@@ -1,0 +1,103 @@
+# makefile for Microsoft Visual C++ Toolkit 2003 with
+# Microsoft Framework SDK
+
+CC = cl.exe
+RM = del.exe
+LIBEXE = lib.exe
+# SSE enable
+CFLAGS = /DNDEBUG /DWIN32 /D_WIN32 /D_WIN32 /DWITH_SSE /MT /G7 /Ox /Oy /Og /Ot
+# SSE disaable
+#CFLAGS = /DNDEBUG /DWIN32 /D_WIN32 /D_WIN32 /MT /G7 /Ox /Oy /Og /Ot
+INCLUDE=/I"C:\Program Files\Microsoft Visual C++ Toolkit 2003\include" /I"C:\Program Files\Microsoft SDK\include"
+
+SUBDIRS = lsh
+LIBTARGET = rib.lib
+
+OBJS =  accel.obj \
+	apitable.obj \
+	array.obj \
+	attribute.obj \
+	backdoor.obj \
+	brdf.obj \
+	bsp.obj \
+	bssrdf.obj \
+	camera.obj \
+	context.obj \
+	declare.obj \
+	display.obj \
+	dlload.obj \
+	filter.obj \
+	framebufferdrv.obj \
+	geom.obj \
+	hash.obj \
+	hdrdrv.obj \
+	hilbert.obj \
+	hilbert2d.obj \
+	htm.obj \
+	ibl.obj \
+	irradcache.obj \
+	jpeg.obj \
+	kdtree.obj \
+	light.obj \
+	list.obj \
+	loader_obj.obj \
+	log.obj \
+	material.obj \
+	matrix.obj \
+	mc.obj \
+	memory.obj \
+	metropolis.obj \
+	noise.obj \
+	octree.obj \
+	octree_frisken.obj \
+	openexrdrv.obj \
+	option.obj \
+	parallel.obj \
+	pathtrace.obj \
+	photonmap.obj \
+	polygon.obj \
+	prt.obj \
+	qmc.obj \
+	quadric.obj \
+	quaternion.obj \
+	random.obj \
+	raytrace.obj \
+	reflection.obj \
+	render.obj \
+	rgbe.obj \
+	ri.obj \
+	sh.obj \
+	shader.obj \
+	shading.obj \
+	sis.obj \
+	sockdrv.obj \
+	stack.obj \
+	subd.obj \
+	texture.obj \
+	thread.obj \
+	tiffdrv.obj \
+	timer.obj \
+	transport.obj \
+	util.obj \
+	vector.obj \
+	zorder2d.obj 
+
+.SUFFIXES : .c
+
+all: $(LIBTARGET) $(SUBDIRS)
+
+$(LIBTARGET): $(OBJS)
+	$(LIBEXE) /OUT:$(LIBTARGET) $(OBJS)	
+
+$(SUBDIRS) _ ::
+	@echo Entering directory $@...
+	@cd $@
+	@$(MAKE) /f Makefile.nmake
+	@cd ..
+
+clean:
+	$(RM) $(OBJS)
+
+.c.obj:
+	$(CC) /nologo /c $(INCLUDE) $(CFLAGS) $<
+

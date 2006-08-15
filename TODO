@@ -1,0 +1,19 @@
+ - Output alpha and depth value of pixel.
+
+ - RenderMan Shading Language.
+   o Surface shader.
+
+ - Various global illumination algorithms.
+   o Metropolis Light Transport.
+   o Path tracing, bidirectional path tracing.
+
+ - Improved Texture filtering.
+   o Tracing ray differentials.
+
+ - Better irradiance and radiance cacing
+   o Shrek 2 style irradiance cacing.
+
+ - Adaptive Antialiasing. 
+   o Entropy-based antialiasing.
+
+ - And more and more...

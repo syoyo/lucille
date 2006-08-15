@@ -1,0 +1,26 @@
+# makefile for gcc which doesn't use configure script.
+# It provides direct configuration.
+
+# include common settings
+-include ../make.include.gcc
+
+CFLAGS += -I..
+
+OBJS =  lexrib.o \
+	parserib.o \
+	lsh.o \
+	my_getopt.o \
+	main.o
+
+.SUFFIXES : .c
+
+all: $(OBJS)
+	$(LINK) -o lsh $(PROFOPT) $(OBJS) ../librib.a $(X11LIBS) -ldl -lpthread -lm 
+
+clean:
+	$(RM) $(OBJS)
+	$(RM) lsh
+
+.c.o:
+	$(CC) $(INCLUDE) $(CFLAGS) -c $<
+

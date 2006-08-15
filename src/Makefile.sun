@@ -1,0 +1,106 @@
+# makefile for Sun C/C++ compiler for Solaris(x86)
+
+CC           = cc
+RM           = rm -rf
+LIBEXE       = gar cr
+MAKEFILENAME = Makefile.sun
+
+# ----------------------------------------------
+# Include common compile options.
+
+include makefile.sun.include
+
+#
+# ----------------------------------------------
+
+SUBDIRS = lsh
+LIBTARGET = librib.a
+
+OBJS =  accel.o \
+	apitable.o \
+	array.o \
+	attribute.o \
+	backdoor.o \
+	brdf.o \
+	bsp.o \
+	bssrdf.o \
+	camera.o \
+	context.o \
+	declare.o \
+	display.o \
+	dlload.o \
+	filter.o \
+	framebufferdrv.o \
+	geom.o \
+	hash.o \
+	hdrdrv.o \
+	hilbert.o \
+	hilbert2d.o \
+	htm.o \
+	ibl.o \
+	irradcache.o \
+	jpeg.o \
+	kdtree.o \
+	light.o \
+	list.o \
+	loader_obj.o \
+	log.o \
+	material.o \
+	matrix.o \
+	mc.o \
+	memory.o \
+	metropolis.o \
+	noise.o \
+	octree.o \
+	octree_frisken.o \
+	openexrdrv.o \
+	option.o \
+	parallel.o \
+	pathtrace.o \
+	photonmap.o \
+	polygon.o \
+	prt.o \
+	qmc.o \
+	quadric.o \
+	quaternion.o \
+	random.o \
+	raytrace.o \
+	reflection.o \
+	render.o \
+	rgbe.o \
+	ri.o \
+	sh.o \
+	shader.o \
+	shading.o \
+	sis.o \
+	sockdrv.o \
+	stack.o \
+	subd.o \
+	texture.o \
+	thread.o \
+	tiffdrv.o \
+	timer.o \
+	transport.o \
+	util.o \
+	vector.o \
+	zorder2d.o \
+	spiral.o 
+
+.SUFFIXES : .c
+
+all: $(LIBTARGET) $(SUBDIRS)
+
+$(LIBTARGET): $(OBJS)
+	$(LIBEXE) $(LIBTARGET) $(OBJS)	
+
+$(SUBDIRS) _ ::
+	@echo Entering directory $@...
+	@(cd $@; $(MAKE) -f $(MAKEFILENAME))
+	@cd ..
+
+clean:
+	$(RM) $(OBJS) $(LIBTARGET)
+
+.c.o:
+	$(CC) $(INCLUDE) $(CFLAGS) -c $<
+

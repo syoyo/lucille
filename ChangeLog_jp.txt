@@ -1,0 +1,39 @@
+0.2
+	o rockenfield のディレクトリを移動
+	  (tools/fltkview/ -> tools/rockenfield)
+	  [ 2004 年 10 月 30 日]
+	
+	o Z 曲線順にバケットをレンダリングするようにした
+	  (src/zorder2d.c)
+	  [ 2004 年 10 月 30 日]
+		
+	o NaturalDocs(http://www.naturaldocs.org/) を用いてソースコードドキュメント
+	  を生成するためのスクリプトを追加
+	  (doc/gendoc.sh)
+	  [ 2004 年 8 月 26 日]
+	  
+	o fltk + OpenGL によるフレームバッファドライバ rockenfield を追加
+	  (tools/fltkview/)
+	  [ 2004 年 8 月 26 日]
+
+	o OpenEXR 画像フォーマットでの保存をサポート(openexrdrv.c)
+	o 実験的なメトロポリス光輸送レンダリングアルゴリズムの実装(metropolis.c)
+	o -info オプションで、利用可能なディスプレイドライバのリストを表示(main.c)
+	o 実験的、制限のある RenderMan シェーダ言語のサポート(shader.c)
+	o サブディビジョンサーフェスのサポート(SubdivisionMesh, "catmull-clark" 法)
+	o 四角形ポリゴンのサポート(PointsPolygons, PointsGeneralPolygons)
+	o 2 次元フィボナッチ格子点を実装( qmc: fibonacci_lattice_2D() )
+
+0.1.3
+	o Faure の置換法を実装( qmc.c: faure_permutation() )
+	o 一般化 van der Corput 列を実装( qmc.c: generalized_vdC() )
+	o レンダリング予想終了時間(ETA, Elapsed Time Left)を表示
+	o レンダリング済みのパーセンテージを表示
+	o ReadArchive をサポート
+
+0.1.2 以前
+	o お前は今までに加えた変更点を覚えているのか?
+
+--
+藤田将洋
+syoyo@users.sourceforge.net

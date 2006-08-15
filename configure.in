@@ -1,0 +1,540 @@
+dnl Process this file with autoconf to produce a configure script.
+AC_REVISION($Id: configure.in,v 1.11 2004/10/31 13:50:32 syoyo Exp $)
+AC_INIT(src/ri.h)
+AC_CANONICAL_SYSTEM
+AM_INIT_AUTOMAKE(lucille, 0.1.3)
+AM_CONFIG_HEADER(src/config.h)
+
+dnl Checks for programs.
+AC_PROG_CC
+AC_PROG_CXX
+AC_PROG_RANLIB
+dnl AC_LIBTOOL_WIN32_DLL
+dnl AM_PROG_LIBTOOL
+AM_PROG_LEX
+AC_PROG_YACC
+AC_PATH_XTRA
+ 
+dnl Checks if system has gunzip.
+AC_CHECK_PROG(GUNZIP, gunzip, notfound, $PATH) 
+if test "$GUNZIP" = "gunzip"; then
+  AC_DEFINE([WITH_GUNZIP],[1],[Found gunzip. lucille supports compressed RIB.])
+fi
+
+dnl Checks for C compiler architecture
+AC_C_BIGENDIAN
+
+dnl From autoconf macro archives.
+AC_DEFUN([ACX_C_RESTRICT],
+[AC_CACHE_CHECK([for C restrict keyword], acx_cv_c_restrict,
+[acx_cv_c_restrict=unsupported
+ AC_LANG_SAVE
+ AC_LANG_C
+ # Try the official restrict keyword, then gcc's __restrict__, then
+ # SGI's __restrict.  __restrict has slightly different semantics than
+ # restrict (it's a bit stronger, in that __restrict pointers can't
+ # overlap even with non __restrict pointers), but I think it should be
+ # okay under the circumstances where restrict is normally used.
+ for acx_kw in restrict __restrict__ __restrict; do
+   AC_TRY_COMPILE([], [float * $acx_kw x;], [acx_cv_c_restrict=$acx_kw; break])
+ done
+ AC_LANG_RESTORE
+])
+ if test "$acx_cv_c_restrict" != "restrict"; then
+   acx_kw="$acx_cv_c_restrict"
+   if test "$acx_kw" = unsupported; then acx_kw=""; fi
+   AC_DEFINE_UNQUOTED(restrict, $acx_kw, [Define to equivalent of C99 restrict keyword, or to nothing if this is not supported.  Do not define if restrict is supported directly.])
+ fi
+
+ if test "$acx_kw" != ""; then
+   AC_DEFINE([HAVE_RESTRICT],[1],[C compiler supports restrict keyword])
+ fi
+])
+
+ACX_C_RESTRICT
+
+dnl Checks for libraries.
+
+AM_WITH_DMALLOC
+
+dnl libtiff check
+TIFF_LIBS=""
+AC_MSG_CHECKING(libtiff)
+AC_CHECK_HEADER(tiffio.h,
+	[have_libtiff="yes"],
+	[have_libtiff="no"])
+AC_MSG_RESULT($have_libtiff)
+
+if test "$have_libtiff" = "yes"; then
+  AC_DEFINE([HAVE_LIBTIFF],[1],[libtiff available on the computer])
+  TIFF_LIBS="-ltiff"
+fi
+
+AC_ARG_WITH(
+	tiff,
+	[  --with-tiff             Force use libtiff to output TIFF image ],
+	[ with_tiff="yes" ],
+	[ with_tiff="no" ])            
+
+if test "$with_tiff" = "yes"; then
+  AC_DEFINE([HAVE_LIBTIFF],[1],[libtiff available on the computer])
+  TIFF_LIBS="-ltiff"
+fi
+
+AC_SUBST(TIFF_LIBS)
+
+dnl libjpeg check
+AC_MSG_CHECKING(libjpeg)
+AC_CHECK_LIB(jpeg, jpeg_start_compress,
+	[have_libjpeg="yes"],
+	[have_libjpeg="no"])
+dnl AC_MSG_RESULT($have_libjpeg)
+
+JPEG_LIBS=""
+if test "$have_libjpeg" = "yes"; then
+  AC_DEFINE([HAVE_LIBJPEG],[1],[libjpeg available on the computer])
+  JPEG_LIBS="-ljpeg"
+fi
+AC_SUBST(JPEG_LIBS)
+AM_CONDITIONAL(HAVE_JPEGLIB, test x$have_libjpeg = xtrue)
+
+dnl OpenEXR check
+OPENEXR_LIBS=""
+AC_MSG_CHECKING(OpenEXR)
+AC_CHECK_HEADER(OpenEXR/ImfCRgbaFile.h,
+	[have_openexr="yes"],
+	[have_openexr="no"])
+AC_MSG_RESULT($have_openexr)
+
+if test "$have_openexr" = "yes"; then
+  AC_DEFINE([HAVE_OPENEXR],[1],[OpenEXR available on the computer])
+  OPENEXR_LIBS="-lIlmImf -lImath -lHalf -lIex -lz -lstdc++"
+fi
+
+AC_ARG_WITH(
+	openexr,
+	[  --with-openexr          Use OpenEXR image format library ],
+	[ with_openexr="yes" ],
+	[ with_openexr="no" ])            
+
+if test "$with_openexr" = "yes"; then
+  AC_DEFINE([HAVE_OPENEXR],[1],[OpenEXR available on the computer])
+  OPENEXR_LIBS="-lIlmImf -lImath -lHalf -lIex -lz"
+fi
+
+AC_SUBST(OPENEXR_LIBS)
+
+dnl clear CFLAGS
+CFLAGS="-Wall -W"
+
+dnl pthread check(for UNIX like system)
+AC_CHECK_LIB(pthread, pthread_mutex_init, 
+	[have_pthread="yes"],
+	[have_pthread="no"])
+
+if test "$have_pthread" = "yes"; then
+  AC_DEFINE([HAVE_PTHREAD],[1],[pthread available on the computer])
+fi
+
+dnl Checks for header files.
+AC_HEADER_STDC
+
+dnl Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_C_INLINE
+
+DL_LIBS=""
+SYSTEM_LIBS="-lz"
+DL_FLAGS=""
+dnl target host check
+case "$target" in
+  i*86-*-linux-gnu)
+    CFLAGS="$CFLAGS -DLINUX"
+    DL_LIBS="-ldl"
+    DL_FLAGS="-rdynamic"
+  ;;
+  x86*-linux-gnu)
+    dnl amd or amd64?
+    CFLAGS="$CFLAGS -DLINUX"
+    DL_LIBS="-ldl"
+    DL_FLAGS="-rdynamic"
+  ;;
+  i*86-pc-cygwin)
+    CFLAGS="$CFLAGS -mwindows -mno-cygwin -Wl,--subsystem,console -DWIN32"
+  ;;
+  i*86-pc-mingw32)
+    CFLAGS="$CFLAGS -DWIN32"
+    dnl winsock2, etc
+    SYSTEM_LIBS="-lws2_32 -lgdi32"
+  ;;
+  powerpc-*-darwin*) 
+    CFLAGS="$CFLAGS -I/sw/include"
+    LDFLAGS="$LDFLAGS -L/sw/lib"
+  ;;
+  sparc-sun-*)
+    CFLAGS="$CFLAGS -DSPARC"
+    ;;
+  mips-sgi-*)
+    CFLAGS="$CFLAGS -DSGI"
+    ;;
+  *)
+  ;;
+esac
+AC_SUBST(DL_LIBS)
+AC_SUBST(DL_RDYNAMIC)
+AC_SUBST(SYSTEM_LIBS)
+
+AC_ARG_WITH(
+	x11,
+	[  --with-x11            Use X11 for framebuffer(for Mac OS X) ],
+	[ with_x11fb="yes" ],
+	[ with_x11fb="no" ])            
+
+dnl framebuffer option
+AC_MSG_CHECKING(if --enable-framebuffer option is specified)
+AC_ARG_ENABLE(framebuffer, 
+  [  --enable-framebuffer    Build a framebuffer display driver(default=no).],
+  [build_framebuffer="auto"], [build_framebuffer="yes"])
+
+X11_LIB=""
+if test "$build_framebuffer" = auto; then
+  dnl for Windows and Mac OS X, enable framebuffer
+  case "$target" in
+    i*86-pc-cygwin)
+      dnl FB output is enabled by default through Win32 Windowing API
+      dnl X11_LIB=""
+    ;;
+    powerpc-*-darwin*) 
+      if test "$with_x11fb" = "yes"; then
+        dnl Use GLUT framework(10.3 includes GLUT by default)
+
+        AC_DEFINE([WITH_11],[1],[enable X11 output])
+        CFLAGS="$CFLAGS -I/usr/X11R6/include"
+        X11_LIB="-L/usr/X11R6/lib -lX11 -lXext -lGL -lGLU -lglut"
+
+      else
+        dnl Use GLUT framework(10.3 includes GLUT by default)
+
+        AC_DEFINE([WITH_AQUA],[1],[enable AQUA output])
+        X11_LIB="-framework OpenGL -framework GLUT -lobjc"
+      fi
+    ;;
+    *)
+    ;;
+  esac
+fi
+
+if test "$build_framebuffer" = yes; then
+  case "$target" in
+    i*86-*-linux-gnu)
+      if test "$have_pthread" = yes; then
+        AC_DEFINE([WITH_X11],[1],[enable X11 output])
+        X11_LIB="-L/usr/X11R6/lib -lX11"
+      else
+        X11_LIB=""
+        AC_MSG_WARN(framebuffer needs pthread but it seems pthread is not present on your system. So, the framebuffer is disabled in this build.)
+      fi
+    ;;
+    x86*-linux-gnu)
+      dnl amd or amd64?
+      if test "$have_pthread" = yes; then
+        AC_DEFINE([WITH_X11],[1],[enable X11 output])
+        X11_LIB="-L/usr/X11R6/lib -lX11"
+      else
+        X11_LIB=""
+        AC_MSG_WARN(framebuffer needs pthread but it seems pthread is not present on your system. So, the framebuffer is disabled in this build.)
+      fi
+    ;;
+    i*86-pc-cygwin)
+      dnl FB output is enabled by default through Win32 Windowing API
+      dnl X11_LIB=""
+    ;;
+    powerpc-*-darwin*) 
+      if test "$with_x11fb" = "yes"; then
+
+        dnl Use GLUT framework(10.3 includes GLUT by default)
+
+        AC_DEFINE([WITH_11],[1],[enable X11 output])
+        CFLAGS="$CFLAGS -I/usr/X11R6/include"
+        X11_LIB="-L/usr/X11R6/lib -lX11 -lXext -lGL -lGLU -lglut"
+
+      else
+
+        dnl Use GLUT framework(10.3 includes GLUT by default)
+
+        AC_DEFINE([WITH_AQUA],[1],[enable AQUA output])
+        X11_LIB="-framework OpenGL -framework GLUT -lobjc"
+
+      fi
+    ;;
+    *)
+    ;;
+  esac
+fi
+AC_MSG_RESULT($build_framebuffer)
+AC_SUBST(X11_LIB)
+
+dnl thread option
+AC_MSG_CHECKING([if --enable-thread option is specified(default=no)])
+AC_ARG_ENABLE(thread, 
+  [  --enable-thread         Build a multithreaded version[[default=no]]],
+  [build_thread="yes"], [build_thread="no"])
+
+if test "$build_thread" = yes; then
+  case "$target" in
+    powerpc-*-darwin*) 
+      dnl darwin supports pthread natively
+      AC_DEFINE([WITH_PTHREAD],[1],[enable threaded application])
+      CFLAGS="$CFLAGS -D_REENTRANT"
+      ;;
+    i*86-pc-cygwin)
+      dnl Use Win32 thread API
+      ;;
+    *)
+      if test "$have_pthread" = yes; then
+        AC_DEFINE([WITH_PTHREAD],[1],[enable threaded application])
+        CFLAGS="$CFLAGS -D_REENTRANT"
+        PTHREAD_LIB="-pthread"
+      else
+        AC_DEFINE([NOTHREAD],[1],[disable threaded application])
+        PTHREAD_LIB=""
+      fi 
+      ;;
+  esac
+else
+  if test "$build_framebuffer" = yes; then
+    case "$target" in
+      i*86-*-linux-gnu)
+        CFLAGS="$CFLAGS -D_REENTRANT"
+        PTHREAD_LIB="-pthread"
+        AC_MSG_WARN(Framebuffer needs pthread so lucille will be compiled with pthread support.)
+      ;;
+      x86*-linux-gnu)
+        CFLAGS="$CFLAGS -D_REENTRANT"
+        PTHREAD_LIB="-pthread"
+        AC_MSG_WARN(Framebuffer needs pthread so lucille will be compiled with pthread support.)
+      ;;
+      *)
+        CFLAGS="$CFLAGS -D_REENTRANT"
+        PTHREAD_LIB=""
+      ;;
+    esac
+    build_thread="yes"
+  else
+    AC_DEFINE([NOTHREAD],[1],[disable threaded application])
+    PTHREAD_LIB=""
+  fi
+fi
+
+AC_MSG_RESULT($build_thread)
+AC_SUBST(PTHREAD_LIB)
+
+dnl profile option
+AC_MSG_CHECKING(if --enable-profile option is specified)
+AC_ARG_ENABLE(profile, 
+  [  --enable-profile        Build a profiling version.],
+  [build_profile="yes"], [build_profile="no"])
+
+if test "$build_profile" = yes; then
+  CFLAGS="$CFLAGS -pg"
+fi
+AC_MSG_RESULT($build_profile)
+
+dnl debug option
+AC_MSG_CHECKING(if --enable-debug option is specified)
+AC_ARG_ENABLE(debug, 
+  [  --enable-debug          Build a debugging version.],
+  [ build_debug=${enableval}], [build_debug="no"])
+
+if test x"$build_debug" = x"yes"; then
+  AC_DEFINE([DEBUG],[1],[enable debug])
+  dnl AC_DEFINE([NOTHREAD],[1],[disable thread application])
+  CFLAGS="$CFLAGS -g"
+else
+  AC_DEFINE([NDEBUG],[1],[disable debug])
+  if test "$build_profile" = yes; then
+      CFLAGS="$CFLAGS -O3"
+  else
+      dnl common optimization flag
+
+      CFLAGS="$CFLAGS -O2"
+
+      dnl CPU specific optimization flag
+      case "$target" in
+        i*86-*-linux-gnu)
+	;;
+        x86*-linux-gnu)
+        ;;
+	i*86-pc-cygwin)
+	;;
+	powerpc-*-darwin*) 
+	  CFLAGS="$CFLAGS -falign-loops=16"
+	  dnl CFLAGS="-fast -mcpu=7450 -mdynamic-no-pic -ftree-vectorize -maltivec"
+	;;
+	sparc-sun-*)
+	;;
+	mips-sgi-*)
+	;;
+	*)
+	;;
+      esac
+  fi
+fi
+AC_MSG_RESULT($build_debug)
+
+dnl SSE support option
+AC_MSG_CHECKING(if --enable-sse option is specified[default=no])
+AC_ARG_ENABLE(sse,
+  [  --enable-sse            Build a SSE optimized version(x86 only).],
+  [  ts_cv_sse="yes"], [ts_cv_sse="no"])
+
+if test "$ts_cv_sse" = yes; then
+   CFLAGS="${CFLAGS} -msse"
+   AC_DEFINE([WITH_SSE],[1],[enable SSE optimizations])
+fi
+AC_MSG_RESULT($ts_cv_sse)
+
+dnl altivec support option
+AC_MSG_CHECKING(if --enable-altivec option is specified[default=no])
+AC_ARG_ENABLE(altivec,
+  [  --enable-altivec        Build a AltiVec optimized version(PowerPC G4 only).],
+  [  ts_cv_altivec="yes"], [ts_cv_altivec="no"])
+
+if test "$ts_cv_altivec" = yes; then
+  # check if target is PoerPC G4 processor.
+  case "$target" in
+  powerpc-*-darwin*) is_powerpc="yes" is_darwin="yes" is_linux="no";;
+  powerpc-*-linux*) is_powerpc="yes" is_darwin="no" is_linux="yes";;
+  *)         is_powerpc="no";;
+  esac
+
+  if test "$is_powerpc" = yes; then
+    if test "$is_darwin" = yes; then
+      save_CFLAGS="$CFLAGS"
+      CFLAGS="${CFLAGS} -faltivec"
+      dnl echo ${CFLAGS}
+      AC_TRY_COMPILE([#include <stdio.h>],
+      [vector float vec; vec = (vector float)(1.0f, 1.0f, 1.0f, 1.0f);],
+      [ have_altivec="yes"], [ CFLAGS="$save_CFLAGS" have_altivec="no"])
+    elif test "$is_linux" = yes; then
+      save_CFLAGS="$CFLAGS"
+      save_CC="$CC"
+      CFLAGS="${CFLAGS} -fvec"
+      CC="gcc-vec"
+      AC_TRY_COMPILE([#include <stdio.h>],
+      [vector float vec; vec = (vector float)(1.0f, 1.0f, 1.0f, 1.0f);],
+      [ have_altivec="yes"], [ CFLAGS="$save_CFLAGS" CC="$save_CC" have_altivec="no"])
+
+    fi  
+  else
+    have_altivec="no"
+  fi
+
+  if test "$have_altivec" = yes; then
+    AC_DEFINE([WITH_ALTIVEC],[1],[enable AltiVec optiomizations])
+  fi
+else 
+  have_altivec="no"
+fi
+
+AC_MSG_RESULT($have_altivec)
+
+dnl GNU readline check
+AC_ARG_WITH(readline, 
+  [  --with-readline         Use GNU readline library for lucille shell[[default=no]]],
+  [  ts_with_readline="yes"], [ts_with_realine="no"])
+if test "$ts_with_realine" = yes; then
+  AC_DEFINE([WITH_READLINE],[1],[use GNU readline library])
+
+  case "$target" in
+  powerpc-*-darwin*)
+    RL_LIBS="-lreadline"
+    RL_LDFLAGS="-L/sw/lib"
+  ;;
+  i*86-*-linux-gnu)
+    RL_LIBS="-lreadline -lcurses"
+    RL_LDFLAGS=""
+  ;;
+  x86*-linux-gnu)
+    RL_LIBS="-lreadline -lcurses"
+    RL_LDFLAGS=""
+  ;;
+  i*86-pc-cygwin)
+    RL_LIBS="-lreadline"
+    RL_LDFLAGS=""
+  esac  
+else
+  RL_LIBS=""
+  RL_LDFLAGS="" 
+fi 
+
+AC_SUBST(RL_LIBS)
+AC_SUBST(RL_LDFLAGS)
+
+dnl MPI parallel rendering option
+AC_MSG_CHECKING(if --with-mpi option is specified[[default=no]])
+AC_ARG_WITH(mpi, 
+  [  --with-mpi              Enable parallel rendering with MPI.],
+  [with_mpi="yes"], [with_mpi="no"])
+
+if test "$with_mpi" = yes; then
+  CC="mpicc"
+  AC_DEFINE([WITH_MPI],[1],[enable MPI usage])
+fi
+AC_MSG_RESULT($with_mpi)
+
+dnl Checks for Tcl
+dnl AC_MSG_CHECKING(if --with-tcl option is specified[[default=no]])
+dnl AC_ARG_WITH(
+dnl 	tcl,
+dnl 	[  --with-tcl              Use Tcl interpreter ],
+dnl 	[ with_tcl="yes" ],
+dnl 	[ with_tcl="no" ])            
+dnl 
+dnl dnl Config path to tclConfig.h
+dnl AC_ARG_WITH(
+dnl 	tclconfig,
+dnl 	[  --with-tclconfig        Path to tclConfig.h ],
+dnl 	[ tclconf_path=$withval ],
+dnl 	[ tclconf_path="" ])            
+dnl 
+dnl dnl Check if Tcl is installed.
+dnl TCL_LIB_DIR=""
+dnl for dir in $tclconf_path /usr/lib /usr/local/lib /sw/lib; do
+dnl 	if test -r $dir/tclConfig.sh; then
+dnl 		TCL_LIB_DIR=$dir
+dnl 		break;
+dnl 	fi
+dnl done
+dnl 
+dnl if test -z "$TCL_LIB_DIR" && test "$with_tcl" = "yes"; then
+dnl 	AC_MSG_ERROR(Can't find Tcl. Use --with-tclconfig to specify the directory containing tclConfig.sh.) 
+dnl fi
+dnl 
+dnl . $TCL_LIB_DIR/tclConfig.sh
+dnl AC_MSG_RESULT($with_tcl)
+dnl if test "$with_tcl$" = "yes"; then
+dnl 	AC_MSG_RESULT($TCL_LIB_DIR/tclConfig.sh)
+dnl 	AC_MSG_CHECKING([Tcl version])
+dnl 	AC_MSG_RESULT([$TCL_VERSION, patchlevel $TCL_PATCH_LEVEL])
+dnl 	AC_SUBST(TCL_INCLUDE_SPEC)
+dnl 	AC_SUBST(TCL_LIB_SPEC)
+dnl fi
+
+dnl Checks for library functions.
+dnl fltk_cxxflags=`fltk-config --cxxflags`
+dnl fltk_ldflags=`fltk-config --ldflags`
+
+dnl FLTK_CXXFLAGS="$fltk_cxxflags"
+dnl FLTK_LDFLAGS="$fltk_ldflags"
+dnl AC_SUBST(FLTK_CXXFLAGS)
+dnl AC_SUBST(FLTK_LDFLAGS)
+dnl echo "FLTK $FLTK_CXXFLAGS"
+
+dnl AC_OUTPUT(Makefile src/Makefile src/lsh/Makefile ribfiles/Makefile)
+AC_OUTPUT(Makefile \
+	src/Makefile \
+	src/lsh/Makefile \
+	src/sl/Makefile \
+	tools/Makefile \
+	tools/mqo2rib/Makefile)

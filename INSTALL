@@ -1,0 +1,103 @@
+Compilation for lucille
+=======================
+
+1. Building lsh( lucille shell, renderer itself )
+2. Building lsh with MPI( for parallel rendering)
+3. external library lsh used.
+
+
+1. Building lsh( lucille shell, renderer itself )
+
+  cygwin and linux(or other UNIX like system):
+	$ ./configure
+	$ make
+	$ make install (optional)
+	$ ./src/lsh/lsh RIBFILE
+
+	compile options:
+
+		$ ./configure --disable-debug
+
+		turn on optimization.
+
+		$ ./configure --disable-debug --enable-sse
+
+		turn on optimization with SSE.
+		(You will need PentiumIII or higher CPU)
+
+  OS-X:
+	$ ./configure
+	$ make
+	$ make install (optional)
+	$ ./src/lsh/lsh RIBFILE
+
+	compile options:
+
+		$ ./configure --disable-debug
+
+		turn on optimization.
+
+		$ ./configure --enable-altivec
+
+		use AltiVec.
+		(You shold need PowerPC G4 or higher)
+
+		$ ./configure --enable-profile
+
+		enable profiling for gprof.
+
+
+2. Building lsh with MPI( for parallel rendering )
+
+  If you want parallel rendering with lucille, first install MPI library
+  into your machines.
+
+  MPI is widely used message passing library interface for parallel computing.
+  There are two major free implementation of MPI specification.
+
+	- mpich
+	  http://www-unix.mcs.anl.gov/mpi/mpich/
+
+	- LAM/MPI
+	  http://www.lam-mpi.org/
+  
+  Then, build lsh with
+
+	$ ./configure --with-mpi
+	$ make
+
+  You can specify optimization options with --with-mpi. e.g,
+	$ ./configure --disable-debug --with-mpi
+	$ ./configure --disable-debug --enable-sse --with-mpi (x86 only)
+	$ ./configure --disable-debug --enable-altivec --with-mpi (G4 only)
+
+
+  To execute MPI version of lsh, you should use mpirun command.
+
+	$ mpirun -np N lsh RIBFILE
+
+  Where N is number of Processing Elements to run. lsh and RIB file should
+  be installed all machines if file system does not uses NFS.  
+
+
+3. lsh uses following library as optional( for UNIX like system ).
+   It is recommanded to install this libraries, but it may possible to
+   build lsh without such libraries.
+
+   libtiff:
+	to save a TIFF format image(highly recommanded).
+
+   libjpeg:
+	to convert a JPEG format image to the texture file.
+
+   readline:
+	to provide bash like command line shell.
+
+   X Window:
+	for "framebuffer" display driver.
+
+   dmalloc:
+	for memory debugging(e.g. memory leaks).
+	
+--
+Syoyo FUJITA

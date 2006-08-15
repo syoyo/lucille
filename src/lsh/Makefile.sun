@@ -1,0 +1,38 @@
+# makefile for Sun's C/C++ Compiler for Solaris(x86)
+
+CC         = cc
+RM         = rm -rf
+LIBPROG    = gar cru
+LINK       = cc
+INCLUDE    = -I../
+
+DEFLDLIBS  = -lsocket -lnsl -ldl -lpthread -lm -lz 
+
+# Assume that those libraries are already installed on your system.
+LDLIBS     = -ljpeg -ltiff 
+
+# Include common compile options
+
+include ../makefile.sun.include
+
+#
+
+X11LIBS = -L/usr/X11R6/lib -lX11 -lXext -lXmu -lXi
+
+OBJS =  lexrib.o \
+	parserib.o \
+	lsh.o \
+	my_getopt.o \
+	main.o
+
+.SUFFIXES : .c
+
+all: $(OBJS)
+	$(LINK) -o lsh $(CFLAGS) $(OBJS) ../librib.a $(X11LIBS) $(LDLIBS) $(DEFLDLIBS) 
+
+clean:
+	$(RM) $(OBJS)
+
+.c.o:
+	$(CC) $(INCLUDE) $(CFLAGS) -c $<
+

@@ -1,0 +1,15 @@
+#!/bin/sh
+
+# get OS name
+osname=`uname`
+
+# remove file extension. 
+fname=`expr $1 : '\(.*\)\.' '|' $1`
+
+if test "$osname" == "Darwin"; then
+    # Mac OS X
+    gcc -DHAVE_CONFIG_H -I../ -g -faltivec -bundle -flat_namespace -undefined suppress -o $fname.so $1 -lm
+elif test "$osname" == "Linux"; then
+    # Linux
+    echo ""
+fi 

@@ -1,0 +1,53 @@
+
+  Install memo for Solaris 10(x86)
+
+  Contents
+  --------
+
+    1.  Requirements
+    2.  Setup
+    3a. Configure & Make(for gcc)
+    3b. Configure & Make(for Sun's C/C++ compier) 
+
+  --------
+
+    1. Requirements
+
+       If you want to use Sun's cc for compiler, goto 3b.
+
+       - autoconf
+       - automake
+       - C/C++ compiler(cc or gcc)
+
+       You may install precompiled binaries of above using Solaris pkg-get tool.
+
+          http://www.bolthole.com/solaris/pkg-get.html
+
+
+    2. Setup
+
+      Make some symbolic links for gnu tools.
+     
+      # ln -s /usr/sfw/bin/gmake /usr/sfw/bin/make
+      # ln -s /usr/sfw/bin/gas /usr/sfw/bin/as
+      # ln -s /usr/sfw/bin/gar /usr/sfw/bin/ar
+
+      Add '/usr/sfw/bin' to PATH environment.
+
+
+    3a. Configure & Make(for gcc)
+
+      $ ./configure && make
+
+    3b. Configure & Make(for Sun's C/C++ compiler)
+
+      $ cd src
+      
+      Edit the file 'makefile.sun.include'. Then,
+
+      $ make -f Makefile.sun
+
+
+ ------------
+ Syoyo Fujita
+ 25 Nov, 2005.
