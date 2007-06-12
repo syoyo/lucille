@@ -1,0 +1,54 @@
+/*
+ * opcode table
+ */
+
+#ifndef OPCODE_DEF
+#define OPCODE_DEF
+
+#define CLASS_NONE                  0
+#define CLASS_ARITH                 1
+#define CLASS_COND                  2
+#define CLASS_LEAF                  3
+
+typedef struct _opcode_t
+{
+
+	int         op;
+	const char *name;
+	int         n_ops;
+	void        (*func)(node_t *node);
+	int         class;
+
+} opcode_t;
+
+extern void emit_stmt(node_t *node);
+extern void emit_mul(node_t *node);
+
+opcode_t g_opcodes[] = {
+	{ OP_MUL         , "mul"      , 2, emit_mul     , CLASS_ARITH },
+	{ OP_SUB         , "sub"      , 2, NULL         , CLASS_ARITH },
+	{ OP_ADD         , "add"      , 2, NULL         , CLASS_ARITH },
+	{ OP_DIV         , "div"      , 2, NULL         , CLASS_ARITH },
+	{ OP_NEG         , "neg"      , 1, NULL         , CLASS_ARITH },
+	{ OP_ASSIGN      , "assign"   , 2, NULL         , CLASS_ARITH },
+	{ OP_VARDEF      , "vardef"   , 2, NULL         , CLASS_NONE  },
+	{ OP_IF          , "if"       , 2, NULL         , CLASS_COND  },
+	{ OP_IF_ELSE     , "if_else"  , 3, NULL         , CLASS_COND  },
+	{ OP_EQ          , "eq"       , 2, NULL         , CLASS_ARITH },
+	{ OP_LE          , "le"       , 2, NULL         , CLASS_ARITH },
+	{ OP_GE          , "ge"       , 2, NULL         , CLASS_ARITH },
+	{ OP_NEQ         , "neq"      , 2, NULL         , CLASS_ARITH },
+	{ OP_STMT        , "stmt"     , 2, emit_stmt    , CLASS_NONE  },
+	{ OP_DEFEXPR     , "defexpr"  , 2, NULL         , CLASS_NONE  },
+	{ OP_VARDEF      , "vardef"   , 1, NULL         , CLASS_NONE  },
+	{ OP_FUNC_HEADER , "funchead" , 2, NULL         , CLASS_NONE  },
+	{ OP_FUNC        , "func"     , 2, NULL         , CLASS_NONE  },
+	{ OP_CALLFUNC    , "call"     , 2, NULL         , CLASS_ARITH },
+	{ OP_NULL        , "null"     , 0, NULL         , CLASS_NONE  },
+	{ IDENTIFIER     , "id"       , 1, NULL         , CLASS_LEAF  },
+	{ NUMBER         , "constnum" , 1, NULL         , CLASS_LEAF  },
+	{ STRINGCONSTANT , "conststr" , 1, NULL         , CLASS_LEAF  },
+	{ 0              , "null"     , 0, NULL         , CLASS_NONE  }
+};
+
+#endif

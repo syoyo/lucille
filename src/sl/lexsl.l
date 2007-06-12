@@ -7,6 +7,7 @@
 int nlines = 0;
 
 %}
+%option noyywrap
 IDENT  [a-zA-Z_][a-zA-Z_0-9]*
 exp    [eE][-+]?[0-9]+
 NUM    [-+]?([0-9]+|(([0-9]+)|([0-9]+\.[0-9]*)|(\.[0-9]+)){exp}?)
@@ -84,7 +85,8 @@ STR    \"([^\"\n]|\"\")*\"
 "-="		{ return MINUSEQ;				}
 "*="		{ return MULEQ;					}
 
-"!="		{ return OPNEQ;					}
+"!="		{ return OP_NEQ;				}
+"=="		{ return OP_EQ;					}
 
 "/*"		BEGIN(COMMENT);
 <COMMENT>[^\n]	/* do noting */
