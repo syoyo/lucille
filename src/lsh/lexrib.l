@@ -94,6 +94,7 @@ static void read_archive(const char *rib)
 	/* tear down is done in <<EOF>> pattern */
 }
 
+
 %}
 %option nounput
 %option noyywrap
@@ -153,6 +154,7 @@ Projection		{ return PROJECTION;			}
 Quantize		{ return QUANTIZE;			}
 Rotate			{ return ROTATE;			}
 Scale			{ return SCALE;				}
+ScreenWindow		{ return SCREENWINDOW;			}
 ShadingInterpolation	{ return SHADINGINTERPOLATION;		}
 ShadingRate		{ return SHADINGRATE;			}
 Shutter			{ return SHUTTER;			}

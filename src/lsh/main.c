@@ -1,7 +1,7 @@
 /*
  * main routine for lsh
  *
- * $Id: main.c 109 2005-09-08 14:54:49Z lucille $
+ * $Id: main.c 280 2007-05-12 15:54:23Z lucille $
  */
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -60,6 +60,8 @@ int     flag_pixelsamples = 0;
 int     pixelsamples      = 0;
 int     flag_maxraydepth  = 0;
 int     maxraydepth       = 0;
+int     flag_outputname   = 0;
+const char *outputname    = NULL;
 int     debug_mode        = 0;
 
 static void info();
@@ -149,7 +151,7 @@ main(int argc, char **argv)
 		RiBegin(RI_NULL);
 
 		/* set debuggin mode */
-		ri_render_get()->debug_mode = debug_mode;
+		ri_render_get()->is_debug_mode = debug_mode;
 
 
 		/* register WorldBegin callback to override
@@ -161,7 +163,7 @@ main(int argc, char **argv)
 		ri_timer_start(ri_render_get()->context->timer, "RIB parsing");
 
 #ifdef WITH_GUNZIP
-		/* Is file is gzip'ed? */
+		/* Is file gzip'ed? */
 		ext = strrchr(ribfile, '.');
 		printf("ext = %s\n", ext);
 		if (ext != NULL && (strcasecmp(ext, ".gz") == 0)) {
@@ -221,6 +223,12 @@ world_begin_cb(void)
 	if (flag_maxraydepth) {
 		opt->max_ray_depth = maxraydepth;
 	}
+
+	if (flag_outputname) {
+		if (opt->display && opt->display->display_name) {
+			opt->display->display_name = outputname;
+		}
+	}
 }
 
 static void
@@ -241,6 +249,7 @@ parse_arg(int argc, char **argv)
 		{"maxraydepth", 1, 0, 'm'},	
 		{"debug", 0, 0, 'd'},
 		{"verbose", 0, 0, 'b'},
+		{"output", 1, 0, 'o'},
 		{0, 0, 0, 0}
 	};
 
@@ -310,6 +319,13 @@ parse_arg(int argc, char **argv)
 
 			break;
 
+		case 'o':
+			/* Specify default output filename. */
+			flag_outputname = 1;
+			outputname = optarg;
+
+			break;
+
 		default:
 			break;
 		}
@@ -330,7 +346,7 @@ info()
 #else
 	printf("  Version        : %s (compiled on %s)\n", version, compile);
 #endif
-	printf("  Multi-threaded : ");
+	printf("  Multi-threading: ");
 
 	if (ri_thread_supported()) {
 		printf("On\n");
@@ -346,7 +362,7 @@ info()
 	printf("Release build");
 #endif
 
-#if defined(__APPLE__) && defined(__MACH__)
+#if defined(__APPLE__) && defined(__ppc__)
 	printf(", AltiVec ");
 #ifdef WITH_ALTIVEC
 	printf("[on] ");
@@ -355,7 +371,7 @@ info()
 #endif
 #endif
 
-#if defined(WIN32) || defined(LINUX)
+#if defined(WIN32) || defined(LINUX) || defined(__i386__) || defined(__x86_64__)
 	printf(", SSE ");
 #ifdef WITH_SSE
 	printf("[on] ");
@@ -374,7 +390,8 @@ usage()
 {
 	printf("  Example: lsh mudah.rib\n");
 	printf("\n");
-	printf("  To show available display drivers in this build, type 'lsh --info'\n");
+	printf("  To show available display drivers in this build, type `lsh --info'\n");
+	printf("  For more help, type `lsh --help'\n");
 	printf("\n");
 }
 
@@ -382,8 +399,9 @@ static void
 option_list()
 {
 	printf("  [OPTIONS]\n\n");
-	printf("    --info            Print information.\n");
+	printf("    --info            Print the information.\n");
 	printf("    --help            Print this help.\n");
+	printf("    --output          Specify output name.\n");
 	printf("    --version         Show version and help.\n");
 	printf("    --verbose         Verbose mode.\n");
 	printf("    --debug           Run in debug mode.\n");
@@ -397,7 +415,7 @@ show_ddlist()
 {
 	printf("  The list of Display Drivers available.\n");
 	printf("\n");
-	ri_hash_traverse(ri_render_get()->display_drv, show_ddlist_func, NULL);
+	ri_hash_traverse(ri_render_get()->display_drvs, show_ddlist_func, NULL);
 	printf("\n");
 }
 

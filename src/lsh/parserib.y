@@ -157,6 +157,7 @@ ri_ptr_array_t *paramarray;
 %token ROTATE
 %token RIBVERSION
 %token SCALE
+%token SCREENWINDOW
 %token SHADINGRATE
 %token SHADINGINTERPOLATION
 %token SHUTTER
@@ -387,7 +388,7 @@ protocol: ribversion NUM
 
 	/* currently, only consider 3 component color */
 	if (p->nelems < 3) {
-		ri_log("warning", "RiColor() with compnent < 3");
+		ri_log(LOG_WARN, "RiColor() with compnent < 3");
 	} else {
 		for (i = 0; i < 3; i++) {
 			col[i] = *((RtFloat *)ri_ptr_array_at(p, i));
@@ -488,7 +489,7 @@ protocol: ribversion NUM
 	ri_ptr_array_t *p;
 
 	if (array_type != NUM_ARRAY) {
-		ri_log("warning", "MotionBegin: not a float array argument.\n");
+		ri_log(LOG_WARN, "MotionBegin: not a float array argument.\n");
 	} else {
 		p = $2;
 
@@ -518,7 +519,7 @@ protocol: ribversion NUM
 
 	/* currently, only consider 3 component color */
 	if (p->nelems < 3) {
-		ri_log("warning", "RiOpacity() with compnent < 3");
+		ri_log(LOG_WARN, "RiOpacity() with compnent < 3");
 	} else {
 		for (i = 0; i < 3; i++) {
 			opa[i] = *((RtFloat *)ri_ptr_array_at(p, i));
@@ -683,7 +684,7 @@ protocol: ribversion NUM
 		RiPolygonV(nvertices,
 			   rib_param_num, rib_param_tokens, rib_param_args);
 	} else {
-		ri_log("warning", "Polygon call with invalid parameter");
+		ri_log(LOG_WARN, "Polygon call with invalid parameter");
 	}
 }
 | projection STRING param_list
@@ -702,6 +703,10 @@ protocol: ribversion NUM
 | scale NUM NUM NUM
 {
 	RiScale((RtFloat)$2, (RtFloat)$3, (RtFloat)$4);
+}
+| screenwindow NUM NUM NUM NUM
+{
+	RiScreenWindow((RtFloat)$2, (RtFloat)$3, (RtFloat)$4, (RtFloat)$5);
 }
 | sphere NUM NUM NUM NUM param_list
 {
@@ -798,7 +803,7 @@ protocol: ribversion NUM
 
 		RiTransform(matrix);
 	} else {	
-		ri_log("warning", "nelems != 16");
+		ri_log(LOG_WARN, "nelems != 16");
 	}
 
 	if (array_type == NUM_ARRAY) {
@@ -913,6 +918,8 @@ quantize		: QUANTIZE		{ enter_mode_param();	}
 rotate			: ROTATE		{ enter_mode_param();	}
 ;
 scale			: SCALE			{ enter_mode_param();	}
+;
+screenwindow		: SCREENWINDOW		{ enter_mode_param();	}
 ;
 sphere			: SPHERE		{ enter_mode_param();	}
 ;
