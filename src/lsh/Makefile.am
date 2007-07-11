@@ -2,7 +2,7 @@ lib_LIBRARIES = liblsh.a
 liblsh_a_SOURCES = lsh.h \
 		   lsh.c
 
-INCLUDES = -I../basic -I../ri -I../render -I../../include
+INCLUDES = -I../base -I../ri -I../render -I../../include
 
 #YFLAGS = -d -v -t
 #bison version 1.35
@@ -18,7 +18,7 @@ lsh_LDADD   = liblsh.a \
               ../render/librirender.a \
               ../transport/libritransport.a \
               ../display/libridisplay.a \
-              ../basic/libribasic.a \
+              ../base/libribase.a \
               @X_LIBS@ \
               @X11_LIB@ \
               @JPEG_LIBS@ \

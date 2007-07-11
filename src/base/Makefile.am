@@ -1,7 +1,7 @@
-lib_LIBRARIES = libribasic.a
+lib_LIBRARIES = libribase.a
 
-libribasic_a_LDFLAGS = 
-libribasic_a_SOURCES =  array.c \
+#libribase_a_LDFLAGS = 
+libribase_a_SOURCES =   array.c \
 			array.h \
 			atomic.h \
 			dlload.c \

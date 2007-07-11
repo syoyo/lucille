@@ -59,6 +59,6 @@ librirender_a_SOURCES = \
 	zorder2d.c \
 	zorder2d.h
 
-INCLUDES = -I.. -I../basic -I../ri -I../display -I../../include  -I../transport
+INCLUDES = -I.. -I../base -I../ri -I../display -I../../include  -I../transport
 
-librirender_a_LIBADD = ../basic/libribasic.a
+librirender_a_LIBADD = ../base/libribase.a

@@ -16,6 +16,6 @@ libridisplay_a_SOURCES += openexrdrv.c openexrdrv.h
 endif
 
 
-INCLUDES = -I../../include -I../basic
+INCLUDES = -I../../include -I../base
 
 EXTRA_DIST = rgbe.txt

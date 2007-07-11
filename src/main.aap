@@ -1,7 +1,0 @@
-Source = hilbert2d.c
-
-CFLAGS += -I.
-
-_top.Src_obj = `src2obj(Source)`
-
-all: $_top.Src_obj

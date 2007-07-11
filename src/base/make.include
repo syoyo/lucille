@@ -8,7 +8,7 @@ include $(TOPDIR)/make.include.gcc
 #
 # Target
 #
-LIBTARGET=libribasic.a
+LIBTARGET=libribase.a
 
 #
 # Sources

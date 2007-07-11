@@ -25,6 +25,6 @@ libri_a_SOURCES = \
 	subdivision.c \
 	transform.c 
 
-INCLUDES = -I.. -I../basic -I../render -I../../include -I../transport
+INCLUDES = -I.. -I../base -I../render -I../../include -I../transport
 
-libri_a_LIBADD = ../basic/libribasic.a
+libri_a_LIBADD = ../base/libribase.a
