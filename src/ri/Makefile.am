@@ -1,7 +1,6 @@
-lib_LTLIBRARIES = libri.la
+lib_LIBRARIES = libri.a
 
-libri_la_LDFLAGS = 
-libri_la_SOURCES = \
+libri_a_SOURCES = \
 	apitable.c \
 	apitable.h \
 	attribute.c \
@@ -28,4 +27,4 @@ libri_la_SOURCES = \
 
 INCLUDES = -I.. -I../basic -I../render -I../../include -I../transport
 
-libri_la_LIBADD = ../basic/libribasic.la
+libri_a_LIBADD = ../basic/libribasic.a

@@ -14,10 +14,11 @@ lsh_SOURCES = main.c \
 	      lexrib.l 
 lsh_LDFLAGS = 
 lsh_LDADD   = liblsh.a \
-              ../basic/libribasic.la \
-              ../ri/libri.la \
-              ../render/librirender.la \
-              ../display/libridisplay.la \
+              ../ri/libri.a \
+              ../render/librirender.a \
+              ../transport/libritransport.a \
+              ../display/libridisplay.a \
+              ../basic/libribasic.a \
               @X_LIBS@ \
               @X11_LIB@ \
               @JPEG_LIBS@ \

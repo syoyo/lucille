@@ -1,7 +1,6 @@
-lib_LTLIBRARIES = libridisplay.la
+lib_LIBRARIES = libridisplay.a
 
-libridisplay_la_LDFLAGS = 
-libridisplay_la_SOURCES = rgbe.c \
+libridisplay_a_SOURCES =  rgbe.c \
 			  rgbe.h \
 			  sockdrv.c \
 			  sockdrv.h \
@@ -9,11 +8,11 @@ libridisplay_la_SOURCES = rgbe.c \
 			  hdrdrv.h
 
 if HAVE_JPEGLIB
-libridisplay_la_SOURCES += jpeg.c jpeg.h
+libridisplay_a_SOURCES += jpeg.c jpeg.h
 endif
 
 if HAVE_OPENEXRLIB
-libridisplay_la_SOURCES += openexrdrv.c openexrdrv.h
+libridisplay_a_SOURCES += openexrdrv.c openexrdrv.h
 endif
 
 

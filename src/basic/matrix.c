@@ -19,7 +19,7 @@
 /*
  * Routines used only in matrix.c.
  */
-void adjoint(ri_matrix_t *out, ri_matrix_t *in);
+static void adjoint(ri_matrix_t *out, ri_matrix_t *in);
 static RtFloat det3x3(RtFloat a1, RtFloat a2, RtFloat a3,
 		      RtFloat b1, RtFloat b2, RtFloat b3,
 		      RtFloat c1, RtFloat c2, RtFloat c3);

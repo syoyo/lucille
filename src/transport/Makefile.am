@@ -1,6 +1,5 @@
-lib_LTLIBRARIES = libritransport.la
+lib_LIBRARIES = libritransport.a
 
-libritransport_la_LDFLAGS = 
-libritransport_la_SOURCES = transport.c 
+libritransport_a_SOURCES = transport.c 
 
 INCLUDES = -I../../include -I../basic -I../render -I../ri

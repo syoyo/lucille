@@ -1,0 +1,14 @@
+#!/bin/sh
+
+HOSTTYPE=`uname`
+if [ "$HOSTTYPE" == "Darwin" ]; then
+        LIBTOOLIZE=glibtoolize
+else
+        LIBTOOLIZE=libtoolize
+fi
+
+aclocal
+$LIBTOOLIZE --automake --copy
+automake --add-missing --copy
+autoconf
+

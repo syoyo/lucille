@@ -1,7 +1,6 @@
-lib_LTLIBRARIES = librirender.la
+lib_LIBRARIES = librirender.a
 
-librirender_la_LDFLAGS = 
-librirender_la_SOURCES = \
+librirender_a_SOURCES = \
 	accel.c \
 	accel.h \
 	brdf.c \
@@ -62,4 +61,4 @@ librirender_la_SOURCES = \
 
 INCLUDES = -I.. -I../basic -I../ri -I../display -I../../include  -I../transport
 
-librirender_la_LIBADD = ../basic/libribasic.la
+librirender_a_LIBADD = ../basic/libribasic.a
