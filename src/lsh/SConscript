@@ -1,0 +1,27 @@
+srcs=Split("""
+lexrib.c
+lsh.c
+main.c
+parserib.c
+""")
+
+#my_getopt.c
+
+Import('env')
+
+incPath=['../base', '../transport', '../render', '../ri', '../../include']
+
+libs=['riri', 'rirender', 'ritransport', 'ridisplay',  'ribase']
+libs.append(['z'])	# zlib 
+
+libPath=['../base', '../display', '../transport', '../render', '../ri']
+
+env.CFile(target='parserib.c', source='parserib.y')
+env.CFile(target='lexrib.c', source='lexrib.l')
+
+progName='lsh'
+
+env.Program(progName, srcs,
+            CPPPATH=incPath, LIBS=libs, LIBPATH=libPath)
+
+

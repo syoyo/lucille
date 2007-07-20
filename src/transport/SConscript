@@ -1,0 +1,12 @@
+srcs=Split("""
+transport.c
+""")
+
+# pathtrace.c
+
+Import('env')
+
+incPath=['../ri', '../base', '../render', '../../include']
+libName='ritransport'
+
+env.Library(libName, srcs, CPPPATH=incPath)
