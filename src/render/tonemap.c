@@ -19,28 +19,21 @@ exposure( ri_float_t val, ri_float_t gain, ri_float_t gamma )
 void
 ri_tonemap_apply( const ri_display_t *disp, ri_vector_t * result )
 {
-        ri_display_t   *disp;
         ri_float_t      val;
 
         val = exposure( result->f[0], disp->gain, disp->gamma );
-        if ( val < 0.0 )
-                val = 0.0;
-        if ( val > 1.0 )
-                val = 1.0;
+        if ( val < 0.0 ) val = 0.0;
+        if ( val > 1.0 ) val = 1.0;
         result->f[0] = ( RtFloat ) val;
 
         val = exposure( result->f[1], disp->gain, disp->gamma );
-        if ( val < 0.0 )
-                val = 0.0;
-        if ( val > 1.0 )
-                val = 1.0;
+        if ( val < 0.0 ) val = 0.0;
+        if ( val > 1.0 ) val = 1.0;
         result->f[1] = ( RtFloat ) val;
 
         val = exposure( result->f[2], disp->gain, disp->gamma );
-        if ( val < 0.0 )
-                val = 0.0;
-        if ( val > 1.0 )
-                val = 1.0;
+        if ( val < 0.0 ) val = 0.0;
+        if ( val > 1.0 ) val = 1.0;
         result->f[2] = ( RtFloat ) val;
 }
 

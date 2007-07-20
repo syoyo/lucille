@@ -102,20 +102,20 @@ ri_api_sphere(RtFloat radius, RtFloat zmin, RtFloat zmax, RtFloat tmax,
 	pos.f[1] =  0.0;
 	pos.f[2] = -radius;
 	pos.f[3] =  1.0;
-	ri_vector_transform(&positions[0], pos, m);
-	ri_vector_transform(&normals[0], pos, &itm);
+	ri_vector_transform(&positions[0], &pos, m);
+	ri_vector_transform(&normals[0], &pos, &itm);
 	ri_vector_normalize3(&normals[0]);
 	pos.f[0] = -1.0;
 	pos.f[1] =  0.0;
 	pos.f[2] =  0.0;
 	pos.f[3] =  1.0;
-	ri_vector_transform(&tangents[0], pos, &itm);
+	ri_vector_transform(&tangents[0], &pos, &itm);
 	ri_vector_normalize3(&tangents[0]);
 	pos.f[0] =  0.0;
 	pos.f[1] =  1.0;
 	pos.f[2] =  0.0;
 	pos.f[3] =  1.0;
-	ri_vector_transform(&binormals[0], pos, &itm);
+	ri_vector_transform(&binormals[0], &pos, &itm);
 	ri_vector_normalize3(&binormals[0]);
 
 	for (v = 0; v < ndiv - 1; v++) { 
@@ -130,22 +130,22 @@ ri_api_sphere(RtFloat radius, RtFloat zmin, RtFloat zmax, RtFloat tmax,
 			pos.f[1] = radius * sin(ua) * cos(va);
 			pos.f[2] = radius * sin(va);
 			pos.f[3] = 1.0;
-			ri_vector_transform(&positions[idx], pos, m);
-			ri_vector_transform(&normals[idx], pos, &itm);
+			ri_vector_transform(&positions[idx], &pos, m);
+			ri_vector_transform(&normals[idx], &pos, &itm);
 			ri_vector_normalize3(&normals[idx]);
 
 			pos.f[0] = -sin(ua) * cos(va);
 			pos.f[1] =  cos(ua) * cos(va);
 			pos.f[2] =  0.0;
 			pos.f[3] =  1.0;
-			ri_vector_transform(&tangents[idx], pos, &itm);
+			ri_vector_transform(&tangents[idx], &pos, &itm);
 			ri_vector_normalize3(&tangents[idx]);
 
 			pos.f[0] = -cos(ua) * sin(va);
 			pos.f[1] = -sin(ua) * cos(va);
 			pos.f[2] =  cos(va);
 			pos.f[3] =  1.0;
-			ri_vector_transform(&binormals[idx], pos, &itm);
+			ri_vector_transform(&binormals[idx], &pos, &itm);
 			ri_vector_normalize3(&binormals[idx]);
 		}
 	}
@@ -155,20 +155,20 @@ ri_api_sphere(RtFloat radius, RtFloat zmin, RtFloat zmax, RtFloat tmax,
 	pos.f[1] = 0.0;
 	pos.f[2] = radius;
 	pos.f[3] = 1.0;
-	ri_vector_transform(&positions[ndiv * (ndiv - 1) + 1], pos, m);
-	ri_vector_transform(&normals[ndiv * (ndiv - 1) + 1], pos, &itm);
+	ri_vector_transform(&positions[ndiv * (ndiv - 1) + 1], &pos, m);
+	ri_vector_transform(&normals[ndiv * (ndiv - 1) + 1], &pos, &itm);
 	ri_vector_normalize3(&normals[ndiv * (ndiv - 1) + 1]);
 	pos.f[0] = -1.0;
 	pos.f[1] =  0.0;
 	pos.f[2] =  0.0;
 	pos.f[3] =  1.0;
-	ri_vector_transform(&tangents[ndiv * (ndiv - 1) + 1], pos, &itm);
+	ri_vector_transform(&tangents[ndiv * (ndiv - 1) + 1], &pos, &itm);
 	ri_vector_normalize3(&tangents[ndiv * (ndiv - 1) + 1]);
 	pos.f[0] =  0.0;
 	pos.f[1] = -1.0;
 	pos.f[2] =  0.0;
 	pos.f[3] =  1.0;
-	ri_vector_transform(&binormals[ndiv * (ndiv - 1) + 1], pos, &itm);
+	ri_vector_transform(&binormals[ndiv * (ndiv - 1) + 1], &pos, &itm);
 	ri_vector_normalize3(&binormals[ndiv * (ndiv - 1) + 1]);
 
 	/*
