@@ -145,7 +145,7 @@ main(int argc, char **argv)
 		yydebug = 0;
 		if (debug_mode) {
 			/* turn on parser debug mode */
-			//yydebug = 1;
+			yydebug = 1;
 		} 
 
 		RiBegin(RI_NULL);
@@ -346,13 +346,6 @@ info()
 #else
 	printf("  Version        : %s (compiled on %s)\n", version, compile);
 #endif
-	printf("  Multi-threading: ");
-
-	if (ri_thread_supported()) {
-		printf("On\n");
-	} else {
-		printf("Off\n");
-	}
 
 	printf("  Build options  : ");
 
@@ -374,11 +367,19 @@ info()
 #if defined(WIN32) || defined(LINUX) || defined(__i386__) || defined(__x86_64__)
 	printf(", SSE ");
 #ifdef WITH_SSE
-	printf("[on] ");
+	printf("[on]");
 #else
-	printf("[off] ");
+	printf("[off]");
 #endif
 #endif
+
+	printf(", Multi-threading ");
+
+	if (ri_thread_supported()) {
+		printf("[on]");
+	} else {
+		printf("[off]");
+	}
 
 	printf("\n\n");
 	printf("  Usage: lsh [OPTIONS] RIBFILE\n");

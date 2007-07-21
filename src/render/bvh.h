@@ -5,12 +5,15 @@
  *
  */
 
+//
+// SIMD(SSE) optimized Bounding Volume Hierarcies
+//
+
 #ifndef LUCILLE_BVH_H
 #define LUCILLE_BVH_H
 
 #include "vector.h"
 
-/* SIMD(SSE) optimized Bounding Volume Hierarcies */
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,9 +22,11 @@ extern "C" {
 #define BVH_NODE_LEAF 0x3U
 
 #if defined ( __GNUC__ )
-#define BVH_ALIGN( x ) __attribute__( ( aligned( ( x ) ) ) )
-#define BVH_PAD( x )   unsigned char pad[0] __attribute__( ( aligned( ( x ) ) ) )
+#define BVH_DECL_ALIGN( x ) 
+#define BVH_ATTRIB_ALIGN( x ) __attribute__((aligned((x))))
+#define BVH_PAD( x )          uint8_t pad[0] __attribute__((aligned((x))))
 #else
+#define BVH_DECL_ALIGN( x )  __declspec(align(x))
 #define BVH_ALIGN( x )
 #define BVH_PAD( x )
 #endif
@@ -36,7 +41,7 @@ extern "C" {
  *
  *     Structure for BVH node.
  */
-typedef struct _ri_bvh_node_t {
+typedef struct BVH_DECL_ALIGN(32) _ri_bvh_node_t {
 
 	/*
 	 * 64                 32            2  0
@@ -48,7 +53,7 @@ typedef struct _ri_bvh_node_t {
 	 *         |                  |
 	 *         |                  +-> ptr to triangle data(30 bits).
 	 *         |                      the address pointed is aligned to
-	 *         |                      16-bytes boundary or mode
+	 *         |                      16-bytes boundary or more
 	 *         |                      (at least, lower 4 bits are zeros),
 	 *         |                      so we can safely include flag bits
 	 *         |                      into it's lower 2 bits.
@@ -67,7 +72,7 @@ typedef struct _ri_bvh_node_t {
 	 */
 	ri_vector_t bmax_and_data1;
 
-} ri_bvh_node_t BVH_ALIGN ( 32 );
+} ri_bvh_node_t BVH_ATTRIB_ALIGN ( 32 );
 
 static inline uint32_t bvh_node_get_flag(const ri_bvh_node_t *node)
 {

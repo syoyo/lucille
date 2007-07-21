@@ -301,6 +301,7 @@ command_render(char *arg)
 	} else {
 		yydebug = 0;
 	}	
+	yydebug = 1; // hack
 
 	fseek(yyin, 0, SEEK_SET);
 	yyparse();

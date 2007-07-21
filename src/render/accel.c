@@ -624,8 +624,8 @@ copy_simd(ri_tri_list_t *dst)
 			v1 = geom->positions[i1];
 			v2 = geom->positions[i2];
 
-			ri_vector_sub(&e1, v1, v0);
-			ri_vector_sub(&e2, v2, v0);
+			ri_vector_sub(&e1, &v1, &v0);
+			ri_vector_sub(&e2, &v2, &v0);
 
 			simdinfo->tridata.aligned[36 * j +  0 + i] = v0.f[0];
 			simdinfo->tridata.aligned[36 * j +  4 + i] = v0.f[1];
@@ -655,8 +655,8 @@ copy_simd(ri_tri_list_t *dst)
 		v1 = geom->positions[i1];
 		v2 = geom->positions[i2];
 
-		ri_vector_sub(&e1, v1, v0);
-		ri_vector_sub(&e2, v2, v0);
+		ri_vector_sub(&e1, &v1, &v0);
+		ri_vector_sub(&e2, &v2, &v0);
 
 		simdinfo->tridata.aligned[36 * offset +  0 + i] = v0.f[0];
 		simdinfo->tridata.aligned[36 * offset +  4 + i] = v0.f[1];
@@ -686,8 +686,8 @@ copy_simd(ri_tri_list_t *dst)
 			v1 = geom->positions[i1];
 			v2 = geom->positions[i2];
 
-			ri_vector_sub(&e1, v1, v0);
-			ri_vector_sub(&e2, v2, v0);
+			ri_vector_sub(&e1, &v1, &v0);
+			ri_vector_sub(&e2, &v2, &v0);
 
 			simdinfo->tridata.aligned[36*offset+ 0+i] = v0.f[0];
 			simdinfo->tridata.aligned[36*offset+ 4+i] = v0.f[1];

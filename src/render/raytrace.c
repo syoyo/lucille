@@ -222,16 +222,16 @@ static FORCE_INLINE void isect_sse(
 #else	// single precison
 
 	/* cross product p = d x e2 */
-	const __m128 px = cross_sse( e2z.v, e2y.v, rdy.v, rdz.v );
-	const __m128 py = cross_sse( e2x.v, e2z.v, rdz.v, rdx.v );
-	const __m128 pz = cross_sse( e2y.v, e2x.v, rdx.v, rdy.v );
+	const __m128 px = cross_sse( e2z->v, e2y->v, rdy->v, rdz->v );
+	const __m128 py = cross_sse( e2x->v, e2z->v, rdz->v, rdx->v );
+	const __m128 pz = cross_sse( e2y->v, e2x->v, rdx->v, rdy->v );
 
-	__m128       a = dot_sse( px, py, pz, e1x.v, e1y.v, e1z.v );
+	__m128       a = dot_sse( px, py, pz, e1x->v, e1y->v, e1z->v );
 
 	/* constructs the vector s = (ray origin) - v0. */
-	const __m128 sx = _mm_sub_ps( rox.v, v0x.v );
-	const __m128 sy = _mm_sub_ps( roy.v, v0y.v );
-	const __m128 sz = _mm_sub_ps( roz.v, v0z.v );
+	const __m128 sx = _mm_sub_ps( rox->v, v0x->v );
+	const __m128 sy = _mm_sub_ps( roy->v, v0y->v );
+	const __m128 sz = _mm_sub_ps( roz->v, v0z->v );
 
 	/*
 	 * Simple trick that avoid division for each ray-triangle intersection.
@@ -253,15 +253,15 @@ static FORCE_INLINE void isect_sse(
 	 */
 
 	/* q = s x e1 */
-	const __m128 qx = cross_sse( e1z.v, e1y.v, sy, sz );
-	const __m128 qy = cross_sse( e1x.v, e1z.v, sz, sx );
-	const __m128 qz = cross_sse( e1y.v, e1x.v, sx, sy );
+	const __m128 qx = cross_sse( e1z->v, e1y->v, sy, sz );
+	const __m128 qy = cross_sse( e1x->v, e1z->v, sz, sx );
+	const __m128 qz = cross_sse( e1y->v, e1x->v, sx, sy );
 
 	/* calculate u', v' and t' for all triangles. */
 	//const __m128 uu = _mm_mul_ps( dot_sse( sx, sy, sz, px, py, pz ), rpa );
 	//const __m128 vv = _mm_mul_ps( dot_sse( rdx, rdy, rdz, qx, qy, qz ), rpa );
 	const __m128 uu = dot_sse( sx, sy, sz, px, py, pz );
-	const __m128 vv = dot_sse( rdx.v, rdy.v, rdz.v, qx, qy, qz );
+	const __m128 vv = dot_sse( rdx->v, rdy->v, rdz->v, qx, qy, qz );
 
 	/* run all rejection tests. if a triangle passes all test,
 	 * it will be marked by all ones in the SSE-register, if it fails
@@ -286,7 +286,7 @@ static FORCE_INLINE void isect_sse(
 		)
 	    );
 
-	const __m128 tt = dot_sse( e2x.v, e2y.v, e2z.v, qx, qy, qz );
+	const __m128 tt = dot_sse( e2x->v, e2y->v, e2z->v, qx, qy, qz );
 
 	/*
 	 * if ( (tt * det_prev) < (t_prev * det) ) {
@@ -853,10 +853,10 @@ intersect_with_ugrid_simd( const ri_ugrid_t *ugrid,
 
 	grid = ugrid;
 
-	if (inside( eye, grid->bboxmin, grid->bboxmax ) )
+	if (inside( &eye, grid->bboxmin, grid->bboxmax ) )
 		rayt = 0.0;
 	else {
-		if (!intersect_ray_bbox( eye, dir,
+		if (!intersect_ray_bbox( &eye, &dir,
 					grid->bboxmin, grid->bboxmax, tvals ) )
 			return 0;
 		rayt = tvals[0];
@@ -995,15 +995,15 @@ intersect_with_ugrid_simd( const ri_ugrid_t *ugrid,
 					/* if intersection point is in this
 					 * voxel, terminate traversal.
 					 */
-					ri_vector_copy( &isectpoint, dir );
+					ri_vector_copy( &isectpoint, &dir );
 					ri_vector_scale( &isectpoint,
-							  isectpoint,
+							 &isectpoint,
 							  isectt );
 					ri_vector_add( &isectpoint,
-						        isectpoint,
-						        eye );
+						       &isectpoint,
+						       &eye );
 
-					if (inside_voxel( isectpoint, x, y, z,
+					if (inside_voxel( &isectpoint, x, y, z,
 							  grid ) )
 						break;
 				}
@@ -1052,10 +1052,12 @@ intersect_foreach_trilist_simd(
 	ri_float_t               *u,
 	ri_float_t               *v )
 {
+
 	int                i; //, j;
 	int                hashit;
 	ri_float_t              nearest = RI_INFINITY;
 
+#if 0	// TODO!
 	ri_vector_t hit_t;
 	ri_vector_t hit_u;
 	ri_vector_t hit_v;
@@ -1082,17 +1084,29 @@ intersect_foreach_trilist_simd(
 
 	for (i = 0; i < list->nblocks; i++) {
 
-		v0x = _mm_load_ps(list->tridataptr + 36 * i + 0);
-		v0y = _mm_load_ps(list->tridataptr + 36 * i + 4);
-		v0z = _mm_load_ps(list->tridataptr + 36 * i + 8);
+		ri_vector_t *v0x;
+		ri_vector_t *v0y;
+		ri_vector_t *v0z;
 
-		e1x = _mm_load_ps(list->tridataptr + 36 * i + 12);
-		e1y = _mm_load_ps(list->tridataptr + 36 * i + 16);
-		e1z = _mm_load_ps(list->tridataptr + 36 * i + 20);
+		ri_vector_t *e1x;
+		ri_vector_t *e1y;
+		ri_vector_t *e1z;
 
-		e2x = _mm_load_ps(list->tridataptr + 36 * i + 24);
-		e2y = _mm_load_ps(list->tridataptr + 36 * i + 28);
-		e2z = _mm_load_ps(list->tridataptr + 36 * i + 32);
+		ri_vector_t *e2x;
+		ri_vector_t *e2y;
+		ri_vector_t *e2z;
+
+		v0x = (ri_vector_t *)(list->tridataptr + 36 * i + 0);
+		v0y = (ri_vector_t *)(list->tridataptr + 36 * i + 4);
+		v0z = (ri_vector_t *)(list->tridataptr + 36 * i + 8);
+
+		e1x = (ri_vector_t *)(list->tridataptr + 36 * i + 12);
+		e1y = (ri_vector_t *)(list->tridataptr + 36 * i + 16);
+		e1z = (ri_vector_t *)(list->tridataptr + 36 * i + 20);
+
+		e2x = (ri_vector_t *)(list->tridataptr + 36 * i + 24);
+		e2y = (ri_vector_t *)(list->tridataptr + 36 * i + 28);
+		e2z = (ri_vector_t *)(list->tridataptr + 36 * i + 32);
 
 		isect_sse( rox, roy, roz,
 			   rdx, rdy, rdz,
@@ -1154,6 +1168,7 @@ intersect_foreach_trilist_simd(
 			hittri->geom  = list->geoms[4 * i + 3];
 		}
 	}
+#endif
 
 	return hashit;
 }

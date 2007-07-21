@@ -36,13 +36,19 @@
 
 #define BVH_MAXDEPTH 100
 
-typedef struct _triangle4_t {
+// sizeof(triangle4_t) = 144 when float precision, 288 when double precision.
+typedef struct BVH_DECL_ALIGN(32) _triangle4_t {
+
 	ri_vector_t p0x, p0y, p0z;
 	ri_vector_t e1x, e1y, e1z;
 	ri_vector_t e2x, e2y, e2z;
-} triangle4_t BVH_ALIGN ( 32 );
 
-typedef struct _leaf_info_t {
+	BVH_PAD( 32 );
+
+} triangle4_t BVH_ATTRIB_ALIGN (32);
+
+typedef struct BVH_DECL_ALIGN(32) _leaf_info_t {
+
 	triangle4_t   *tris;	/* ptr to array of triangle data	*/
 	ri_geom_t    **geoms;	/* ptr array of geometry		*/
 	uint32_t     **indices; /* offset index in the geometry data	*/
@@ -52,30 +58,31 @@ typedef struct _leaf_info_t {
 
 	BVH_PAD( 32 );
 
-} leaf_info_t BVH_ALIGN ( 32 );
+} leaf_info_t BVH_ATTRIB_ALIGN ( 32 );
 
 /*
- * Primitive information. Only used in BVH construction time.
+ * Primitive information. Only used when BVH is constructed.
  *
  * sizeof(ri_bvh_primitive_t) = 16*3. Up to 800M primitives in 32-bit.
  */
-typedef struct _ri_bvh_primitive_t {
+typedef struct BVH_DECL_ALIGN(16) _ri_bvh_primitive_t {
+
 	ri_vector_t       bmin_and_left_area;
 	ri_vector_t       bmax_and_right_area;
-	//ri_float_t        bmin[3];  ri_float_t left_area;
-	//ri_float_t        bmax[3];  ri_float_t right_area;
 
 	/* info for triangle data */
 	ri_geom_t   *geom;
 	uint32_t     index;
 
 #if defined ( __x86_64__ )
-	uint32_t     pad[1];
+	uint32_t     extra_pad[1];
 #else
-	uint32_t     pad[2];
+	uint32_t     extra_pad[2];
 #endif
 
-} ri_bvh_primitive_t BVH_ALIGN ( 16 ); // sizeof(bvh_primitive_t) = 16*3
+	BVH_PAD(16);
+
+} ri_bvh_primitive_t BVH_ATTRIB_ALIGN ( 16 );
 
 typedef struct _interval_t {
 	ri_float_t min, max;
@@ -104,42 +111,42 @@ bvh_stat_t  g_stat;
 #define BVH_LEFTNODE( node ) ( (ri_bvh_node_t *)bvh_node_get_data( node ) )
 #define BVH_RIGHTNODE( node ) ( (ri_bvh_node_t *)bvh_node_get_data( node ) + 1 )
 
-/* ============================================================================
+/* ----------------------------------------------------------------------------
  *
  * Static functions
  *
- */
-static void		calc_polybbox(
+ * ------------------------------------------------------------------------- */
+static void calc_polybbox(
 	const ri_vector_t       *v,
 	ri_vector_t              min,
 	ri_vector_t              max );
 
-static void		calc_scene_bbox(
+static void calc_scene_bbox(
 	ri_list_t       *geom_list,
 	ri_vector_t      min,
 	ri_vector_t      max );
 
-static uint64_t		calc_sum_triangles(
+static uint64_t	calc_sum_triangles(
 	ri_list_t *geom_list );
 
-static void		create_primitive_info(
+static void create_primitive_info(
 	ri_bvh_primitive_t  *prims,
 	uint64_t             nprims,
 	ri_list_t           *geomslist );
 
-static void		calc_bbox_of_primitives(
+static void calc_bbox_of_primitives(
 	ri_vector_t               bmin,
 	ri_vector_t               bmax,
 	const ri_bvh_primitive_t *prims,
 	uint64_t start, uint64_t  end );
 
-static int		get_longetst_axis(
+static int get_longetst_axis(
 	ri_vector_t bmin,
 	ri_vector_t bmax );
 
 static ri_bvh_node_t *	bvh_pair_node_aloc();
 
-static void		bvh_build_tree_median(
+static void bvh_build_tree_median(
 	ri_bvh_node_t      *tree,
 	ri_bvh_primitive_t *prims,
 	uint64_t            start,
@@ -148,7 +155,7 @@ static void		bvh_build_tree_median(
 	ri_vector_t         scene_bmax,
 	int                 depth );
 
-#if 0
+#if 0	// TODO
 static ri_float_t		SAH(
 	int   N1,
 	ri_float_t left_area,
@@ -159,10 +166,6 @@ static ri_float_t		SAH(
 	ri_float_t Ttri );
 #endif
 
-/*
- *
- * ============================================================================
- */
 
 
 /*
