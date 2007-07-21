@@ -30,13 +30,18 @@ use_double = 0
 # LLVM settings
 #
 #use_llvm = 1
-
-
-#
-# If you turn 'use_llvm' on, set path to llvm toolchain here.
-#
 LLVM_CC     = 'llvm-gcc'
 LLVM_AR     = 'llvm-ar'
 LLVM_LD     = 'llvm-ld'
 LLVM_RANLIB = 'llvm-ranlib'
 LLVM_LINK   = 'llvm-ld'
+
+#
+# compression support
+#
+#with_zlib = 1
+ZLIB_INC_PATH = '/usr/include'
+ZLIB_LIB_PATH = '/usr/lib'
+ZLIB_LIB_NAME = 'z'
+
+

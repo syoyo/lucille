@@ -45,7 +45,10 @@
 #include <math.h>
 #include <ctype.h>
 
+
+#ifdef HAVE_ZLIB
 #include <zlib.h>		// Blocked texture is saved with zlib comporession.
+#endif
 
 #include "memory.h"
 #include "log.h"
@@ -759,6 +762,8 @@ gen_blockedmipmap(const char *filename, ri_rawtexture_t *texture)
 	return NULL;	// not yet implemented.
 }
 
+#if 0 // TODO
+
 // Write mipmap to disk with zlib compression.
 static void
 write_blockedmipmap(const char *filename, blockedmipmap_t *blkmipmap)
@@ -806,3 +811,4 @@ write_blockedmipmap(const char *filename, blockedmipmap_t *blkmipmap)
 
 	gzclose(fp);
 }
+#endif

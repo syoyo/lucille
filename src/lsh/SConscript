@@ -9,10 +9,14 @@ Import('env')
 
 incPath=['../base', '../transport', '../render', '../ri', '../../include']
 
-libs=['riri', 'rirender', 'ritransport', 'ridisplay',  'ribase']
-libs.append(['z'])	# zlib 
+libs=['riri', 'rirender', 'ritransport', 'ridisplay',  'ribase', 'm']
+if env['with_zlib']:
+	libs.append([env['ZLIB_LIB_NAME']]) 
 
 libPath=['../base', '../display', '../transport', '../render', '../ri']
+if env['with_zlib']:
+	libPath.append([env['ZLIB_LIB_PATH']])
+
 
 p = env.CFile(target='parserib.c', source='parserib.y')
 l = env.CFile(target='lexrib.c', source='lexrib.l')
