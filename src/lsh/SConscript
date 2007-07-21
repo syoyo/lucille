@@ -1,8 +1,6 @@
 srcs=Split("""
-lexrib.c
 lsh.c
 main.c
-parserib.c
 """)
 
 #my_getopt.c
@@ -16,12 +14,17 @@ libs.append(['z'])	# zlib
 
 libPath=['../base', '../display', '../transport', '../render', '../ri']
 
-env.CFile(target='parserib.c', source='parserib.y')
-env.CFile(target='lexrib.c', source='lexrib.l')
+p = env.CFile(target='parserib.c', source='parserib.y')
+l = env.CFile(target='lexrib.c', source='lexrib.l')
+
+#lexTarget   = CFile(target='lexrib.c', source=['lexrib.l'])
+#parseTarget = CFile(target='parserib.c', source='parserib.y')
+
+env['YACCFLAGS'].append(['-d', '-v', '-t'])
+env.Depends(l, p);  # Should be lex before parse
 
 progName='lsh'
 
-env.Program(progName, srcs,
+lsh = env.Program(progName, srcs + p + l,
             CPPPATH=incPath, LIBS=libs, LIBPATH=libPath)
-
 
