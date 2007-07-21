@@ -1,0 +1,16 @@
+srcs=Split("""
+framebufferdrv.c
+hdrdrv.c
+openexrdrv.c
+rgbe.c
+sockdrv.c
+""")
+
+#jpeg.c
+
+Import('env')
+
+incPath=['../base', '../ri', '../../include']
+libName='ridisplay'
+
+env.Library(libName, srcs, CPPPATH=incPath)
