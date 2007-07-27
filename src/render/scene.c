@@ -2,13 +2,18 @@
 #include "config.h"
 #endif
 
+#include <assert.h>
+
 #include "scene.h"
 #include "memory.h"
 #include "list.h"
 #include "hash.h"
 #include "log.h"
-
 #include "geom.h"
+#include "render.h"
+
+#include "ugrid.h"
+#include "bvh.h"
 
 static void calc_scene_bbox(const ri_list_t *geom_list,
                             ri_vector_t     *bmin,
@@ -25,18 +30,37 @@ ri_scene_new()
         p->geom_list  = ri_list_new();
         p->light_list = ri_list_new();
 
+	p->accel      = ri_accel_new();
+
         return p;
 }
 
 void
 ri_scene_free( ri_scene_t * scene )
 {
+	
+	ri_log_and_return_if(scene == NULL);
+
 	ri_list_free( scene->geom_list );
 	ri_list_free( scene->light_list );
+
+	assert(scene->accel);
+	assert(scene->accel->free);
+	assert(scene->accel->accel);
+
+	scene->accel->free(scene->accel->accel);
+
+	ri_accel_free(scene->accel);
 
         ri_mem_free( scene );
 }
 
+/*
+ * Function: ri_scene_setup
+ *
+ *     Setups scene data and builds spatial data structure for the scene.
+ *
+ */
 void
 ri_scene_setup( ri_scene_t * scene )
 {
@@ -45,6 +69,11 @@ ri_scene_setup( ri_scene_t * scene )
 		&scene->bmin,
 		&scene->bmax,
 		&scene->maxwidth );
+
+	ri_accel_bind( scene->accel,	
+		       ri_render_get()->context->option->accel_method);
+
+	scene->accel->accel = scene->accel->build();
 
 }
 

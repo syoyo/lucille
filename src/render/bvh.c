@@ -18,7 +18,11 @@
  *   <http://www.sci.utah.edu/~wald/Publications/index.html>
  *
  */
+
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <assert.h>
 #ifdef WITH_SSE
 #include <xmmintrin.h>
@@ -33,6 +37,7 @@
 #include "log.h"
 
 //#define LOCAL_TEST
+#define LOCAL_DEBUG
 
 #define BVH_MAXDEPTH 100
 
@@ -70,14 +75,14 @@ typedef struct BVH_DECL_ALIGN(16) _ri_bvh_primitive_t {
 	ri_vector_t       bmin_and_left_area;
 	ri_vector_t       bmax_and_right_area;
 
-	/* info for triangle data */
+	/* ptr to triangle data */
 	ri_geom_t   *geom;
 	uint32_t     index;
 
 #if defined ( __x86_64__ )
-	uint32_t     extra_pad[1];
+	uint32_t     tmp[1];
 #else
-	uint32_t     extra_pad[2];
+	uint32_t     tmp[2];
 #endif
 
 	BVH_PAD(16);
@@ -105,11 +110,15 @@ typedef struct _bvh_stat_t {
 
 bvh_stat_t  g_stat;
 
-#define BVH_ISLEAF( node ) ( ( bvh_node_get_flag( node ) & 0x3 ) == BVH_NODE_LEAF )
-#define BVH_ISEMPTY( node ) ( bvh_node_get_data( node ) == 0 )
-#define BVH_NTRIS( node ) ( ( bvh_node_get_flag( node ) ) >> 2 )
-#define BVH_LEFTNODE( node ) ( (ri_bvh_node_t *)bvh_node_get_data( node ) )
-#define BVH_RIGHTNODE( node ) ( (ri_bvh_node_t *)bvh_node_get_data( node ) + 1 )
+
+#define BVH_NODE_SIZE sizeof(ri_bvh_node_t)
+
+#define BVH_ISLEAF( node ) ( (node)->child_node_ptr == 0 )
+#define BVH_ISEMPTY( node ) ( (node)->ntriangles == 0 )
+#define BVH_NTRIS( node ) ( (node)->ntriangles )
+#define BVH_LEFTNODE( node ) ( (ri_bvh_node_t *)( (node)->child_node_ptr ))
+#define BVH_RIGHTNODE( node ) (ri_bvh_node_t *)( (node)->child_node_ptr + BVH_NODE_SIZE )
+
 
 /* ----------------------------------------------------------------------------
  *
@@ -122,15 +131,15 @@ static void calc_polybbox(
 	ri_vector_t              max );
 
 static void calc_scene_bbox(
-	ri_list_t       *geom_list,
-	ri_vector_t      min,
-	ri_vector_t      max );
+	ri_vector_t      *min,				/* [out] */
+	ri_vector_t      *max,				/* [out] */
+	ri_list_t        *geom_list);
 
 static uint64_t	calc_sum_triangles(
 	ri_list_t *geom_list );
 
-static void create_primitive_info(
-	ri_bvh_primitive_t  *prims,
+static void create_primitive_info_array(
+	ri_bvh_primitive_t  *prims,			/* [out] */
 	uint64_t             nprims,
 	ri_list_t           *geomslist );
 
@@ -182,10 +191,11 @@ static ri_float_t		SAH(
  *
  *     Built BVH data strucure.
  */
-ri_bvh_t *
+void *
 ri_bvh_build()
 {
 	ri_bvh_t           *bvh;
+	ri_bvh_node_t      *root;
 	ri_timer_t         *timer;
 	ri_bvh_primitive_t *prims;
 	ri_vector_t         bmin, bmax;
@@ -200,9 +210,11 @@ ri_bvh_build()
 
 	bvh = ( ri_bvh_t * )ri_mem_alloc( sizeof( ri_bvh_t ) );
 
+	//
+	// 1. Compute scene bounding box.
+	//
 	scene = ri_render_get()->scene;
-
-	calc_scene_bbox( scene->geom_list, bmin, bmax );
+	calc_scene_bbox( &bmin, &bmax, scene->geom_list );
 
 	bvh->bmin.f[0] = bmin.f[0];
 	bvh->bmin.f[1] = bmin.f[1];
@@ -212,22 +224,48 @@ ri_bvh_build()
 	bvh->bmax.f[1] = bmax.f[1];
 	bvh->bmax.f[2] = bmax.f[2];
 
-	/* Create 1D linear array of triangle primitive info.
-	 * This information is used through BVH construction time,
-	 * but not through rendering time.
-	 */
+	ri_log(LOG_INFO, "  bmin (%f, %f, %f)",
+		bvh->bmin.f[0], bvh->bmin.f[1], bvh->bmin.f[2]);
+	ri_log(LOG_INFO, "  bmax (%f, %f, %f)",
+		bvh->bmax.f[0], bvh->bmax.f[1], bvh->bmax.f[2]);
+
+	// 2. Create 1D array of triangle primitive infos.
+	//    This information is just used through BVH construction phase,
+	//     not through traversal phase.
+	
 	ntris = calc_sum_triangles( scene->geom_list );
+
+	ri_log(LOG_INFO, "  # of tris = %d", ntris);
 
 	prims = ( ri_bvh_primitive_t * )
 		ri_aligned_alloc( sizeof(ri_bvh_primitive_t ) * ntris, 32 );
 
-	create_primitive_info(
+	create_primitive_info_array(
 		prims,	 /* output */
 		ntris,
 		scene->geom_list );
 
+	//
+	// 3. Create root node.
+	//
+	root = ri_bvh_node_new();
+
+	root->bmin[0] = bmin.f[0];
+	root->bmin[1] = bmin.f[1];
+	root->bmin[2] = bmin.f[2];
+
+	root->bmax[0] = bmax.f[0];
+	root->bmax[1] = bmax.f[1];
+	root->bmax[2] = bmax.f[2];
+
+	bvh->root = root;
+	
+
+	//
+	// 3. Build BVH!
+	//
 	bvh_build_tree_median(
-		bvh_get_root(bvh),
+		bvh->root,
 		prims,
 		0,
 		ntris,
@@ -237,12 +275,41 @@ ri_bvh_build()
 
 	ri_timer_end( timer, "BVH Construction" );
 
-	printf( "BVH Construction: %f sec\n",
+	ri_log( LOG_INFO, "BVH Construction time: %f sec",
 	       ri_timer_elapsed( timer, "BVH Construction" ) );
 
 	ri_log( LOG_INFO, "Built BVH." );
 
-	return bvh;
+	return (void *)bvh;
+}
+
+void
+ri_bvh_free( void *accel )
+{
+	ri_bvh_t *bvh = (ri_bvh_t *)accel;
+}
+
+int
+ri_bvh_intersect(
+	void                    *accel,
+	ri_ray_t                *ray,
+	ri_intersection_state_t *state)
+{
+	ri_bvh_t *bvh = (ri_bvh_t *)accel;
+}
+
+ri_bvh_node_t *
+ri_bvh_node_new()
+{
+	ri_bvh_node_t *node;
+
+	node = (ri_bvh_node_t *)ri_aligned_alloc(sizeof(ri_bvh_node_t), 32);
+
+	assert(((uintptr_t)node % 32) == 0);	// check align
+
+	memset(node, 0, sizeof(ri_bvh_node_t));
+
+	return node;
 }
 
 
@@ -377,15 +444,18 @@ make_leaf( int                ntriangles,
 
 
 static void
-calc_scene_bbox( ri_list_t *geom_list, ri_vector_t min, ri_vector_t max )
+calc_scene_bbox(
+	ri_vector_t *bmin,		/* [out] */
+	ri_vector_t *bmax,		/* [out] */
+	ri_list_t   *geom_list)		/* [in]  */
 {
 	uint32_t     i;
 	ri_vector_t  v;
 	ri_list_t   *itr;
 	ri_geom_t   *geom;
 
-	min.f[0] = min.f[1] = min.f[2] =  RI_INFINITY;
-	max.f[0] = max.f[1] = max.f[2] = -RI_INFINITY;
+	bmin->f[0] = bmin->f[1] = bmin->f[2] =  RI_INFINITY;
+	bmax->f[0] = bmax->f[1] = bmax->f[2] = -RI_INFINITY;
 
 	for (itr  = ri_list_first( geom_list );
 	     itr != NULL;
@@ -396,13 +466,13 @@ calc_scene_bbox( ri_list_t *geom_list, ri_vector_t min, ri_vector_t max )
 		for (i = 0; i < geom->npositions; i++) {
 			v = geom->positions[i];
 
-			if (min.f[0] > v.f[0]) min.f[0] = v.f[0];
-			if (min.f[1] > v.f[1]) min.f[1] = v.f[1];
-			if (min.f[2] > v.f[2]) min.f[2] = v.f[2];
+			if (bmin->f[0] > v.f[0]) bmin->f[0] = v.f[0];
+			if (bmin->f[1] > v.f[1]) bmin->f[1] = v.f[1];
+			if (bmin->f[2] > v.f[2]) bmin->f[2] = v.f[2];
 
-			if (max.f[0] < v.f[0]) max.f[0] = v.f[0];
-			if (max.f[1] < v.f[1]) max.f[1] = v.f[1];
-			if (max.f[2] < v.f[2]) max.f[2] = v.f[2];
+			if (bmax->f[0] < v.f[0]) bmax->f[0] = v.f[0];
+			if (bmax->f[1] < v.f[1]) bmax->f[1] = v.f[1];
+			if (bmax->f[2] < v.f[2]) bmax->f[2] = v.f[2];
 		}
 	}
 }
@@ -451,17 +521,17 @@ calc_sum_triangles(
 }
 
 static void
-create_primitive_info(
-	ri_bvh_primitive_t  *prims, /* output */
+create_primitive_info_array(
+	ri_bvh_primitive_t  *prims, /* [out] */
 	uint64_t             nprims,
 	ri_list_t           *geom_list )
 {
-	uint64_t    i, n;
-	uint64_t    ntris = 0;
+	uint64_t         i, n;
+	uint64_t         ntris = 0;
 
-	ri_list_t  *itr;
-	ri_geom_t  *geom;
-	ri_vector_t v[3];
+	ri_list_t       *itr;
+	ri_geom_t       *geom;
+	ri_vector_t      v[3];
 
 	/*
 	 * Precompute triangle's bounding box.
@@ -568,6 +638,11 @@ bvh_build_tree_median(
 
 	sortfunc sorter[] = { sorter_x, sorter_y, sorter_z };
 
+#ifdef LOCAL_DEBUG
+	printf("tree: start = 0x%016x, end = 0x%016x\n", start, end);
+#endif
+
+#if 0	// TODO
 
 	/*
 	 * Terminate recursion and make the leaf node if # of tris == 1 or
@@ -740,7 +815,10 @@ bvh_build_tree_median(
 
 		} else {
 
-			/* NEVER come here, I think... */
+			/*
+			 * NEVER come here, I think...
+			 */
+			assert(0);
 
 			/* No good paritition found. split at half index
 			 * of the primitive list.
@@ -774,13 +852,13 @@ bvh_build_tree_median(
 	 */
 	bvh_node_set_data(tree,  bvh_pair_node_aloc());
 
-	tree->bmin_and_data0.f[0] = bmin.f[0];
-	tree->bmin_and_data0.f[1] = bmin.f[1];
-	tree->bmin_and_data0.f[2] = bmin.f[2];
+	tree->bmin[0] = bmin.f[0];
+	tree->bmin[1] = bmin.f[1];
+	tree->bmin[2] = bmin.f[2];
 
-	tree->bmax_and_data1.f[0] = bmax.f[0];
-	tree->bmax_and_data1.f[1] = bmax.f[1];
-	tree->bmax_and_data1.f[2] = bmax.f[2];
+	tree->bmax[0] = bmax.f[0];
+	tree->bmax[1] = bmax.f[1];
+	tree->bmax[2] = bmax.f[2];
 
 
 	/* left  = prims[start, ..., split_idx)
@@ -800,8 +878,7 @@ bvh_build_tree_median(
 	bvh_build_tree_median( right_node, prims, split_idx, end,
 			      right_bmin, right_bmax, depth + 1 );
 
-
-
+#endif	// TODO
 
 
 }

@@ -149,34 +149,34 @@ ri_render_init()
         ri_display_drv_t *fb_drv = NULL;
 #endif
 
-        ri_display_drv_t *hdr_drv = NULL;
+        ri_display_drv_t *hdr_drv  = NULL;
         ri_display_drv_t *sock_drv = NULL;
 
         if ( initialized ) {
                 return;
 	}
 
-        grender = ( ri_render_t * ) ri_mem_alloc( sizeof( ri_render_t ) );
+        grender                   = ( ri_render_t *) ri_mem_alloc(
+					sizeof( ri_render_t ) );
 
-        grender->geom_drvs = ri_hash_new();
-        grender->display_drvs = ri_hash_new();
+        grender->geom_drvs        = ri_hash_new();
+        grender->display_drvs     = ri_hash_new();
 
-	grender->curr_display_drv = NULL;
+        grender->curr_display_drv = NULL;
 
-	grender->scene = ri_scene_new();
+        grender->scene            = ri_scene_new();
 
-	grender->bucket_queue = ri_queue_new();
-	grender->bucket_size  = 32;
-	grender->bucket_order = BUCKET_ORDER_SPIRAL;
+        grender->bucket_queue     = ri_queue_new();
+        grender->bucket_size      = 32;
+        grender->bucket_order     = BUCKET_ORDER_SPIRAL;
 
-        grender->context = ri_context_new();
-        grender->accel_grid = NULL;
+        grender->context          = ri_context_new();
         grender->progress_handler = NULL;
-        grender->ribpath[0] = '\0';
+        grender->ribpath[0]       = '\0';
 
-        grender->is_debug_mode = 0;
+        grender->is_debug_mode    = 0;
 
-	grender->background_map = NULL;
+        grender->background_map   = NULL;
 
         /* generate permutation sequences up to 100 dimension.
          * I think 100 is far enough for rendering integration
@@ -186,10 +186,10 @@ ri_render_init()
 	/*
 	 * Initialize statistics
 	 */
-        grender->stat.ngridtravs = 0;
-        grender->stat.ntesttris = 0;
+        grender->stat.ngridtravs   = 0;
+        grender->stat.ntesttris    = 0;
         grender->stat.nmailboxhits = 0;
-        grender->stat.nrays = 0;
+        grender->stat.nrays        = 0;
 
         polygon_drv =
             ( ri_geom_drv_t * ) ri_mem_alloc( sizeof( ri_geom_drv_t ) );
@@ -197,50 +197,50 @@ ri_render_init()
         ri_render_register_geom_drv( grender, "polygon", polygon_drv );
 
 #ifdef HAVE_OPENEXR
-        openexr_drv = ( ri_display_drv_t * )
-            ri_mem_alloc( sizeof( ri_display_drv_t ) );
-        openexr_drv->open = openexr_dd_open;
-        openexr_drv->write = openexr_dd_write;
-        openexr_drv->close = openexr_dd_close;
+        openexr_drv           = ( ri_display_drv_t * )
+        			ri_mem_alloc( sizeof( ri_display_drv_t ) );
+        openexr_drv->open     = openexr_dd_open;
+        openexr_drv->write    = openexr_dd_write;
+        openexr_drv->close    = openexr_dd_close;
         openexr_drv->progress = openexr_dd_progress;
-        openexr_drv->name = strdup( "openexr" );
-        openexr_drv->info =
+        openexr_drv->name     = strdup( "openexr" );
+        openexr_drv->info     =
             strdup( "Save the image as a OpenEXR format(HDR)" );
         ri_render_register_display_drv( grender, "openexr", openexr_drv );
 #endif
 
 #if defined(WIN32) || defined(WITH_AQUA) || defined(WITH_X11)
-        fb_drv = ( ri_display_drv_t * )
-            ri_mem_alloc( sizeof( ri_display_drv_t ) );
-        fb_drv->open = fb_dd_open;
-        fb_drv->write = fb_dd_write;
-        fb_drv->close = fb_dd_close;
+        fb_drv           = ( ri_display_drv_t * )
+				ri_mem_alloc( sizeof( ri_display_drv_t ) );
+        fb_drv->open     = fb_dd_open;
+        fb_drv->write    = fb_dd_write;
+        fb_drv->close    = fb_dd_close;
         fb_drv->progress = fb_dd_progress;
-        fb_drv->name = strdup( "framebuffer" );
-        fb_drv->info = strdup( "Output the image to window(LDR)" );
+        fb_drv->name     = strdup( "framebuffer" );
+        fb_drv->info     = strdup( "Output the image to window(LDR)" );
         ri_render_register_display_drv( grender, RI_FRAMEBUFFER, fb_drv );
 #endif
 
-        hdr_drv = ( ri_display_drv_t * )
-            ri_mem_alloc( sizeof( ri_display_drv_t ) );
-        hdr_drv->open = hdr_dd_open;
-        hdr_drv->write = hdr_dd_write;
-        hdr_drv->close = hdr_dd_close;
+        hdr_drv           = ( ri_display_drv_t * )
+        			ri_mem_alloc( sizeof( ri_display_drv_t ) );
+        hdr_drv->open     = hdr_dd_open;
+        hdr_drv->write    = hdr_dd_write;
+        hdr_drv->close    = hdr_dd_close;
         hdr_drv->progress = hdr_dd_progress;
-        hdr_drv->name = strdup( "hdr" );
-        hdr_drv->info =
+        hdr_drv->name     = strdup( "hdr" );
+        hdr_drv->info     =
             strdup( "Save the image as a Radiance .hdr format(HDR)" );
         ri_render_register_display_drv( grender, "hdr", hdr_drv );
         ri_render_register_display_drv( grender, RI_FILE, hdr_drv );
 
-        sock_drv = ( ri_display_drv_t * )
-            ri_mem_alloc( sizeof( ri_display_drv_t ) );
-        sock_drv->open = sock_dd_open;
-        sock_drv->write = sock_dd_write;
-        sock_drv->close = sock_dd_close;
+        sock_drv           = ( ri_display_drv_t * )
+        			ri_mem_alloc( sizeof( ri_display_drv_t ) );
+        sock_drv->open     = sock_dd_open;
+        sock_drv->write    = sock_dd_write;
+        sock_drv->close    = sock_dd_close;
         sock_drv->progress = sock_dd_progress;
-        sock_drv->name = strdup( "socket" );
-        sock_drv->info = strdup( "Send image data to external program" );
+        sock_drv->name     = strdup( "socket" );
+        sock_drv->info     = strdup( "Send image data to external program" );
         ri_render_register_display_drv( grender, "socket", sock_drv );
 
 
@@ -269,10 +269,14 @@ ri_render_free()
         ri_hash_free( grender->geom_drvs );
         ri_hash_free( grender->display_drvs );
 
-	ri_scene_free( grender->scene );
+	// ri_scene_free() was already called in render_frame_cleanup(),
+	// thus no need to to call it.
+	//ri_scene_free( grender->scene );
 
         ri_context_free( grender->context );
         ri_mem_free( grender );
+
+	grender = NULL;
 }
 
 void
@@ -484,46 +488,40 @@ ri_render_setup(ri_render_t *render)
                     ( ri_light_t * ) ri_list_first( scene->light_list)->data;
         }
 
-        /* ===================================================================
-	 *
+        /*
 	 * multithreading setup
 	 */
-        ri_thread_initialize(  );
+	{
+		ri_thread_initialize(  );
 
-        nthreads = render->context->option->nthreads;
-        if ( nthreads > RI_MAX_THREADS ) {
-		nthreads = RI_MAX_THREADS;
+		nthreads = render->context->option->nthreads;
+		if ( nthreads > RI_MAX_THREADS ) {
+			nthreads = RI_MAX_THREADS;
+		}
+
+		if ( nthreads > 1 ) {
+			ri_log(LOG_INFO, "number of threads to use = %d\n", nthreads );
+		} else {
+			ri_log(LOG_INFO, "Single thread rendering");
+		}
+
+		render->nthreads = nthreads;
 	}
 
-        if ( nthreads > 1 ) {
-		ri_log(LOG_INFO, "number of threads to use = %d\n", nthreads );
-        } else {
-		ri_log(LOG_INFO, "Single thread rendering\n");
-	}
-
-	render->nthreads = nthreads;
-
-	/*
-	 *
-	 * ================================================================ */
-
-
-        /* ==================================================================
-	 *
-	 * parallel rendering setup
+        /* 
+	 * setup for parallel rendering
 	 */
-        np = ri_parallel_ntasks(  );
-        my_id = ri_parallel_taskid(  );
+	{
+		np = ri_parallel_ntasks(  );
+		my_id = ri_parallel_taskid(  );
 
 
-        /* requestlist[0] is never used. */
-        requestlist = ( ri_parallel_request_t * )
-            ri_mem_alloc( sizeof( ri_parallel_request_t ) * np );
-
-	/*
-	 *
-	 * ================================================================ */
-
+		/*
+		 * requestlist[0] is never used.
+		 */
+		requestlist = ( ri_parallel_request_t * )
+		    ri_mem_alloc( sizeof( ri_parallel_request_t ) * np );
+	}
 
 }
 
@@ -1438,13 +1436,6 @@ render_bucket_thread_func(void *arg)
 			&info->var,
 			&info->node);
 		
-		printf("thread[%d]: (x, y) = (%d, %d)\n",
-			info->thread_id,
-			bucket.x,
-			bucket.y);
-
-		printf("queue stat: %d\n", ret);
-
 		if (ret != 0) {
 			/* no items in the queue. */
 			break;
@@ -1516,9 +1507,10 @@ render_frame_cleanup(ri_render_t *render)
 	}
 
 	ri_timer_start( render->context->timer, "Clean up" );
-	if ( opt->accel_method == ACCEL_GRID ) {
-		ri_accel_free( render->accel_grid );
-	}
+
+	ri_scene_free( grender->scene );
+	grender->scene = NULL;
+
 	ri_timer_end( render->context->timer, "Clean up" );
 	ri_timer_end( render->context->timer,
 		      "TOTAL rendering time" );

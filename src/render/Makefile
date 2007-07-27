@@ -1,7 +1,7 @@
-SCONS := scons -u
+SCONS := scons -u -Q
 
 all:
-	@$(SCONS) -Q
+	@$(SCONS)
 
 clean:
-	@$(SCONS) -c -Q
+	@$(SCONS) -c

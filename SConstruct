@@ -16,6 +16,7 @@ opts.Add(EnumOption('build_target', 'Build target', 'release',
 opts.Add('use_llvm', 'Use LLVM', 0)
 opts.Add('enable_sse', 'Enable SSE(valid for x86 processor)', 1)
 opts.Add('use_double', 'Use double precision', 0)
+opts.Add('enable_64bit', 'Compile for 64bit environment', 0)
 opts.Add('with_zlib', 'Use zlib for compression facility', 0)
 opts.Add('LLVM_CC',     'LLVM C frontend')
 opts.Add('LLVM_AR',     'LLVM ar')
@@ -62,6 +63,13 @@ if env['use_double'] == 1:
 
 
 #
+# 64bit
+#
+if env['enable_64bit'] == 1:
+	env.Append(CPPDEFINES = ['__64bit__'])
+	env.Append(CFLAGS = ['-m64'])	# gcc only
+
+#
 # compression
 #
 if env['with_zlib'] == 1:
@@ -93,7 +101,7 @@ if platform == 'linux2' and byteorder == 'little':
 	env.Append(CPPDEFINES = ['__x86__'])
 
 	if env['enable_sse'] == 1:
-		env.Append(CPPDEFINES = ['WITH_SSE'])
+			env.Append(CPPDEFINES = ['WITH_SSE'])
 
 
 #

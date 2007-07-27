@@ -3,6 +3,15 @@
 #
 #CC = 'gcc'
 
+#
+# OpenMPI support(TODO)
+#
+#enable_openmpi = 0
+#OPENMPI_CC = 'mpicc'
+#OPENMPI_INC_PATH = '/usr/local/include'
+#OPENMPI_LIB_PATH = '/usr/local/lib'
+#OPENMPI_LIB_NAME = '/usr/local/lib'
+
 
 #
 # Build target 
@@ -25,7 +34,6 @@ enable_sse = 1
 #
 use_double = 0
 
-
 #
 # LLVM settings
 #
@@ -35,6 +43,13 @@ LLVM_AR     = 'llvm-ar'
 LLVM_LD     = 'llvm-ld'
 LLVM_RANLIB = 'llvm-ranlib'
 LLVM_LINK   = 'llvm-ld'
+
+#
+# 64bit
+#
+enable_64bit = 0
+
+
 
 #
 # compression support

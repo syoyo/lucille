@@ -22,7 +22,6 @@
 
 #include "geom.h"
 #include "display.h"
-#include "accel.h"
 #include "scene.h"
 #include "debugger.h"
 
@@ -61,16 +60,16 @@ typedef struct _ri_render_t
 
 	ri_statistic_t  stat;			/* statistics for rendering */
 
-	ri_ugrid_t     *accel_grid;		/* for accelerated
-						 * intersection test	*/ 
 
 	void           (*progress_handler)(void);
 
+#if 0	// to be removed.
 	ri_vector_t     bmin;			/* bounding box of scene */
 	ri_vector_t     bmax;			/* bounding box of scene */
 
 	ri_float_t      bmaxwidth;		/* maximum width of bounding
 						 * box.                  */
+#endif
 
 	int             dd_use_callback;	/* use callback display
 						   driver?		 */

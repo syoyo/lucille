@@ -55,7 +55,7 @@ ri_subd_new()
 {
 	ri_subd_t *p;
 
-	p = ri_mem_alloc(sizeof(ri_subd_t));
+	p = (ri_subd_t *)ri_mem_alloc(sizeof(ri_subd_t));
 
 	p->vertex = ri_array_new(sizeof(ri_subd_vertex_t));
 	p->face   = ri_array_new(sizeof(ri_subd_face_t));

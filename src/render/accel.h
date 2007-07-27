@@ -11,78 +11,53 @@
 extern "C" {
 #endif
 
-#include "memory.h"
-#include "geom.h"
-#include "list.h"
+#include "ray.h"
+#include "intersection_state.h"
 
-/* grid size for unifrom grid structre */
-#define GRIDSIZE 64		/* Should be 2^N and >= 4 */
+/*
+ * Acceleration methods
+ */
+#define RI_ACCEL_UGRID          0
+#define RI_ACCEL_BVH            1
+//#define RI_ACCEL_BIH           2		// TODO
 
-/* Acceleration methods */
-#define ACCEL_GRID           0
 
-/* triangle info data structure stored in ri_ugrid_t->cell */
-typedef struct _ri_tri_info_t
+/*
+ * Struct: ri_accel_t
+ *
+ *     Interface for spatial data accelerator
+ *
+ */
+typedef struct _ri_accel_t
 {
-	unsigned int  index;		/* vertex index			*/
-	ri_geom_t    *geom;		/* reference for geom		*/
-	int           id;		/* ray id for mailboxing test	*/
-} ri_tri_info_t;
+	/*
+	 * Methods
+	 */
 
-/* data structure used for SIMD ray-triangle intersection */
-typedef struct _ri_simd_tri_info_t
-{
-	ri_aligned_float_t  tridata;
+	/*
+	 * Scene data and construction parameters are grabbed from g_render,
+	 * thus no arg for build().
+	 */
 
-	ri_geom_t          **geoms;
-	unsigned int        *indices;
-
-	int nblocks;
-
-	/* tridataptr points memory address in ri_ugrid_t->tridata */
-
-	float              *tridataptr;	
-} ri_simd_tri_info_t;
-
-typedef struct _ri_tri_list_t
-{
-	ri_tri_info_t      *tris;
-	int                 ntris;
+	void *( *build     )();
+	void  ( *free      )(void                    *accel);
+	int   ( *intersect )(void                    *accel,   /* [in]    */
+                             ri_ray_t                *ray,     /* [in]    */
+			     ri_intersection_state_t *state);  /* [inout] */
 	
-	ri_simd_tri_info_t *simdtris;
-} ri_tri_list_t;
+	/*
+	 * Members
+	 */
 
-/* uniform grid data structure */
-typedef struct _ri_ugrid_t
-{
-	ri_tri_list_t *cell[GRIDSIZE][GRIDSIZE][GRIDSIZE];
-	//ri_list_t *cell[GRIDSIZE][GRIDSIZE][GRIDSIZE];
-	float bboxmin[3], bboxmax[3];
-	int   voxels[3];
-	float width[3];
-	float invwidth[3];
-	int   curr_rayid;
+	void *accel;		/* spatial data structure */
 
-	ri_tri_list_t **cdat;	/* ptr array */
-	/* 1D triangle data array. */ 
-	ri_aligned_float_t  tridata;
+} ri_accel_t;
 
-	//int   *hilbtable;	/* Hilbert mapping table. */
+extern ri_accel_t *ri_accel_new();
+extern void        ri_accel_free(ri_accel_t *accel);
+extern int         ri_accel_bind(ri_accel_t *accel,
+                                 int         method);
 
-	/* variables for block'ed grid cells */
-	int   blkwidth;		/* block width		*/
-	int   blksize;		/* block size		*/
-	int   shiftsize;	/* bit shift size	*/
-	int   bitmask;		/* bit mask		*/
-	
-} ri_ugrid_t;
-
-
-
-/* create uniform grid deta structure from geometry */
-extern ri_ugrid_t *ri_accel_build_uniform_grid();
-
-extern void ri_accel_free(ri_ugrid_t *ugrid);
 
 #ifdef __cplusplus
 }	/* extern "C" */

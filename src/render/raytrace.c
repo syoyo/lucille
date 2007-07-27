@@ -28,6 +28,7 @@
 #include "memory.h"
 #include "reflection.h"
 #include "thread.h"
+#include "ugrid.h"
 
 #define EPS 1.0e-6
 #define EPSILON 1.0e-6
@@ -337,7 +338,10 @@ ri_raytrace(
 
 	state.inside = 0;
 
-	if (render->context->option->accel_method == ACCEL_GRID) {
+
+#if 0	// to be removed
+
+	if (render->context->option->accel_method == RI_ACCEL_UGRID) {
 #if defined ( WITH_SSE )
 		hit = intersect_with_ugrid_simd( render->accel_grid,
 						ray,
@@ -352,6 +356,17 @@ ri_raytrace(
 		ri_log( LOG_ERROR, "No accel structure!" );
 
 	}
+
+#else
+
+	assert(render->scene);
+	assert(render->scene->accel);
+	assert(render->scene->accel->intersect);
+	hit = render->scene->accel->intersect( render->scene->accel->accel,
+                                               ray,
+                                              &state );
+
+#endif
 
 	if (hit) {
 		hashit  = 1;

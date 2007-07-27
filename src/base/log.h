@@ -12,15 +12,22 @@
 extern "C" {
 #endif
 
-#define LOG_INFO   0
-#define LOG_WARN   1
-#define LOG_ERROR  2
-#define LOG_DEBUG  3
+#define LOG_LEVEL_DEBUG (0)
+#define LOG_LEVEL_INFO  (1)
+#define LOG_LEVEL_WARN  (2)
+#define LOG_LEVEL_ERROR (3)
+#define LOG_LEVEL_FATAL (4)
+
+#define LOG_DEBUG  LOG_LEVEL_DEBUG, __FILE__, __LINE__
+#define LOG_INFO   LOG_LEVEL_INFO,  __FILE__, __LINE__
+#define LOG_WARN   LOG_LEVEL_WARN,  __FILE__, __LINE__
+#define LOG_ERROR  LOG_LEVEL_ERROR, __FILE__, __LINE__
+#define LOG_FATAL  LOG_LEVEL_FATAL, __FILE__, __LINE__
 
 extern void ri_log_set_debug(int onoff);
 extern int  ri_log_get_debug();
 
-extern void ri_log(int level, const char *message, ...);
+extern void ri_log(int level, const char *filename, int linenum, const char *message, ...);
 
 #define ri_log_and_return_if(eval) {					\
 		if ((eval)) {						\

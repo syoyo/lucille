@@ -59,36 +59,39 @@ ri_option_new()
 
 	p = (ri_option_t *)ri_mem_alloc(sizeof(ri_option_t));
 
-	p->camera          = ri_camera_new();
-	p->display         = ri_display_new();
-	p->hider           = "hidden";
-	p->searchpath      = ri_ptr_array_new();
-	p->relative_detail = 1.0;
-	p->orientation     = RI_LH;
-	p->nfinalgather_rays = 5;
-	p->narealight_rays   = 16;
-	p->max_ray_depth     = 5;
+	p->camera                    = ri_camera_new();
+	p->display                   = ri_display_new();
+	p->hider                     = "hidden";
+	p->searchpath                = ri_ptr_array_new();
+	p->relative_detail           = 1.0;
+	p->orientation               = RI_LH;
+	p->nfinalgather_rays         = 5;
+	p->narealight_rays           = 16;
+	p->max_ray_depth             = 5;
+
 	p->irradcache_find_tolerance = 5.0;
-	p->irradcache_max_radius = 1.0;
-	p->bssrdf_nsamples   = 100;
-	p->bssrdf_scatter    = 2.19;
-	p->bssrdf_absorb     = 0.0021;
-	p->bssrdf_scale      = 1.0;
-	p->bssrdf_tree_level = 3;
-	p->bssrdf_cache_file = NULL;
+	p->irradcache_max_radius     = 1.0;
+
+	p->bssrdf_nsamples           = 100;
+	p->bssrdf_scatter            = 2.19;
+	p->bssrdf_absorb             = 0.0021;
+	p->bssrdf_scale              = 1.0;
+	p->bssrdf_tree_level         = 3;
+	p->bssrdf_cache_file         = NULL;
+
 	p->enable_direct_lighting    = 1;
 	p->enable_indirect_lighting  = 0;
 	p->enable_caustics_lighting  = 0;
-	p->irradcache_file = NULL;
+	p->irradcache_file           = NULL;
 
-	p->accel_method = ACCEL_GRID;
+	p->accel_method              = RI_ACCEL_BVH;
 
-	p->compute_prt = 0;
-	p->prt_is_glossy = 0;
-	p->prt_nsamples = 64;
-	p->prt_samplinglevel = 3;
-	p->prt_do_distscale = 0;
-	p->prt_scale = 1.0;
+	p->compute_prt               = 0;
+	p->prt_is_glossy             = 0;
+	p->prt_nsamples              = 64;
+	p->prt_samplinglevel         = 3;
+	p->prt_do_distscale          = 0;
+	p->prt_scale                 = 1.0;
 
 	ri_vector_zero(&(p->bgcolor));
 	ri_vector_zero(&(p->ambcolor));
@@ -252,8 +255,11 @@ ri_api_option(RtToken token, RtInt n, RtToken tokens[], RtPointer params[])
 				tokp = (RtToken *)params[i];
 
 				if (strcmp(*tokp, "grid") == 0) {
-					ctxopt->accel_method = ACCEL_GRID;	
-					ri_log(LOG_INFO, "Use accel_grid");
+					ctxopt->accel_method = RI_ACCEL_UGRID;	
+					ri_log(LOG_INFO, "Use ugrid");
+				} else if (strcmp(*tokp, "bvh") == 0) {
+					ctxopt->accel_method = RI_ACCEL_BVH;	
+					ri_log(LOG_INFO, "Use BVH");
 				}
 			}
 		}

@@ -19,10 +19,11 @@
 static int gdebug = 0;
 
 static char *level_msg[] = {
+	"debug",
 	"info ",
 	"warn ",
 	"error",
-	"debug"
+	"fatal"
 };
 
 
@@ -39,7 +40,7 @@ ri_log_get_debug()
 }
 
 void
-ri_log(int level, const char *message, ...)
+ri_log(int level, const char *filename, int linenum, const char *message, ...)
 {
 	va_list list;
 
@@ -51,10 +52,15 @@ ri_log(int level, const char *message, ...)
 
 	//time(&tm);
 
-	fprintf(stdout, "[lucille] %s : ", level_msg[level]);
+	if (gdebug) {
+		fprintf(stdout, "[lucille] %s:%d %s : ",
+			filename, linenum, level_msg[level]);
+	} else {
+		fprintf(stdout, "[lucille] %s : ", level_msg[level]);
+	}
 	vfprintf(stdout, message, list);
 	fprintf(stdout, "\n");
-	fflush(stdout);	// For VC binary running in cygwin console.
+	fflush(stdout);
 #if 0
 		/* print only if master node */
 		if (ri_parallel_taskid() == 0) {

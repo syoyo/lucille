@@ -166,18 +166,14 @@ ri_api_world_end()
 	/* ri_timer_start() is called in lsh/main.c */
 	ri_timer_end(ri_render_get()->context->timer, "RIB parsing");
 
-	switch (ri_render_get()->context->option->accel_method) {
-	case ACCEL_GRID:
-		ri_render_get()->accel_grid = ri_accel_build_uniform_grid();
-		break;
-	default:
-		ri_render_get()->accel_grid = ri_accel_build_uniform_grid();
-		break;
-	} 
-
-	/* begin rendering! */
+	/*
+	 * begin rendering!
+	 */
 	ri_render_frame();
 
+	/*
+	 * Call user defined callback
+	 */
 	if (ri_render_get()->context->world_end_cb) {
 		ri_render_get()->context->world_end_cb();
 	}
