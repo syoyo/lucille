@@ -33,6 +33,72 @@ typedef struct _mem_block_t
 
 } mem_block_t;
 
+// ceil 'val' by 'c'
+// Ex. ceil(14, 16) = 16
+unsigned long myceil(unsigned long val, unsigned long c)
+{
+    return ((val + (c - 1)) & (~(c - 1)));
+}
+
+void *
+aligned_malloc(size_t size, unsigned int align)
+{
+    //
+    //  +-- malloc addr
+    //  |
+    //  |           +-- aligned addr
+    //  |           |
+    //  |/          |/
+    //  +---+-------+--------------------
+    //  | ^ | diff  |
+    //  +-|-+---|---+--------------------
+    //    |     |
+    //    +-----+ aligned addr - diff
+    //
+    //
+
+    assert(align < 1024 * 1024);
+
+    unsigned int align16 = myceil(align, 16);
+    if (align16 == 0) align16 = 16;
+
+    void *ptr = malloc(size + align16 + sizeof(int));
+    if (ptr == NULL) return NULL;
+
+    void *aligned_ptr = (void *)(myceil((unsigned long)ptr, align16) + align16);
+
+    // Embed distance(difference) between ptr and aligned_ptr to the address
+    // addr(aligned_ptr) - sizeof(int).
+    // sizeof(int) is suffice because difference is small.
+
+    int diff = (int)((unsigned long)aligned_ptr - (unsigned long)ptr);
+
+    int *embed_ptr = (int *)((unsigned long)aligned_ptr - sizeof(int));
+    (*embed_ptr) = diff;
+
+    return aligned_ptr;
+
+}
+
+//
+// addr must be the pointer allocated by aligned_malloc()
+//
+int
+aligned_free(void *addr)
+{
+
+    int *embed = (int *)((unsigned long)addr - sizeof(int));
+    int  diff  = (*embed);
+
+    void *freed_add = (void *)((unsigned long)addr - diff);
+
+    free(freed_add);
+
+    return 0;
+
+}
+
+
 void *
 ri_mem_alloc(long byte)
 {
@@ -54,7 +120,7 @@ ri_mem_alloc(long byte)
 	return ptr;
 }
 
-void
+int
 ri_mem_free(void *ptr)
 {
 	if (ptr != NULL) {
@@ -65,7 +131,7 @@ ri_mem_free(void *ptr)
 #endif
 	}
 
-	return;
+	return 0;
 }
 
 void *
