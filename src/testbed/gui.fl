@@ -1,0 +1,36 @@
+# data file for the Fltk User Interface Designer (fluid)
+version 1.0107 
+header_name {.h} 
+code_name {.cxx}
+decl {\#include <stdio.h>} {} 
+
+decl {\#include <stdlib.h>} {} 
+
+decl {\#include "GLView.h"} {public
+} 
+
+Function {make_window()} {open
+} {
+  Fl_Window {} {open
+    xywh {348 103 545 570} type Double visible
+  } {
+    Fl_Menu_Bar {} {open
+      xywh {0 0 600 25}
+    } {
+      Submenu {} {
+        label File open
+        xywh {0 0 100 20}
+      } {
+        MenuItem {} {
+          label Quit
+          callback {exit(1);}
+          xywh {0 0 100 20} shortcut 0x71
+        }
+      }
+    }
+    Fl_Box guiGLView {selected
+      xywh {15 40 512 512}
+      class GLView
+    }
+  }
+} 
