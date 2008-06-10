@@ -22,6 +22,7 @@
 extern "C" {
 #endif
 
+#include <assert.h>
 #include <stdint.h>
 
 #if defined(__x86__)
@@ -35,35 +36,41 @@ struct __xchg_dummy { unsigned long a[100]; };
 
 static inline int ri_atomic_read(int *ptr)
 {
-	return (*ptr);
+    return (*ptr);
 }
 
 static inline void ri_atomic_inc(int *ptr)
 {
-	__asm__ __volatile__(
-		"lock;\n\t"
-		"incl %0"
-		: "+m" (*ptr));
+    __asm__ __volatile__(
+        "lock;\n\t"
+        "incl %0"
+        : "+m" (*ptr));
 }
 
 static inline void ri_atomic_dec(int *ptr)
 {
-	__asm__ __volatile__(
-		"lock;\n\t"
-		"incl %0"
-		: "+m" (*ptr));
+    __asm__ __volatile__(
+        "lock;\n\t"
+        "incl %0"
+        : "+m" (*ptr));
 }
 
-static inline uint32_t ri_atomic_cmpxchg32(void *ptr,
-	uint32_t oldv,
-	uint32_t newv)
-{
-	asm volatile("lock\n cmpxchgl %1,%2"
-		     : "=a" (oldv)
-		     : "q" (newv), "m" (*(uint32_t *)ptr),"0" (oldv)
-		     : "memory");
 
-	return oldv;
+// the address of ptr must be on 16-byte boundary
+static inline uint32_t ri_atomic_cmpxchg32(
+    void     *ptr,
+    uint32_t  oldv,
+    uint32_t  newv)
+{
+
+    assert( ((uintptr_t)ptr % 16) == 0 );
+
+    asm volatile("lock\n cmpxchgl %1,%2"
+             : "=a" (oldv)
+             : "q" (newv), "m" (*(uint32_t *)ptr),"0" (oldv)
+             : "memory");
+
+    return oldv;
 }
 
 
@@ -74,64 +81,66 @@ static inline uint32_t ri_atomic_cmpxchg32(void *ptr,
  * `ptr' must point to 16-byte aligned address.
  */
 static inline uint64_t ri_atomic_cmpxchg64(void *ptr,
-	uint64_t oldv,
-	uint64_t newv)
+    uint64_t oldv,
+    uint64_t newv)
 {
-	uint64_t out;
+    uint64_t out;
 
-	// newline after `lock' for work around of apple's gas(?) bug.
-	__asm__ __volatile__(
-		"lock\n cmpxchgq %2,%1"
-		: "=a" (out), "+m" (*(volatile uint64_t *)ptr)
-		: "q" (newv), "0" (oldv)
-		: "cc");
+    // newline after `lock' for work around of apple's gas(?) bug.
+    __asm__ __volatile__(
+        "lock\n cmpxchgq %2,%1"
+        : "=a" (out), "+m" (*(volatile uint64_t *)ptr)
+        : "q" (newv), "0" (oldv)
+        : "cc");
 
-	return out;
+    return out;
 }
 
-#else	/* !__X86_64__ */
+#else    /* !__X86_64__ */
 
 static inline uint64_t ri_atomic_cmpxchg64(void *ptr,
-	uint64_t oldv,
-	uint64_t newv)
+    uint64_t oldv,
+    uint64_t newv)
 {
-        uint64_t prev;
-	uint32_t tmp0, tmp1;
+    uint64_t prev;
+    uint32_t tmp0, tmp1;
 
-	tmp0 = (uint32_t)newv;
-	tmp1 = (uint32_t)(newv >> 32);
+    tmp0 = (uint32_t)newv;
+    tmp1 = (uint32_t)(newv >> 32);
 
-        __asm__ __volatile__("pushl %%ebx\n\t"
-			     "movl %2, %%ecx\n\t"
-			     "movl %1, %%ebx\n\t"
-			     "lock\n\t"
-			     "cmpxchg8b %3\n\t"
-			     "popl %%ebx"
-                             : "=A"(prev)
-                             : "m"(tmp0),
-                               "m"(tmp1),
-                               "m"(*__xg(ptr)),
-                               "0"(oldv)
-                             : "memory", "ecx");
+    assert( ((uintptr_t)ptr % 16) == 0 );
+
+    __asm__ __volatile__("pushl %%ebx\n\t"
+             "movl %2, %%ecx\n\t"
+             "movl %1, %%ebx\n\t"
+             "lock\n\t"
+             "cmpxchg8b %3\n\t"
+             "popl %%ebx"
+                         : "=A"(prev)
+                         : "m"(tmp0),
+                           "m"(tmp1),
+                           "m"(*__xg(ptr)),
+                           "0"(oldv)
+                         : "memory", "ecx");
         return prev;
 }
 
-#endif	/* __X86_64__ */
+#endif    /* __X86_64__ */
 
 #define RI_ATOMIC_CAS64(ptr, oldv, newv) (ri_atomic_cmpxchg64((ptr), (oldv), (newv)) == (oldv) ? 1 : 0)
 #define RI_ATOMIC_CAS32(ptr, oldv, newv) (ri_atomic_cmpxchg32((ptr), (oldv), (newv)) == (oldv) ? 1 : 0)
 
 
 
-#else	/* non x86 processor */
+#else    /* non x86 processor */
 
 /* TODO: */
 
-#endif	/* __x86__ */
+#endif    /* __x86__ */
 
 
 #ifdef __cplusplus
-}	/* extern "C" */
+}    /* extern "C" */
 #endif
 
-#endif	/* LUCILLE_ATOMIC_H */
+#endif    /* LUCILLE_ATOMIC_H */

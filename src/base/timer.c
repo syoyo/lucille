@@ -284,6 +284,8 @@ timerinfo_free_func(void *data, void *userdata)
 {
 	timerinfo_t *p;
 
+    (void)userdata;
+
 	assert(data != NULL);
 
 	p = (timerinfo_t *)data;
@@ -297,6 +299,8 @@ void
 timerinfo_dump_func(void *data, void *userdata)
 {
 	timerinfo_t *p;
+
+    (void)userdata;
 
 	assert(data != NULL);
 

@@ -10,7 +10,7 @@
 #include "array.h"
 #include "log.h"
 
-#define DEFAULT_ALLOC_SIZE 8
+#define DEFAULT_ALLOC_SIZE 16
 
 static void	array_resize_intl     ( ri_array_t     *array, uint32_t size );
 static void	ptr_array_resize_intl ( ri_ptr_array_t *array, uint32_t size );

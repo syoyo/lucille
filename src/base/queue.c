@@ -184,7 +184,8 @@ release_op(ri_queue_node_t *nd)
 
 	if (CLEAN(post)) set_nlpred(pred_nd);
 	if (FREEABLE(post)) {
-		free(nd);
+		ri_mem_free_aligned(nd->data);
+		ri_mem_free_aligned(nd);
 	}
 }
 
@@ -208,7 +209,8 @@ set_nlpred(ri_queue_node_t *nd)
 				   CASTTOUINT64(post.nlp)));
 
 	if (FREEABLE(post)) {
-		free(nd);
+		ri_mem_free_aligned(nd->data);
+		ri_mem_free_aligned(nd);
 	}
 }
 
@@ -231,7 +233,8 @@ set_to_be_freed(ri_queue_node_t *nd)
 				   CASTTOUINT64(post.nlp)));
 
 	if (FREEABLE(post)) {
-		free(nd);
+		ri_mem_free_aligned(nd->data);
+		ri_mem_free_aligned(nd);
 	}
 }
 
@@ -282,10 +285,10 @@ ri_queue_push(
 		return -1;	/* fail */
 	}
 
-	nd = ri_mem_alloc(sizeof(ri_queue_node_t));
+	nd = ri_mem_alloc_aligned(sizeof(ri_queue_node_t), 16);
 	assert(nd != 0);	
 
-	nd->data = ri_mem_alloc(data_size);
+	nd->data = ri_mem_alloc_aligned(data_size, 16);
 	assert(nd->data != 0);	
 
 	memcpy(nd->data, data, data_size);
@@ -343,7 +346,7 @@ ri_queue_pop(
 	ri_queue_t       *queue,
 	void             *out_data,
 	unsigned int     *out_data_size,
-        int              *pver,
+    int              *pver,
 	ri_queue_node_t **pnode)
 {
 
@@ -394,26 +397,28 @@ ri_queue_new(int max_queue_size)
 {
 	ri_queue_t *q;
 
-	q = ri_mem_alloc(sizeof(ri_queue_t));
+	q = ri_mem_alloc_aligned(sizeof(ri_queue_t), 16);
 
 	q->tail.entry.ver = 0;
 	q->tail.entry.count = 0;
 
-	q->tail.ptr0 = (ri_queue_node_t *)ri_mem_alloc(sizeof(ri_queue_node_t));
-	q->tail.ptr1 = (ri_queue_node_t *)ri_mem_alloc(sizeof(ri_queue_node_t));
+	q->tail.ptr0 = (ri_queue_node_t *)ri_mem_alloc_aligned(
+                        sizeof(ri_queue_node_t), 16);
+	q->tail.ptr1 = (ri_queue_node_t *)ri_mem_alloc_aligned(
+                        sizeof(ri_queue_node_t), 16);
 
 	q->tail.ptr0->pred = q->tail.ptr1;
 
-	q->tail.ptr0->exit.count = 0;
+	q->tail.ptr0->exit.count          = 0;
 	q->tail.ptr0->exit.transfers_left = 2;
-	q->tail.ptr0->exit.nlp = 0;
-	q->tail.ptr0->exit.to_be_freed = 0;
-	q->tail.ptr0->next = NULL;
+	q->tail.ptr0->exit.nlp            = 0;
+	q->tail.ptr0->exit.to_be_freed    = 0;
+	q->tail.ptr0->next                = NULL;
 
-	q->tail.ptr1->exit.count = 0;
+	q->tail.ptr1->exit.count          = 0;
 	q->tail.ptr1->exit.transfers_left = 0;
-	q->tail.ptr1->exit.nlp = 0;
-	q->tail.ptr1->exit.to_be_freed = 0;
+	q->tail.ptr1->exit.nlp            = 0;
+	q->tail.ptr1->exit.to_be_freed    = 0;
 	
 	q->head = q->tail;
 
@@ -426,15 +431,132 @@ ri_queue_new(int max_queue_size)
 }
 
 void
-ri_queue_delete(
+ri_queue_free(
 	ri_queue_t *queue)
 {
-	ri_mem_free(queue->tail.ptr0);
-	ri_mem_free(queue->tail.ptr1);
+	ri_mem_free_aligned(queue->tail.ptr0);
+	ri_mem_free_aligned(queue->tail.ptr1);
 
-	ri_mem_free(queue);
+	ri_mem_free_aligned(queue);
 
 }
+
+/* -------------------------------------------------------------------------
+ *
+ * MT queue
+ *
+ * ------------------------------------------------------------------------- */
+
+typedef struct _mt_queue_item_t
+{
+
+    void     *data;
+    uint32_t  len;
+
+} mt_queue_item_t;
+
+
+ri_mt_queue_t *
+ri_mt_queue_new()
+{
+
+    // ri_mt_queue_new() is not MT-safe.
+
+    ri_mt_queue_t *q;
+
+    q        = ri_mem_alloc(sizeof(ri_mt_queue_t));
+    q->nodes = ri_list_new(); 
+    q->mutex = ri_mutex_new(); 
+    ri_mutex_init(q->mutex);
+
+    return q;
+}
+
+int
+ri_mt_queue_push(
+    ri_mt_queue_t *queue,
+    const void    *data,
+    uint32_t       size)
+{
+    assert(queue != NULL);
+    assert(data  != NULL);
+    assert(size > 4);
+
+    ri_mutex_lock(queue->mutex);
+
+    {
+        // Alloate memory and copy content
+        mt_queue_item_t *item;
+
+        item       = ri_mem_alloc(sizeof(mt_queue_item_t));
+        item->data = ri_mem_alloc(size);
+        item->len  = size;
+
+        memcpy(item->data, data, size);
+
+        ri_list_append(queue->nodes, item);
+    }
+
+    ri_mutex_unlock(queue->mutex);
+
+    return 0;   // OK
+
+}
+
+
+int
+ri_mt_queue_pop(
+    ri_mt_queue_t  *queue,
+    void          **data_out,
+    uint32_t       *data_size_out)
+{
+    assert(queue         != NULL);
+    assert(data_out      != NULL);
+    assert(data_size_out != NULL);
+
+    ri_mutex_lock(queue->mutex);
+
+    {
+        ri_list_t       *l;
+        mt_queue_item_t *item;
+
+        l = ri_list_first(queue->nodes);
+        if (l == NULL) {
+            ri_mutex_unlock(queue->mutex);
+            return -1;           /* empty */
+        } 
+
+        item = (mt_queue_item_t *)(l->data);
+
+        (*data_out)      = item->data;
+        (*data_size_out) = item->len; 
+
+        /*
+         * Notice: ri_list_remove_first() does not free memory pointed by
+         * l->data.
+         */
+        queue->nodes = ri_list_remove_first(queue->nodes);
+
+    }
+
+    ri_mutex_unlock(queue->mutex);
+
+    return 0;
+}
+
+int
+ri_mt_queue_free(
+    ri_mt_queue_t  *queue)
+{
+
+    // ri_mt_queue_free() is not MT-safe.
+
+    ri_mutex_free(queue->mutex);
+    ri_list_free(queue->nodes);
+    ri_mem_free(queue);
+
+    return 0;
+} 
 
 
 

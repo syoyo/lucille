@@ -17,18 +17,18 @@ extern "C" {
 
 typedef struct _ri_quat_t
 {
-	ri_float_t x, y, z, w;
+    ri_float_t x, y, z, w;
 } ri_quat_t;
 
 extern void ri_quat_set(ri_quat_t         *quat,
-		 	ri_float_t         theta,
-			const ri_vector_t *axis);
+                        ri_float_t         theta,
+                        const ri_vector_t  axis);
 
-extern void ri_quat_mat(ri_matrix_t     *mat,
-			const ri_quat_t  quat);
+extern void ri_quat_mat(ri_matrix_t       *mat,
+                        const ri_quat_t    quat);
 
 #ifdef __cplusplus
-}	/* extern "C" */
+}    /* extern "C" */
 #endif
 
 #endif

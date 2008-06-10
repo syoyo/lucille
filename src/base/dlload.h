@@ -17,11 +17,11 @@ extern "C" {
 typedef struct _dl_module_t
 {
 #if defined(WIN32)
-	HINSTANCE         module;
+    HINSTANCE         module;
 #elif defined(LINUX) || (defined(__APPLE__) && defined(__MACH__))
-	void             *module;
+    void             *module;
 #else
-	int               module;
+    int               module;
 #endif
 } dl_module_t;
 
@@ -29,7 +29,7 @@ extern dl_module_t *dlload(const char *filename);
 extern void        *dlgetfunc(dl_module_t *module, const char *funcname);
 
 #ifdef __cplusplus
-}	/* extern "C" */
+}    /* extern "C" */
 #endif
 
 #endif

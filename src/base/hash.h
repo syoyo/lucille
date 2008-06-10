@@ -13,33 +13,46 @@ extern "C" {
 
 typedef struct _ri_hash_node_t
 {
-	char                   *key;
-	int                     len;	/* strlen(key) */
-	void		       *val;
-	struct _ri_hash_node_t *next;
+    char                   *key;
+    int                     len;    /* strlen(key) */
+    void                   *val;
+    struct _ri_hash_node_t *next;
 } ri_hash_node_t;
 
 typedef struct _ri_hash_t
 {
-	unsigned int	 size;
-	unsigned int	 nnodes;
-	ri_hash_node_t **nodes;
+    unsigned int     size;
+    unsigned int     nnodes;
+    ri_hash_node_t **nodes;
 } ri_hash_t;
 
-extern ri_hash_t *ri_hash_new     ();
-extern void	  ri_hash_free    (ri_hash_t *hash);
-extern void	  ri_hash_insert  (ri_hash_t *hash, const char *key,
-				   void *data);
-extern void	 *ri_hash_lookup  (ri_hash_t *hash, const char *key);
-extern void       ri_hash_traverse(ri_hash_t *hash,
-				   void (*travfunc)(void *data, void *userdata),
-				   void *userdata);
+extern ri_hash_t *ri_hash_new();
+
+extern void       ri_hash_free(
+                        ri_hash_t  *hash);
+
+extern void       ri_hash_insert(
+                        ri_hash_t   *hash,
+                        const char  *key,
+                        void        *data);
+
+extern void      *ri_hash_lookup(
+                        ri_hash_t   *hash,
+                        const char  *key);
+
+extern void       ri_hash_traverse(
+                        ri_hash_t   *hash,
+                        void       (*travfunc)(void *data, void *userdata),
+                        void        *userdata);
+
 /*
-extern void	  ri_hash_remove(ri_hash_t *hash, const char *key);
+extern void       ri_hash_remove(
+                        ri_hash_t  *hash,
+                        const char *key);
 */
 
 #ifdef __cplusplus
-}	/* extern "C" */
+}    /* extern "C" */
 #endif
 
 #endif

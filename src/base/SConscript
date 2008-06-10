@@ -15,6 +15,7 @@ thread.c
 timer.c
 util.c
 vector.c
+geometric.c
 """)
 
 Import('env')

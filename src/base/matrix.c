@@ -15,179 +15,16 @@
 #include "memory.h"
 #include "vector.h"
 
+/* ---------------------------------------------------------------------------
+ *
+ * Public functions
+ *
+ * ------------------------------------------------------------------------ */
 
-/*
- * Routines used only in matrix.c.
- */
-static void adjoint(ri_matrix_t *out, ri_matrix_t *in);
-static RtFloat det3x3(RtFloat a1, RtFloat a2, RtFloat a3,
-		      RtFloat b1, RtFloat b2, RtFloat b3,
-		      RtFloat c1, RtFloat c2, RtFloat c3);
-static RtFloat det2x2(RtFloat a, RtFloat b, RtFloat c, RtFloat d);
- 
-#if 0
-void ludcmp(ri_matrix_t *dst, int *index, RtFloat *d);
-void lubksb(ri_matrix_t *dst, int *index, RtFloat *d);
-
-/*
- * ludcmp() code is from Numerical recipie in C.
- */
-void
-ludcmp(ri_matrix_t *dst, RtInt *indx, RtFloat *d)
-{
-	const int n = 4;
-	RtInt i, imax, j, k;
-	RtFloat big, dum, sum, temp;
-	RtFloat	v[4];
-
-	*d = 1.0;
-
-	for (i = 1; i <= n; i++) {
-		big = 0.0f;
-		for (j = 1; j <= n; j++) {
-			if ((temp = fabs(dst->f[i][j])) > big) big = temp;
-		}
-
-		if (big == 0.0f) printf("singular matrix");
-
-		v[i] = 1.0f / big;
-	}
-
-	for (j = 1; j <= n; j++) {
-		for (i = 1; i <= n; i++) {
-			sum = dst->f[i][j];
-			for (k = 1; k < i; k++) sum -= dst->f[i][k] * dst->f[k][j];
-			dst->f[i][j] = sum;
-		}
-
-		big = 0.0f;
-
-		for (i = j; i <= n; i++) {
-			sum = dst->f[i][j];
-			for (k = 1; k < j; k++) {
-				sum -= dst->f[i][k] * dst->f[k][j];
-			}
-			
-			dst->f[i][j] = sum;
-
-			if ( (dum = v[i] * fabs(sum)) >= big) {
-				big = dum;
-				imax = i;
-			}
-		}
-
-		if (j != imax) {
-			for (k = 1; k <= n; k++) {
-				dum = dst->f[imax][k];
-				dst->f[imax][k] = dst->f[j][k];
-				dst->f[j][k] = dum;
-			}
-
-			*d = -(*d);
-			v[imax] = v[j];
-		}
-
-		indx[j] = imax;
-		if (dst->f[j][i] == 0.0f) dst->f[j][i] = RI_EPSILON;
-		if (j != n) {
-			dum = 1.0f / dst->f[j][i];
-			for (i = j + 1; i <= n; i++) dst->f[i][j] *= dum;
-		}
-	}
-}
 
 void
-lubksb(ri_matrix_t *dst, RtInt *indx, RtFloat b[])
-{
-	const int n = 4; 
-	RtInt i, ii = 0, ip, j;
-	RtFloat sum;
-
-	for (i = 1; i <= n; i++) {
-		ip = indx[i];
-		sum = b[ip];
-		b[ip] = b[i];
-		if (ii) {
-			for (j = ii; j <= i - 1; j++) sum -= dst->f[i][j] * b[j];
-		} else if (sum) ii = i;
-		b[i] = sum;
-	}
-	
-	for (i = n; i >= 1; i--) {
-		sum = b[i];
-		for (j = i + 1; j <= n; j++) sum -= dst->f[i][j] * b[j];
-		b[i] = sum / dst->f[i][i];
-	}
-}
-#endif
-
-/*
- * Codes from Graphics Gems
- */
-void adjoint(ri_matrix_t *out, ri_matrix_t *in)
-{
-	RtFloat a1, a2, a3, a4, b1, b2, b3, b4;
-	RtFloat c1, c2, c3, c4, d1, d2, d3, d4;
-	
-	a1 = in->f[0][0]; b1 = in->f[0][1];
-	c1 = in->f[0][2]; d1 = in->f[0][3];
-
-	a2 = in->f[1][0]; b2 = in->f[1][1];
-	c2 = in->f[1][2]; d2 = in->f[1][3];
-
-	a3 = in->f[2][0]; b3 = in->f[2][1];
-	c3 = in->f[2][2]; d3 = in->f[2][3];
-
-	a4 = in->f[3][0]; b4 = in->f[3][1];
-	c4 = in->f[3][2]; d4 = in->f[3][3];
-
-	out->f[0][0] =  det3x3(b2, b3, b4, c2, c3, c4, d2, d3, d4);
-	out->f[1][0] = -det3x3(a2, a3, a4, c2, c3, c4, d2, d3, d4);
-	out->f[2][0] =  det3x3(a2, a3, a4, b2, b3, b4, d2, d3, d4);
-	out->f[3][0] = -det3x3(a2, a3, a4, b2, b3, b4, c2, c3, c4);
-
-	out->f[0][1] = -det3x3(b1, b3, b4, c1, c3, c4, d1, d3, d4);
-	out->f[1][1] =  det3x3(a1, a3, a4, c1, c3, c4, d1, d3, d4);
-	out->f[2][1] = -det3x3(a1, a3, a4, b1, b3, b4, d1, d3, d4);
-	out->f[3][1] =  det3x3(a1, a3, a4, b1, b3, b4, c1, c3, c4);
-
-	out->f[0][2] =  det3x3(b1, b2, b4, c1, c2, c4, d1, d2, d4);
-	out->f[1][2] = -det3x3(a1, a2, a4, c1, c2, c4, d1, d2, d4);
-	out->f[2][2] =  det3x3(a1, a2, a4, b1, b2, b4, d1, d2, d4);
-	out->f[3][2] = -det3x3(a1, a2, a4, b1, b2, b4, c1, c2, c4);
-
-	out->f[0][3] = -det3x3(b1, b2, b3, c1, c2, c3, d1, d2, d3);
-	out->f[1][3] =  det3x3(a1, a2, a3, c1, c2, c3, d1, d2, d3);
-	out->f[2][3] = -det3x3(a1, a2, a3, b1, b2, b3, d1, d2, d3);
-	out->f[3][3] =  det3x3(a1, a2, a3, b1, b2, b3, c1, c2, c3);
-}
-
-static RtFloat
-det3x3(RtFloat a1, RtFloat a2, RtFloat a3,
-       RtFloat b1, RtFloat b2, RtFloat b3,
-       RtFloat c1, RtFloat c2, RtFloat c3)
-{
-	RtFloat ans;
-
-	ans =  a1 * det2x2(b2, b3, c2, c3)
-	     - b1 * det2x2(a2, a3, c2, c3)
-	     + c1 * det2x2(a2, a3, b2, b3);
-
-	return ans;
-}
-
-static RtFloat
-det2x2(RtFloat a, RtFloat b, RtFloat c, RtFloat d)
-{
-	RtFloat ans;
-
-	ans = a * d - b * c;
-
-	return ans;
-}
-	
-void
-ri_matrix_identity(ri_matrix_t *dst)
+ri_matrix_identity(
+    ri_matrix_t *dst)
 {
 	register int i, j;
 
@@ -200,25 +37,11 @@ ri_matrix_identity(ri_matrix_t *dst)
 } 
 			
 void
-ri_matrix_mul(ri_matrix_t *dst, const ri_matrix_t *a, const ri_matrix_t *b)
+ri_matrix_mul(
+    ri_matrix_t       *dst,
+    const ri_matrix_t *a,
+    const ri_matrix_t *b)
 {
-	/* TODO: implement AltiVec version. */
-#ifdef WITH_ALTIVEC
-	register int i, j;
-	ri_matrix_t tb;
-	ri_vector_t av, bv;
-
-	ri_matrix_copy(&tb, b); 
-	ri_matrix_transpose(&tb);
-
-	for (j = 0; j < 4; j++) {
-		av.v = a->v[j];
-		for (i = 0; i < 4; i++) {
-			bv.v = tb.v[i];
-			dst->f[j][i] = ri_vector_dot4(&av, &bv);
-		}
-	}
-#else
 	register int i, j, k;
 
 	for (j = 0; j < 4; j++) {
@@ -229,11 +52,14 @@ ri_matrix_mul(ri_matrix_t *dst, const ri_matrix_t *a, const ri_matrix_t *b)
 			}
 		}
 	}
-#endif
 }
 
 void
-ri_matrix_translate(ri_matrix_t *dst, RtFloat x, RtFloat y, RtFloat z)
+ri_matrix_translate(
+    ri_matrix_t *dst,
+    RtFloat      x,
+    RtFloat      y,
+    RtFloat      z)
 {
 	ri_matrix_t trans;
 	ri_matrix_t tmp;
@@ -257,9 +83,14 @@ ri_matrix_translate(ri_matrix_t *dst, RtFloat x, RtFloat y, RtFloat z)
 }
 
 void
-ri_matrix_rotate(ri_matrix_t *dst, RtFloat angle, RtFloat axisx, RtFloat axisy, RtFloat axisz)
+ri_matrix_rotate(
+    ri_matrix_t *dst,
+    RtFloat      angle,
+    RtFloat      axisx,
+    RtFloat      axisy,
+    RtFloat      axisz)
 {
-	RtVector v;
+	RtVector    v;
 	ri_vector_t axis;
 	ri_quat_t   quat;
 	ri_matrix_t tmp;
@@ -267,9 +98,9 @@ ri_matrix_rotate(ri_matrix_t *dst, RtFloat angle, RtFloat axisx, RtFloat axisy, 
 
 	v[0] = axisx; v[1] = axisy; v[2] = axisz;
 	
-	ri_vector_set_rman(&axis, v);
+	ri_vector_set_from_rman(axis, v);
 
-	ri_quat_set(&quat, angle, &axis);
+	ri_quat_set(&quat, angle, axis);
 
 	ri_quat_mat(&rotmat, quat);
 
@@ -323,9 +154,12 @@ ri_matrix_rotate(ri_matrix_t *dst, RtFloat angle, RtFloat axisx, RtFloat axisy, 
 }
 
 void
-ri_matrix_scale(ri_matrix_t *dst, RtFloat sx, RtFloat sy, RtFloat sz)
+ri_matrix_scale(
+    ri_matrix_t *dst,
+    RtFloat      sx,
+    RtFloat      sy,
+    RtFloat      sz)
 {
-	/* TODO: implement AltiVec version. */
 	ri_matrix_t scale;
 	ri_matrix_t tmp;
 
@@ -341,12 +175,14 @@ ri_matrix_scale(ri_matrix_t *dst, RtFloat sx, RtFloat sy, RtFloat sz)
 }
 
 void 
-ri_matrix_perspective(ri_matrix_t *dst, RtFloat d)
+ri_matrix_perspective(
+    ri_matrix_t *dst,
+    RtFloat      d)
 {
 	int i;
 	RtFloat f;
 
-	// too small
+	/* too small */
 	if (fabs(d) < RI_EPSILON) return;
 
 	f = 1.0f / d;
@@ -358,27 +194,9 @@ ri_matrix_perspective(ri_matrix_t *dst, RtFloat d)
 }
 
 void
-ri_matrix_transpose(ri_matrix_t *dst)
+ri_matrix_transpose(
+    ri_matrix_t *dst)
 {
-#ifdef WITH_ALTIVEC
-	/*
-	 * The code is descended from Apple Sample Code.
-	 *
-	 * http://developer.apple.com/hardware/ve/index.html
-	 */
-
-	vector float v0, v1, v2, v3;
-
-	v0 = vec_mergeh(dst->v[0], dst->v[2]);
-	v1 = vec_mergeh(dst->v[1], dst->v[3]);
-	v2 = vec_mergel(dst->v[0], dst->v[2]);
-	v3 = vec_mergel(dst->v[1], dst->v[3]);
-
-	dst->v[0] = vec_mergeh(v0, v1);
-	dst->v[1] = vec_mergel(v0, v1);
-	dst->v[2] = vec_mergeh(v2, v3);
-	dst->v[3] = vec_mergel(v2, v3);
-#else
 	register int i, j;
 	ri_matrix_t tmp;
 
@@ -393,11 +211,11 @@ ri_matrix_transpose(ri_matrix_t *dst)
 			dst->f[j][i] = tmp.f[j][i];
 		}
 	}
-#endif
 }
 
 void
-ri_matrix_print(const ri_matrix_t *mat)
+ri_matrix_print(
+    const ri_matrix_t *mat)
 {
 	int i, j;
 
@@ -411,7 +229,9 @@ ri_matrix_print(const ri_matrix_t *mat)
 }
 
 void
-ri_matrix_set(ri_matrix_t *dst, RtMatrix src)
+ri_matrix_set(
+    ri_matrix_t *dst,
+    RtMatrix     src)
 {
 	int i, j;
 
@@ -423,14 +243,10 @@ ri_matrix_set(ri_matrix_t *dst, RtMatrix src)
 }
 
 void
-ri_matrix_copy(ri_matrix_t *dst, const ri_matrix_t *src)
+ri_matrix_copy(
+    ri_matrix_t       *dst,
+    const ri_matrix_t *src)
 {
-#ifdef WITH_ALTIVEC
-	int i;
-
-	for (i = 0; i < 4; i++)
-		dst->v[i] = src->v[i];
-#else
 	int i, j;
 
 	for (j = 0; j < 4; j++) {
@@ -438,11 +254,11 @@ ri_matrix_copy(ri_matrix_t *dst, const ri_matrix_t *src)
 			dst->f[j][i] = src->f[j][i];
 		}
 	}
-#endif
 }
 
 void 
-ri_matrix_inverse(ri_matrix_t *dst)
+ri_matrix_inverse(
+    ri_matrix_t *dst)
 {
 	/*
 	 * codes from intel web

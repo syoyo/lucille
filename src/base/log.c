@@ -44,13 +44,13 @@ ri_log(int level, const char *filename, int linenum, const char *message, ...)
 {
 	va_list list;
 
-	//time_t tm;
+	/* time_t tm; */
 
 	va_start(list, message);
 
-	assert(level < sizeof(level_msg));
+	assert((unsigned int)level < sizeof(level_msg));
 
-	//time(&tm);
+	/* time(&tm); */
 
 	if (gdebug) {
 		fprintf(stdout, "[lucille] %s:%d %s : ",

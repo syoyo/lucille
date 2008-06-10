@@ -20,17 +20,7 @@
 #include <stdint.h>
 #include <math.h>
 
-#ifdef ENABLE_DOUBLE_PRECISION
-
 #define ri_float_t double
-#define ri_sqrt sqrt
-
-#else	/* !ENABLE_DOUBLE_PRECISION */
-
-#define ri_float_t float
-#define ri_sqrt sqrtf
-
-#endif	/* ENABLE_DOUBLE_PRECISION */
 
 #ifdef WIN32
 #define DLLEXPORT         __declspec(dllexport )

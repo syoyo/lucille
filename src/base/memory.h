@@ -9,40 +9,42 @@
 #define RI_MEMORY_H
 
 #include <stdlib.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/* TODO: remove */
+#if 0
 /* this structure is used for SIMD arthmetric operation */
 typedef struct _ri_aligned_float_t
 {
-	float *aligned;			/* points 16-byte alighed location */
-	float *real;			/* real memory allocated  */
+
+    float *aligned;            /* points 16-byte alighed location */
+    float *real;            /* real memory allocated  */
+
 } ri_aligned_float_t;
-
-#ifdef WITH_DMALLOC
-#include <dmalloc.h>
-
-#define ri_mem_alloc(x) malloc((x))
-#define ri_mem_free(x)  free((void *)(x))
-#define ri_mem_copy(dst, src, size)  memcpy((dst), (src), (size))
-#else
-extern void *ri_mem_alloc(long byte);
-extern void  ri_mem_free (void *ptr);
-extern void *ri_mem_copy (void *dest, const void *src, 	size_t n);
 #endif
 
-/* OLD: allocates 16-byte aligned memory */
-extern void ri_aligned_float_alloc(ri_aligned_float_t *dst, long size);
-extern void ri_aligned_float_free(ri_aligned_float_t *src);
 
-/* allocates n-byte aligned memory */
-extern void *ri_aligned_alloc(size_t size, unsigned int align);
-extern void ri_aligned_free(void *ptr);
+#define RI_MEM_DEFAULT_ALIGN   (16)
+
+/* Allocates 16 byte aligned memory */
+extern void *ri_mem_alloc(size_t byte);
+
+/* `align' will be ceiled to the multiple of 16. */
+extern void *ri_mem_alloc_aligned(size_t byte, uint32_t align);
+
+extern int   ri_mem_free (void *ptr);
+
+/* free a memory allocated by ri_mem_alloc_aligned() */
+extern int   ri_mem_free_aligned (void *ptr);
+
+extern void *ri_mem_copy (void *dest, const void *src,     size_t n);
 
 #ifdef __cplusplus
-}	/* extern "C" */
+}    /* extern "C" */
 #endif
 
 #endif

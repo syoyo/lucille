@@ -13,72 +13,80 @@
 ri_stack_t *
 ri_stack_new()
 {
-	ri_stack_t *p = NULL;
+    ri_stack_t *p = NULL;
 
-	p = (ri_stack_t *)ri_mem_alloc(sizeof(ri_stack_t));
+    p = (ri_stack_t *)ri_mem_alloc(sizeof(ri_stack_t));
 
-	p->stacklist = ri_ptr_array_new();
+    p->stack_array = ri_ptr_array_new();
 
-	return p;
+    return p;
 }
 
 void
 ri_stack_free(ri_stack_t *stack)
 {
-	ri_ptr_array_free(stack->stacklist);
-	ri_mem_free(stack);
+    ri_ptr_array_free(stack->stack_array);
+    ri_mem_free(stack);
 }
 
-void
+int
 ri_stack_push(ri_stack_t *stack, void *data)
 {
-	ri_ptr_array_insert(stack->stacklist,
-			    stack->stacklist->nelems,
-			    data);
+    ri_ptr_array_insert(stack->stack_array,
+                        stack->stack_array->nelems,
+                        data);
+
+    return 0;
 }
 
-void
+int
 ri_stack_pop(ri_stack_t *stack)
 {
 
-	ri_log_and_return_if(stack->stacklist == NULL);
-	ri_log_and_return_if(stack->stacklist->nelems < 1);
+    if (stack->stack_array == NULL) {
+        ri_log(LOG_WARN, "Stack is NULL.");
+        return -1;
+    }
 
-	ri_ptr_array_remove_at(stack->stacklist,
-			       stack->stacklist->nelems - 1);
+    if (stack->stack_array->nelems < 1) {
+        ri_log(LOG_WARN, "Stack pop operation for empty stack.");
+        return -1;
+    }
+
+    ri_ptr_array_remove_at(stack->stack_array,
+                           stack->stack_array->nelems - 1);
+
+    return 0;
 }
 
 void *
 ri_stack_get(ri_stack_t *stack)
 {
-	void *data;
+    void *data;
 
-	if (stack->stacklist == NULL) {
-#ifdef DEBUG
-		ri_log(LOG_WARN, "stack is empty!");
-#endif
-		return NULL;
-	}
+    if (stack->stack_array == NULL) {
+        ri_log(LOG_WARN, "Stack is empty!");
+        return NULL;
+    }
 
-	if (stack->stacklist->nelems < 1) {
-		return NULL;
-	}
+    if (stack->stack_array->nelems < 1) {
+        /* ri_log(LOG_WARN, "Trying to get data from empty stack!"); */
+        return NULL;
+    }
 
-	data = ri_ptr_array_at(stack->stacklist,
-			       stack->stacklist->nelems - 1);
-	if (data  == NULL) {
-#ifdef DEBUG
-		ri_log(LOG_WARN, "stack is empty!");
-#endif
-		return NULL;
-	}
+    data = ri_ptr_array_at(stack->stack_array, stack->stack_array->nelems - 1);
 
-	return data;
+    if (data  == NULL) {
+        ri_log(LOG_WARN, "stack is empty!");
+        return NULL;
+    }
+
+    return data;
 }
 
 int
 ri_stack_depth(ri_stack_t *stack)
 {
-	return stack->stacklist->nelems;
+    return stack->stack_array->nelems;
 }
 

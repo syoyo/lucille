@@ -241,7 +241,7 @@ randomMT2(int thread_id)
 
 
 void
-random_uniform_vector(ri_vector_t *dst)
+random_uniform_vector(ri_vector_t dst)
 {
 	//ri_vector_t vec;
 	RtVector v;
@@ -254,7 +254,7 @@ random_uniform_vector(ri_vector_t *dst)
 		len = v[0] * v[0] + v[1] * v[1] + v[2] * v[2];
 	} while (len > 1.0 || len == 0.0); 
 
-	ri_vector_set_rman(dst, v);
+	ri_vector_set_from_rman(dst, v);
 }
 
 static void
