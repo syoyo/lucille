@@ -3,6 +3,9 @@
 #
 #CC = 'gcc'
 
+custom_cflags   = [ '-g', '-W', '-Wall']
+custom_cxxflags = [ '-g', '-W', '-Wall']
+
 #
 # OpenMPI support(TODO)
 #

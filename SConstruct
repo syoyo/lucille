@@ -11,6 +11,8 @@ import os, sys
 #
 opts = Options('custom.py')
 opts.Add('CC', 'C compiler')
+opts.Add('custom_cflags', 'User defined CFLAGS')
+opts.Add('custom_cxxflags', 'User defined CXXFLAGS')
 opts.Add(EnumOption('build_target', 'Build target', 'release',
                     allowed_values=('debug', 'release', 'fast')))
 opts.Add('use_llvm', 'Use LLVM', 0)
@@ -36,12 +38,18 @@ path = os.environ['PATH']
 #
 env = Environment(options = opts, ENV= {'PATH' : path})
 
+#
+# Add custom CFLAGS
+#
+env.Append(CFLAGS   = env['custom_cflags'])
+env.Append(CXXFLAGS = env['custom_cxxflags'])
 
 #
 # build mode
 #
 if env['build_target'] == 'debug':
-	env.Append(CFLAGS = ['-g'])
+	env.Append(CFLAGS   = ['-g'])
+	env.Append(CXXFLAGS = ['-g'])
 
 #
 # LLVM
@@ -103,6 +111,8 @@ if platform == 'linux2' and byteorder == 'little':
 	if env['enable_sse'] == 1:
 			env.Append(CPPDEFINES = ['WITH_SSE'])
 
+if platform == 'linux2':
+	env.Append(CPPDEFINES = ['LINUX'])
 
 #
 # SSE handling
