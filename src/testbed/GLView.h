@@ -32,6 +32,8 @@ class GLView : public Fl_Gl_Window {
         trackball( currQuat, 0.0, 0.0, 0.0, 0.0 );
 
         bvhVisualizer = new BVHVisualizer();
+
+        wireMode      = false;
     }
 
     void           renderImage();
@@ -51,6 +53,9 @@ class GLView : public Fl_Gl_Window {
     int            imageWidth;
     int            imageHeight;
     
+    // display prop.
+    bool           wireMode;
+
     bool           displayImage;
 
     GLMmodel      *obj;

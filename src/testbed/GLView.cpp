@@ -34,6 +34,11 @@ GLView::handleKey(int k)
     bool needRedraw = false;
 
     switch (k) {
+    case 'w':
+        this->wireMode = !this->wireMode;
+        needRedraw = true;
+        break;
+
     case 'g':
         this->renderImage();
         needRedraw = true;
@@ -233,7 +238,13 @@ GLView::draw()
         // Draw obj
         //
         if (this->obj) {
+            if (this->wireMode) {
+                glPolygonMode( GL_FRONT, GL_LINE );
+            }
             glmDraw(this->obj, GLM_FLAT);
+            if (this->wireMode) {
+                glPolygonMode( GL_FRONT, GL_FILL );
+            }
         }
 
         //

@@ -14,6 +14,8 @@ loadObj(const char *name)
 {
     GLMmodel *model = NULL;
 
+    printf("[obj] Loading obj ...\n"); fflush(stdout);
+
     model = glmReadOBJ((char *)name);
 
     if (!model) {
