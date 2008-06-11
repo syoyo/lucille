@@ -44,21 +44,23 @@ static ri_light_t *get_light(ri_render_t *render);
  *     Always 1.
  */
 int
-ri_transport_sample(ri_render_t *render, const ri_ray_t *ray,
-		    ri_transport_info_t *result)
+ri_transport_sample(
+    ri_render_t         *render,
+    const ri_ray_t      *ray,
+    ri_transport_info_t *result)
 {
-	ri_ray_t newray;
+    ri_ray_t newray;
 
-	memcpy(&newray, ray, sizeof(ri_ray_t));
+    memcpy(&newray, ray, sizeof(ri_ray_t));
 
-	ri_vector_zero(&(result->radiance));
-	result->nbound_diffuse = 0;
-	result->nbound_specular = 0;
-	result->state.inside = 0;
+    ri_vector_setzero(result->radiance);
+    result->nbound_diffuse = 0;
+    result->nbound_specular = 0;
+    result->state.inside = 0;
 
-	trace_path(render, &newray, result);
+    trace_path(render, &newray, result);
 
-	return 1;
+    return 1;
 }
 
 
@@ -81,16 +83,16 @@ ri_transport_sample(ri_render_t *render, const ri_ray_t *ray,
 static ri_light_t *
 get_light(ri_render_t *render)
 {
-	ri_light_t *light;
+    ri_light_t *light;
 
-	if (!ri_list_first(render->scene->light_list)) {
-		ri_log(LOG_WARN, "no light exist.\n");
-		return NULL;
-	}
+    if (!ri_list_first(render->scene->light_list)) {
+        ri_log(LOG_WARN, "no light exist.\n");
+        return NULL;
+    }
 
-	light = (ri_light_t *)ri_list_first(render->scene->light_list)->data;
+    light = (ri_light_t *)ri_list_first(render->scene->light_list)->data;
 
-	return light;
+    return light;
 }
 
 /*
@@ -113,293 +115,293 @@ static void
 trace_path(ri_render_t *render, ri_ray_t *ray, ri_transport_info_t *result)
 {
 #if 0 // TODO
-	int hit, lighthit;
-	int hasfresnel;
-	ri_vector_t col;
-	ri_vector_t transmit_ray;
-	ri_vector_t reflect_ray;
-	ri_vector_t offset;
-	ri_vector_t raydir;
-	ri_vector_t rayorg;
-	ri_vector_t refrad, trasrad;
-	ri_vector_t normal;
-	ri_light_t *light;
-	ri_vector_t rad;
-	ri_material_t *material;
-	ri_ray_t       lightray;
-	ri_transport_info_t ref_result;		/* for reflection */
-	double r, d, s, t;
-	float  fresnel_factor = 1.0f;
-	float  kr, kt;
-	float  eta = 1.0f / 1.4f;
-	float  etaval;
+    int hit, lighthit;
+    int hasfresnel;
+    ri_vector_t col;
+    ri_vector_t transmit_ray;
+    ri_vector_t reflect_ray;
+    ri_vector_t offset;
+    ri_vector_t raydir;
+    ri_vector_t rayorg;
+    ri_vector_t refrad, trasrad;
+    ri_vector_t normal;
+    ri_light_t *light;
+    ri_vector_t rad;
+    ri_material_t *material;
+    ri_ray_t       lightray;
+    ri_transport_info_t ref_result;        /* for reflection */
+    double r, d, s, t;
+    float  fresnel_factor = 1.0f;
+    float  kr, kt;
+    float  eta = 1.0f / 1.4f;
+    float  etaval;
 
-	if (result->nbound_specular > 8) {
-		//printf("too reflection\n");
-		return;
-	}
+    if (result->nbound_specular > 8) {
+        //printf("too reflection\n");
+        return;
+    }
 
-	light = get_light(render);
+    light = get_light(render);
 
-	ri_vector_copy(&raydir, ray->dir);
-	result->state.inside = 0;
-	hit = ri_raytrace(render, ray, &(result->state));
+    ri_vector_copy(&raydir, ray->dir);
+    result->state.inside = 0;
+    hit = ri_raytrace(render, ray, &(result->state));
 
-	if (hit) {
+    if (hit) {
 
-		if (light->geom) {
-			/* Check if a ray also hits light geometry and
-			 * that is closer than scene geometry or not.
-			 */
-			ri_vector_copy(&lightray.org, ray->org);
-			ri_vector_copy(&lightray.dir, ray->dir);
+        if (light->geom) {
+            /* Check if a ray also hits light geometry and
+             * that is closer than scene geometry or not.
+             */
+            ri_vector_copy(&lightray.org, ray->org);
+            ri_vector_copy(&lightray.dir, ray->dir);
 
-			lighthit = ri_raytrace_geom(
-					light->geom,
-					&lightray,
-					&(result->state));			
+            lighthit = ri_raytrace_geom(
+                    light->geom,
+                    &lightray,
+                    &(result->state));            
 
-			if (lighthit && (lightray.isectt < ray->isectt) ) {
+            if (lighthit && (lightray.isectt < ray->isectt) ) {
 
-				// light is "seen"
-				ri_vector_copy(&result->radiance,
-					       light->col);
-				result->hit = 1;
-				return;
-			}
-		}
+                // light is "seen"
+                ri_vector_copy(&result->radiance,
+                           light->col);
+                result->hit = 1;
+                return;
+            }
+        }
 
-		r = randomMT();
+        r = randomMT();
 
-		material = result->state.geom->material;
-		if (!material) {
-			d = 1.0;
-			s = 0.0;
-			t = 0.0;
-		} else {
-			d = ri_vector_ave(&material->kd);
-			s = ri_vector_ave(&material->ks);
-			t = ri_vector_ave(&material->kt);
-		}
+        material = result->state.geom->material;
+        if (!material) {
+            d = 1.0;
+            s = 0.0;
+            t = 0.0;
+        } else {
+            d = ri_vector_ave(&material->kd);
+            s = ri_vector_ave(&material->ks);
+            t = ri_vector_ave(&material->kt);
+        }
 
-		if (s > 0.0) {
-			/* specular reflection */
+        if (s > 0.0) {
+            /* specular reflection */
 
-			if (result->state.geom->material &&
-			    result->state.geom->material->fresnel) {
+            if (result->state.geom->material &&
+                result->state.geom->material->fresnel) {
 
-				/* Fresnel reflection */
-			
-				ri_fresnel(&ray->dir, &transmit_ray,
-					   &kr, &kt,
-					   &ray->dir, &result->state.normal,
-					   eta);
+                /* Fresnel reflection */
+            
+                ri_fresnel(&ray->dir, &transmit_ray,
+                       &kr, &kt,
+                       &ray->dir, &result->state.normal,
+                       eta);
 
-				fresnel_factor = kr;
+                fresnel_factor = kr;
 
-			} else {
-				ri_reflect(&(ray->dir),
-					   &ray->dir,
-					   &result->state.normal);
+            } else {
+                ri_reflect(&(ray->dir),
+                       &ray->dir,
+                       &result->state.normal);
 
-				fresnel_factor = 1.0f;
-			}
+                fresnel_factor = 1.0f;
+            }
 
-	
-			ri_vector_copy(&(ray->org), result->state.P);
+    
+            ri_vector_copy(&(ray->org), result->state.P);
 
-			ri_vector_copy(&col, result->state.color);
-
-
-			result->nbound_specular++;
-
-			/* push radiance */
-			ri_vector_copy(&rad, result->radiance);
-			ri_vector_zero(&(result->radiance));
-
-			trace_path(render, ray, result);
-
-			/* pop radiance */
-			ri_vector_mul(&(result->radiance),
-				      &result->radiance, &material->ks);
-			ri_vector_mul(&(result->radiance),
-				      &result->radiance, &col);
-			ri_vector_scale(&(result->radiance),
-				        fresnel_factor);
+            ri_vector_copy(&col, result->state.color);
 
 
-			ri_vector_add(&(result->radiance),
-				      &result->radiance,
-				      &rad);
-		}
+            result->nbound_specular++;
 
-		if (d > 0.0) {
-			/* diffuse reflection */
-			result->nbound_diffuse++;
-			ri_shade(&rad, &ray->dir, ray, &(result->state));
+            /* push radiance */
+            ri_vector_copy(&rad, result->radiance);
+            ri_vector_zero(&(result->radiance));
 
-			ri_vector_mul(&rad,
-				      &rad, &material->kd);
-			ri_vector_add(&(result->radiance), &result->radiance,
-						           &rad);	
-		}
+            trace_path(render, ray, result);
 
-
-		if (t > 0.0) {
-			/* specular refraction */
-
-			if (result->state.geom->material &&
-			    result->state.geom->material->fresnel) {
-				hasfresnel = 1;
-			} else {
-				hasfresnel = 0;
-			}
+            /* pop radiance */
+            ri_vector_mul(&(result->radiance),
+                      &result->radiance, &material->ks);
+            ri_vector_mul(&(result->radiance),
+                      &result->radiance, &col);
+            ri_vector_scale(&(result->radiance),
+                        fresnel_factor);
 
 
-			if (hasfresnel) {
-				/* Fresnel effect */
-			
-				ri_vector_copy(&normal,
-					       result->state.normal);
+            ri_vector_add(&(result->radiance),
+                      &result->radiance,
+                      &rad);
+        }
 
-				if (result->state.inside) {
-					printf("inside val = %d\n", result->state.inside);
-					printf("inside\n");
-					/* ray hits inside surface */
-					//ri_vector_neg(&normal);
-					etaval = 1.0 / eta;
-				} else {
-					etaval = eta;
-				}
+        if (d > 0.0) {
+            /* diffuse reflection */
+            result->nbound_diffuse++;
+            ri_shade(&rad, &ray->dir, ray, &(result->state));
 
-				ri_fresnel(&reflect_ray, &transmit_ray,
-					   &kr, &kt,
-					   &ray->dir, &normal,
-					   etaval);
+            ri_vector_mul(&rad,
+                      &rad, &material->kd);
+            ri_vector_add(&(result->radiance), &result->radiance,
+                                   &rad);    
+        }
 
-			} else {
-				ri_refract(&(ray->dir),
-					   &ray->dir,
-					   &result->state.normal,
-					   eta);
 
-				kr = 0.0; kt = 1.0;
-			}
+        if (t > 0.0) {
+            /* specular refraction */
 
-			/* slightly moves the ray towards outgoing direction */
+            if (result->state.geom->material &&
+                result->state.geom->material->fresnel) {
+                hasfresnel = 1;
+            } else {
+                hasfresnel = 0;
+            }
 
-			ri_vector_copy(&rayorg, result->state.P);
 
-			/* ray.org = ray.org + 0.001 * ray.dir */
-			ri_vector_copy(&offset, &transmit_ray);
-			ri_vector_scale(&offset, 0.001);
-			ri_vector_add(&(ray->org), &rayorg, &offset);
+            if (hasfresnel) {
+                /* Fresnel effect */
+            
+                ri_vector_copy(&normal,
+                           result->state.normal);
 
-			/* ray.dir = refract direction */
-			ri_vector_copy(&(ray->dir), &transmit_ray);
+                if (result->state.inside) {
+                    printf("inside val = %d\n", result->state.inside);
+                    printf("inside\n");
+                    /* ray hits inside surface */
+                    //ri_vector_neg(&normal);
+                    etaval = 1.0 / eta;
+                } else {
+                    etaval = eta;
+                }
+
+                ri_fresnel(&reflect_ray, &transmit_ray,
+                       &kr, &kt,
+                       &ray->dir, &normal,
+                       etaval);
+
+            } else {
+                ri_refract(&(ray->dir),
+                       &ray->dir,
+                       &result->state.normal,
+                       eta);
+
+                kr = 0.0; kt = 1.0;
+            }
+
+            /* slightly moves the ray towards outgoing direction */
+
+            ri_vector_copy(&rayorg, result->state.P);
+
+            /* ray.org = ray.org + 0.001 * ray.dir */
+            ri_vector_copy(&offset, &transmit_ray);
+            ri_vector_scale(&offset, 0.001);
+            ri_vector_add(&(ray->org), &rayorg, &offset);
+
+            /* ray.dir = refract direction */
+            ri_vector_copy(&(ray->dir), &transmit_ray);
  
-			ri_vector_copy(&col, &result->state.color);
+            ri_vector_copy(&col, &result->state.color);
 
-			result->nbound_specular++;
-			ray->prev_hit = 'S';
+            result->nbound_specular++;
+            ray->prev_hit = 'S';
 
-			/* push radiance */
-			ri_vector_copy(&rad, &result->radiance);
-			ri_vector_zero(&(result->radiance));
+            /* push radiance */
+            ri_vector_copy(&rad, &result->radiance);
+            ri_vector_zero(&(result->radiance));
 
-			trace_path(render, ray, result);
+            trace_path(render, ray, result);
 
-			/* pop radiance */
-			ri_vector_mul(&(result->radiance),
-				      &result->radiance, &material->kt);
-			ri_vector_mul(&(result->radiance),
-				      &result->radiance, &col);
-			ri_vector_scale(&(result->radiance), kt);
+            /* pop radiance */
+            ri_vector_mul(&(result->radiance),
+                      &result->radiance, &material->kt);
+            ri_vector_mul(&(result->radiance),
+                      &result->radiance, &col);
+            ri_vector_scale(&(result->radiance), kt);
 
-			if (hasfresnel) {
-				/* add reflection color */
+            if (hasfresnel) {
+                /* add reflection color */
 
-				/* ray.org = ray.org + 0.001 * ray.dir */
-				ri_vector_copy(&offset, &reflect_ray);
-				ri_vector_scale(&offset, 0.001);
-				ri_vector_add(&(ray->org), &rayorg, &offset);
+                /* ray.org = ray.org + 0.001 * ray.dir */
+                ri_vector_copy(&offset, &reflect_ray);
+                ri_vector_scale(&offset, 0.001);
+                ri_vector_add(&(ray->org), &rayorg, &offset);
 
-				ri_vector_copy(&(ray->dir), &reflect_ray);
-				ri_vector_copy(&col, &result->state.color);
+                ri_vector_copy(&(ray->dir), &reflect_ray);
+                ri_vector_copy(&col, &result->state.color);
 
-				ray->prev_hit = 'S';
+                ray->prev_hit = 'S';
 
-				ri_vector_zero(&ref_result.radiance);
-				ref_result.nbound_specular = result->nbound_specular;
-				ref_result.nbound_diffuse = result->nbound_diffuse;
-				ref_result.state.inside = 0;
+                ri_vector_zero(&ref_result.radiance);
+                ref_result.nbound_specular = result->nbound_specular;
+                ref_result.nbound_diffuse = result->nbound_diffuse;
+                ref_result.state.inside = 0;
 
-				trace_path(render, ray, &ref_result);
+                trace_path(render, ray, &ref_result);
 
-				/* pop radiance */
-				ri_vector_mul(&(ref_result.radiance),
-					      &ref_result.radiance, &col);
-				ri_vector_scale(&(ref_result.radiance), kr);
-				ri_vector_add(&(result->radiance),
-					      &result->radiance, &ref_result.radiance);
+                /* pop radiance */
+                ri_vector_mul(&(ref_result.radiance),
+                          &ref_result.radiance, &col);
+                ri_vector_scale(&(ref_result.radiance), kr);
+                ri_vector_add(&(result->radiance),
+                          &result->radiance, &ref_result.radiance);
 
-			}
+            }
 
-			ri_vector_add(&(result->radiance),
-			              &result->radiance,
-				      &rad);
-		}
+            ri_vector_add(&(result->radiance),
+                          &result->radiance,
+                      &rad);
+        }
 
-	//} else if (result->nbound_specular + result->nbound_diffuse < 2) {
-	} else {
+    //} else if (result->nbound_specular + result->nbound_diffuse < 2) {
+    } else {
 
-		/* check if hit light geometry */
-		ray->isectt = 0.0f;
+        /* check if hit light geometry */
+        ray->isectt = 0.0f;
 
-		if (light->type == LIGHTTYPE_IBL ||
-		    light->type == LIGHTTYPE_SUNSKY) {
+        if (light->type == LIGHTTYPE_IBL ||
+            light->type == LIGHTTYPE_SUNSKY) {
 
-			ri_texture_ibl_fetch(&(result->radiance),
-					     light->texture,
-					     &ray->dir);
-			result->hit = 1;
-			return;	
-		} else if (ri_render_get()->background_map) {
+            ri_texture_ibl_fetch(&(result->radiance),
+                         light->texture,
+                         &ray->dir);
+            result->hit = 1;
+            return;    
+        } else if (ri_render_get()->background_map) {
 
-			ri_texture_ibl_fetch(&(result->radiance),
-					     ri_render_get()->background_map,
-					     &ray->dir);
-			result->hit = 1;
-			return;	
+            ri_texture_ibl_fetch(&(result->radiance),
+                         ri_render_get()->background_map,
+                         &ray->dir);
+            result->hit = 1;
+            return;    
 
-		
-		} else {
-			if (light->geom) {
-				/* area light. */
+        
+        } else {
+            if (light->geom) {
+                /* area light. */
 
-				lighthit = ri_raytrace_geom(
-						light->geom,
-						ray,
-						&(result->state));			
-				if (lighthit) {
+                lighthit = ri_raytrace_geom(
+                        light->geom,
+                        ray,
+                        &(result->state));            
+                if (lighthit) {
 
-					// light is "seen"
-					result->radiance.e[0] = 1.0;
-					result->radiance.e[1] = 1.0;
-					result->radiance.e[2] = 1.0;
-					result->hit = 1;
-					return;
-				}
-			} else if (light->type == LIGHTTYPE_DOME) {
-				//ri_vector_copy(&(result->radiance),
-				//	       &(light->col));
-				//ri_vector_scale(&(result->radiance),
-				//		(float)light->intensity);
-			}
-		}
-	} 
+                    // light is "seen"
+                    result->radiance.e[0] = 1.0;
+                    result->radiance.e[1] = 1.0;
+                    result->radiance.e[2] = 1.0;
+                    result->hit = 1;
+                    return;
+                }
+            } else if (light->type == LIGHTTYPE_DOME) {
+                //ri_vector_copy(&(result->radiance),
+                //           &(light->col));
+                //ri_vector_scale(&(result->radiance),
+                //        (float)light->intensity);
+            }
+        }
+    } 
 #endif
 
-	return;
+    return;
 
 }
