@@ -22,7 +22,7 @@ typedef struct _ri_tri_info_t
 /* data structure used for SIMD ray-triangle intersection */
 typedef struct _ri_simd_tri_info_t
 {
-	ri_aligned_float_t  tridata;
+	float               *tridata;
 
 	ri_geom_t          **geoms;
 	unsigned int        *indices;
@@ -45,17 +45,17 @@ typedef struct _ri_tri_list_t
 /* uniform grid data structure */
 typedef struct _ri_ugrid_t
 {
-	ri_tri_list_t *cell[GRIDSIZE][GRIDSIZE][GRIDSIZE];
-	//ri_list_t *cell[GRIDSIZE][GRIDSIZE][GRIDSIZE];
-	float bboxmin[3], bboxmax[3];
-	int   voxels[3];
-	float width[3];
-	float invwidth[3];
-	int   curr_rayid;
+	ri_tri_list_t   *cell[GRIDSIZE][GRIDSIZE][GRIDSIZE];
+	ri_float_t       bboxmin[3], bboxmax[3];
+	int              voxels[3];
+	ri_float_t       width[3];
+	ri_float_t       invwidth[3];
+	int              curr_rayid;
 
-	ri_tri_list_t **cdat;	/* ptr array */
+	ri_tri_list_t  **cdat;	/* ptr array */
+
 	/* 1D triangle data array. */ 
-	ri_aligned_float_t  tridata;
+	float           *tridata;
 
 	//int   *hilbtable;	/* Hilbert mapping table. */
 

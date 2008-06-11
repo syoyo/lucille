@@ -33,7 +33,7 @@ ri_intersection_state_new()
 }
 
 /*
- * Function: ri_intersection_state_delete
+ * Function: ri_intersection_state_free
  *
  *    Frees memory for ri_intersection_state_t object.
  *
@@ -46,7 +46,7 @@ ri_intersection_state_new()
  *    None.
  */
 void
-ri_intersection_state_delete(
+ri_intersection_state_free(
 	ri_intersection_state_t *state )
 {
 	ri_mem_free( state );

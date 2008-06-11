@@ -18,34 +18,43 @@ extern "C" {
 
 typedef struct _ri_texture_t
 {
-	ri_float_t	*data;
-	int      width, height; 
-	int      maxsize_pow2n;		/* nearest 2^n value of
-					 * width or height.
-					 */
-	int      mapping;		/* mapping method for IBL */
+    ri_float_t    *data;
+    int            width, height; 
+    int            maxsize_pow2n;        /* nearest 2^n value of
+                                          * width or height.
+                                          */
+    int            mapping;              /* mapping method for IBL */
 } ri_texture_t;
 
 typedef struct _ri_rawtexture_t
 {
-	ri_float_t	*data;
-	int      width, height; 
-	int      maxsize_pow2n;		/* nearest 2^n value of
-					 * width or height.
-					 */
+    ri_float_t    *data;
+    int            width, height; 
+    int            maxsize_pow2n;         /* nearest 2^n value of
+                                           * width or height.
+                                           */
 } ri_rawtexture_t;
 
-extern ri_texture_t *ri_texture_load(const char *filename);
-extern void          ri_texture_free(ri_texture_t *texture);
-extern void          ri_texture_fetch(ri_vector_t *color,
-				      const ri_texture_t *texture,
-				      ri_float_t u, ri_float_t v);
-extern void          ri_texture_ibl_fetch(ri_vector_t *color,
-				          const ri_texture_t *texture,
-				          const ri_vector_t *dir);
-extern void          ri_texture_scale(ri_texture_t *texture, ri_float_t scale);
+extern ri_texture_t *ri_texture_load (const char *filename);
+
+extern void          ri_texture_free (ri_texture_t *texture);
+
+// TODO: LOD
+extern void          ri_texture_fetch(ri_vector_t         color,   /* [out] */
+                                      const ri_texture_t *texture,
+                                      ri_float_t           u,
+                                      ri_float_t           v);
+
+extern void          ri_texture_ibl_fetch(
+                                      ri_vector_t         color,
+                                      const ri_texture_t *texture,
+                                      const ri_vector_t   dir);
+
+extern void          ri_texture_scale(ri_texture_t *texture,
+                                      ri_float_t scale);
+
 #ifdef __cplusplus
-}	/* extern "C" */
+}    /* extern "C" */
 #endif
 
 #endif

@@ -15,44 +15,44 @@
 ri_material_t *
 ri_material_new()
 {
-	ri_material_t *material = NULL;
+    ri_material_t *material = NULL;
 
-	material = (ri_material_t *)ri_mem_alloc(sizeof(ri_material_t));
+    material = (ri_material_t *)ri_mem_alloc(sizeof(ri_material_t));
 
-	/*
-	 * Set default value.
-	 */
-	material->kd.f[0] = 1.0;
-	material->kd.f[1] = 1.0;
-	material->kd.f[2] = 1.0;
+    /*
+     * Set default value.
+     */
+    material->kd[0]   = 1.0;
+    material->kd[1]   = 1.0;
+    material->kd[2]   = 1.0;
 
-	material->ks.f[0] = 0.0;
-	material->ks.f[1] = 0.0;
-	material->ks.f[2] = 0.0;
+    material->ks[0]   = 0.0;
+    material->ks[1]   = 0.0;
+    material->ks[2]   = 0.0;
 
-	material->kt.f[0] = 0.0;
-	material->kt.f[1] = 0.0;
-	material->kt.f[2] = 0.0;
+    material->kt[0]   = 0.0;
+    material->kt[1]   = 0.0;
+    material->kt[2]   = 0.0;
 
-	material->ior     = 1.0;		/* air */
+    material->ior     = 1.0;        /* air */
 
-	material->fresnel = 0;
+    material->fresnel = 0;
 
-	material->texture = NULL;
+    material->texture = NULL;
 
-	return material;
+    return material;
 }
 
 void
 ri_material_free(ri_material_t *material)
 {
-	ri_texture_free(material->texture);
-	ri_mem_free(material);
+    ri_texture_free(material->texture);
+    ri_mem_free(material);
 }
 
 void
 ri_material_copy(ri_material_t *dst, const ri_material_t *src)
 {
-	memcpy((void *)dst, (const void *)src, sizeof(ri_material_t));
+    memcpy((void *)dst, (const void *)src, sizeof(ri_material_t));
 }
 

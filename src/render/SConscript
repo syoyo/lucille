@@ -13,6 +13,7 @@ light.c
 material.c
 mc.c
 noise.c
+polygon.c
 qmc.c
 quadric.c
 ray.c
@@ -23,7 +24,6 @@ sampler.c
 scene.c
 shader.c
 shading.c
-sis.c
 specrend.c
 spectrum.c
 spiral.c
@@ -34,6 +34,10 @@ tonemap.c
 ugrid.c
 zorder2d.c
 """)
+
+
+# TO BE removed
+# sis.c
 
 Import('env')
 

@@ -43,13 +43,13 @@ extern "C" {
  *     1 if the ray hits a point onto the surface. 0 if the ray hits
  *     environment or no hit point found.
  */
-extern int	ri_raytrace(
-	ri_render_t             *render,		/* [inout]	*/
-	ri_ray_t                *ray,			/* [inout]	*/
-	ri_intersection_state_t *state_out );		/* [out]	*/
+extern int    ri_raytrace(
+    ri_render_t             *render,            /* [inout]      */
+    ri_ray_t                *ray,               /* [inout]      */
+    ri_intersection_state_t *state_out );       /* [out]        */
 
 
-extern void	ri_raytrace_shutdown();
+extern void    ri_raytrace_shutdown();
 
 /*
  * Function: ri_raytrace_statistics
@@ -64,21 +64,7 @@ extern void	ri_raytrace_shutdown();
  *
  *     None.
  */
-extern void	ri_raytrace_statistics();
-
-#if 0
-extern RtInt	triangle_intersect(
-	const ri_vector_t *orig,
-	const ri_vector_t *dir,
-	const ri_vector_t *v0,
-	const ri_vector_t *v1,
-	const ri_vector_t *v2,
-	RtFloat curr_t, RtInt tid,
-	RtFloat *newt,					/* [out]	*/
-	RtFloat *newu,					/* [out]	*/
-	RtFloat *newv,					/* [out]	*/
-	RtInt *newtid );				/* [out]	*/
-#endif
+extern void    ri_raytrace_statistics();
 
 #ifdef __cplusplus
 }       /* extern "C" */

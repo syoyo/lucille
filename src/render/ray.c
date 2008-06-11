@@ -55,7 +55,7 @@ void
 ri_ray_perturb(
 	ri_ray_t *ray )
 {
-	ray->org.f[0] += RAY_EPSILON * ray->dir.f[0];
-	ray->org.f[1] += RAY_EPSILON * ray->dir.f[1];
-	ray->org.f[2] += RAY_EPSILON * ray->dir.f[2];
+	ray->org[0] += RAY_EPSILON * ray->dir[0];
+	ray->org[1] += RAY_EPSILON * ray->dir[1];
+	ray->org[2] += RAY_EPSILON * ray->dir[2];
 }

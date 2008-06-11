@@ -33,33 +33,32 @@ extern "C"
 
 typedef struct _ri_intersection_state_t {
 
-	ri_vector_t     P;		/* position                     */
-	ri_vector_t     Ng;		/* geometry normal              */
-	ri_vector_t     Ns;		/* shading normal               */
-	ri_vector_t     I;		/* ray's incoming direction     */
-	double          t;		/* distance to the hit point
-					 * from ray origin.             */
+    ri_vector_t     P;              /* position                     */
+    ri_vector_t     Ng;             /* geometry normal              */
+    ri_vector_t     Ns;             /* shading normal               */
+    ri_vector_t     I;              /* ray's incoming direction     */
+    double          t;              /* distance to the hit point
+                                     * from ray origin.             */
 
-	ri_brdf_t      *fr;             /* BRDF                         */
+    ri_brdf_t      *fr;             /* BRDF                         */
 
-	char            inside;		/* the ray hits the surface
-					 * from back face?		*/
+    char            inside;         /* the ray hits the surface
+                                     * from back face?        */
 
-	ri_geom_t      *geom;
-	uint32_t        index;
+    ri_geom_t      *geom;
+    uint32_t        index;
 
-	ri_vector_t     color;
+    ri_vector_t     color;
 
-	ri_vector_t     tangent;	/* tangent vector		*/
-	ri_vector_t     binormal;	/* binormal vector		*/
+    ri_vector_t     tangent;        /* tangent vector        */
+    ri_vector_t     binormal;       /* binormal vector        */
 
-	ri_float_t	u, v;		/* barycentric coord		*/
+    ri_float_t      u, v;           /* barycentric coord        */
 
 } ri_intersection_state_t;
 
-extern ri_intersection_state_t *	ri_intersection_state_new();
-
-extern void				ri_intersection_state_delete();
+extern ri_intersection_state_t *ri_intersection_state_new();
+extern void                     ri_intersection_state_free();
 
 #ifdef __cplusplus
 } /* extern "C" */

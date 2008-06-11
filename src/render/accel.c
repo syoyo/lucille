@@ -18,6 +18,13 @@
 #include "ugrid.h"
 #include "bvh.h"
 
+
+/* ---------------------------------------------------------------------------
+ *
+ * Public functions
+ *
+ * ------------------------------------------------------------------------ */
+
 ri_accel_t *
 ri_accel_new()
 {
@@ -34,7 +41,18 @@ void
 ri_accel_free(
 	ri_accel_t *accel)
 {
-	if (accel) free(accel);
+	if (accel) {
+
+        if (accel->free) {
+            
+            /* Free spatial data content */
+            accel->free( accel->data );
+
+        }
+
+        ri_mem_free(accel);
+
+    }
 }
 
 /*
@@ -49,7 +67,7 @@ ri_accel_free(
  *
  *  Returns:
  *
- *      1 if succes, 0 not.
+ *      0 if success, -1 not.
  */
 int
 ri_accel_bind(
@@ -82,8 +100,8 @@ ri_accel_bind(
 		default:
 
 			ri_log(LOG_ERROR, "Unknown accel method");
-			return 0;
+			return -1;
 	}
 
-	return 1;
+	return 0;
 }

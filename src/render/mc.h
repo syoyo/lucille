@@ -16,7 +16,7 @@ extern void     latin_hyper_cube(double *out, int n, int d);
 
 
 #ifdef __cplusplus
-}	/* extern "C" */
+}    /* extern "C" */
 #endif
 
-#endif	/* LUCILLE_MC_H */
+#endif    /* LUCILLE_MC_H */

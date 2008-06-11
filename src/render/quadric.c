@@ -19,6 +19,7 @@
 #include "matrix.h"
 #include "memory.h"
 #include "render.h"
+#include "material.h"
 
 void
 ri_api_sphere(RtFloat radius, RtFloat zmin, RtFloat zmax, RtFloat tmax,
@@ -98,25 +99,25 @@ ri_api_sphere(RtFloat radius, RtFloat zmin, RtFloat zmax, RtFloat tmax,
 	 */
 
 	/* bottom(south pole) vertex */
-	pos.f[0] =  0.0;
-	pos.f[1] =  0.0;
-	pos.f[2] = -radius;
-	pos.f[3] =  1.0;
-	ri_vector_transform(&positions[0], &pos, m);
-	ri_vector_transform(&normals[0], &pos, &itm);
-	ri_vector_normalize3(&normals[0]);
-	pos.f[0] = -1.0;
-	pos.f[1] =  0.0;
-	pos.f[2] =  0.0;
-	pos.f[3] =  1.0;
-	ri_vector_transform(&tangents[0], &pos, &itm);
-	ri_vector_normalize3(&tangents[0]);
-	pos.f[0] =  0.0;
-	pos.f[1] =  1.0;
-	pos.f[2] =  0.0;
-	pos.f[3] =  1.0;
-	ri_vector_transform(&binormals[0], &pos, &itm);
-	ri_vector_normalize3(&binormals[0]);
+	pos[0] =  0.0;
+	pos[1] =  0.0;
+	pos[2] = -radius;
+	pos[3] =  1.0;
+	ri_vector_transform(positions[0], pos, m);
+	ri_vector_transform(normals[0], pos, &itm);
+	ri_vector_normalize(normals[0]);
+	pos[0] = -1.0;
+	pos[1] =  0.0;
+	pos[2] =  0.0;
+	pos[3] =  1.0;
+	ri_vector_transform(tangents[0], pos, &itm);
+	ri_vector_normalize(tangents[0]);
+	pos[0] =  0.0;
+	pos[1] =  1.0;
+	pos[2] =  0.0;
+	pos[3] =  1.0;
+	ri_vector_transform(binormals[0], pos, &itm);
+	ri_vector_normalize(binormals[0]);
 
 	for (v = 0; v < ndiv - 1; v++) { 
 		va = phimin + ((phimax - phimin) * (double)(v + 1)) /
@@ -126,50 +127,50 @@ ri_api_sphere(RtFloat radius, RtFloat zmin, RtFloat zmax, RtFloat tmax,
 
 			idx = v * ndiv + u + 1;
 
-			pos.f[0] = radius * cos(ua) * cos(va);
-			pos.f[1] = radius * sin(ua) * cos(va);
-			pos.f[2] = radius * sin(va);
-			pos.f[3] = 1.0;
-			ri_vector_transform(&positions[idx], &pos, m);
-			ri_vector_transform(&normals[idx], &pos, &itm);
-			ri_vector_normalize3(&normals[idx]);
+			pos[0] = radius * cos(ua) * cos(va);
+			pos[1] = radius * sin(ua) * cos(va);
+			pos[2] = radius * sin(va);
+			pos[3] = 1.0;
+			ri_vector_transform(positions[idx], pos, m);
+			ri_vector_transform(normals[idx], pos, &itm);
+			ri_vector_normalize(normals[idx]);
 
-			pos.f[0] = -sin(ua) * cos(va);
-			pos.f[1] =  cos(ua) * cos(va);
-			pos.f[2] =  0.0;
-			pos.f[3] =  1.0;
-			ri_vector_transform(&tangents[idx], &pos, &itm);
-			ri_vector_normalize3(&tangents[idx]);
+			pos[0] = -sin(ua) * cos(va);
+			pos[1] =  cos(ua) * cos(va);
+			pos[2] =  0.0;
+			pos[3] =  1.0;
+			ri_vector_transform(tangents[idx], pos, &itm);
+			ri_vector_normalize(tangents[idx]);
 
-			pos.f[0] = -cos(ua) * sin(va);
-			pos.f[1] = -sin(ua) * cos(va);
-			pos.f[2] =  cos(va);
-			pos.f[3] =  1.0;
-			ri_vector_transform(&binormals[idx], &pos, &itm);
-			ri_vector_normalize3(&binormals[idx]);
+			pos[0] = -cos(ua) * sin(va);
+			pos[1] = -sin(ua) * cos(va);
+			pos[2] =  cos(va);
+			pos[3] =  1.0;
+			ri_vector_transform(binormals[idx], pos, &itm);
+			ri_vector_normalize(binormals[idx]);
 		}
 	}
 
 	/* top(north pole) vertex. */
-	pos.f[0] = 0.0;
-	pos.f[1] = 0.0;
-	pos.f[2] = radius;
-	pos.f[3] = 1.0;
-	ri_vector_transform(&positions[ndiv * (ndiv - 1) + 1], &pos, m);
-	ri_vector_transform(&normals[ndiv * (ndiv - 1) + 1], &pos, &itm);
-	ri_vector_normalize3(&normals[ndiv * (ndiv - 1) + 1]);
-	pos.f[0] = -1.0;
-	pos.f[1] =  0.0;
-	pos.f[2] =  0.0;
-	pos.f[3] =  1.0;
-	ri_vector_transform(&tangents[ndiv * (ndiv - 1) + 1], &pos, &itm);
-	ri_vector_normalize3(&tangents[ndiv * (ndiv - 1) + 1]);
-	pos.f[0] =  0.0;
-	pos.f[1] = -1.0;
-	pos.f[2] =  0.0;
-	pos.f[3] =  1.0;
-	ri_vector_transform(&binormals[ndiv * (ndiv - 1) + 1], &pos, &itm);
-	ri_vector_normalize3(&binormals[ndiv * (ndiv - 1) + 1]);
+	pos[0] = 0.0;
+	pos[1] = 0.0;
+	pos[2] = radius;
+	pos[3] = 1.0;
+	ri_vector_transform(positions[ndiv * (ndiv - 1) + 1], pos, m);
+	ri_vector_transform(normals[ndiv * (ndiv - 1) + 1], pos, &itm);
+	ri_vector_normalize(normals[ndiv * (ndiv - 1) + 1]);
+	pos[0] = -1.0;
+	pos[1] =  0.0;
+	pos[2] =  0.0;
+	pos[3] =  1.0;
+	ri_vector_transform(tangents[ndiv * (ndiv - 1) + 1], pos, &itm);
+	ri_vector_normalize(tangents[ndiv * (ndiv - 1) + 1]);
+	pos[0] =  0.0;
+	pos[1] = -1.0;
+	pos[2] =  0.0;
+	pos[3] =  1.0;
+	ri_vector_transform(binormals[ndiv * (ndiv - 1) + 1], pos, &itm);
+	ri_vector_normalize(binormals[ndiv * (ndiv - 1) + 1]);
 
 	/*
 	 * Generate indices.
@@ -222,10 +223,10 @@ ri_api_sphere(RtFloat radius, RtFloat zmin, RtFloat zmax, RtFloat tmax,
 		indices[3 * offset + 2] = ndiv * (ndiv - 1) + 1;
 	}
 
-	ri_geom_add_positions(geom, npoints,  positions);
-	ri_geom_add_normals  (geom, npoints,  normals);
-	ri_geom_add_tangents (geom, npoints,  tangents);
-	ri_geom_add_binormals(geom, npoints,  binormals);
+	ri_geom_add_positions(geom, npoints,  (const ri_vector_t *)positions);
+	ri_geom_add_normals  (geom, npoints,  (const ri_vector_t *)normals);
+	ri_geom_add_tangents (geom, npoints,  (const ri_vector_t *)tangents);
+	ri_geom_add_binormals(geom, npoints,  (const ri_vector_t *)binormals);
 	ri_geom_add_indices  (geom, nindices, indices);
 
 	/* hack */
@@ -249,7 +250,7 @@ ri_api_sphere(RtFloat radius, RtFloat zmin, RtFloat zmax, RtFloat tmax,
 
 	geom->two_side = 0;
 
-	ri_render_add_geom(ri_render_get(), geom);
+	ri_scene_add_geom(ri_render_get()->scene, geom);
 
 	ri_mem_free(positions);
 	ri_mem_free(normals);

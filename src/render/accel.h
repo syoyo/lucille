@@ -15,11 +15,23 @@ extern "C" {
 #include "intersection_state.h"
 
 /*
- * Acceleration methods
+ * Predefined acceleration methods
  */
 #define RI_ACCEL_UGRID          0
 #define RI_ACCEL_BVH            1
-//#define RI_ACCEL_BIH           2		// TODO
+
+
+typedef void *( *accel_build_func )
+              ( const void              *data);
+
+typedef void  ( *accel_free_func )
+              ( void                    *accel);
+
+typedef int   ( *accel_intersect_func )
+              ( void                    *accel,
+                ri_ray_t                *ray,           /* [in]    */
+                ri_intersection_state_t *state);        /* [inout] */
+
 
 
 /*
@@ -30,37 +42,47 @@ extern "C" {
  */
 typedef struct _ri_accel_t
 {
-	/*
-	 * Methods
-	 */
+    /*
+     * Methods
+     */
 
-	/*
-	 * Scene data and construction parameters are grabbed from g_render,
-	 * thus no arg for build().
-	 */
+    /*
+     * Scene data and construction parameters are grabbed from g_render,
+     * thus no arg for build().
+     */
 
-	void *( *build     )();
-	void  ( *free      )(void                    *accel);
-	int   ( *intersect )(void                    *accel,   /* [in]    */
+    accel_build_func     build;
+    accel_free_func      free;
+    accel_intersect_func intersect;
+
+#if 0
+    void *( *build     )(const void              *data);
+    void  ( *free      )(void                    *accel);
+    int   ( *intersect )(void                    *accel,   /* [in]    */
                              ri_ray_t                *ray,     /* [in]    */
-			     ri_intersection_state_t *state);  /* [inout] */
-	
-	/*
-	 * Members
-	 */
+                 ri_intersection_state_t *state);  /* [inout] */
+#endif
+    
+    /*
+     * Members
+     */
 
-	void *accel;		/* spatial data structure */
+    void *data;        /* spatial data structure */
 
 } ri_accel_t;
 
 extern ri_accel_t *ri_accel_new();
 extern void        ri_accel_free(ri_accel_t *accel);
+
+/*
+ * Bind accelerator with predefined accelerator method.
+ */
 extern int         ri_accel_bind(ri_accel_t *accel,
                                  int         method);
 
 
 #ifdef __cplusplus
-}	/* extern "C" */
+}    /* extern "C" */
 #endif
 
 
