@@ -172,7 +172,13 @@ static int bvh_construct(
 ri_qbvh_node_t *
 ri_qbvh_node_new()
 {
-    return (ri_qbvh_node_t *)ri_mem_alloc(sizeof(ri_qbvh_node_t));
+    ri_qbvh_node_t *node;
+
+    node = (ri_qbvh_node_t *)ri_mem_alloc(sizeof(ri_qbvh_node_t));
+
+    memset( node, 0, sizeof( ri_qbvh_node_t ));
+
+    return node;
 }
 
 /* ----------------------------------------------------------------------------
@@ -219,6 +225,7 @@ ri_bvh_build(
     ri_timer_start( tm, "BVH Construction" );
 
     bvh = ( ri_bvh_t * )ri_mem_alloc( sizeof( ri_bvh_t ) );
+    memset( bvh, 0, sizeof( ri_bvh_t ));
 
 
     /*
@@ -441,8 +448,6 @@ find_cut_from_bin(
 
             pos = bmin[j] + (i + 1) * bstep[j];
 
-            printf("pos = %f\n", pos);
-            
             bmax_left[j]  = pos;
             bmin_right[j] = pos;
 
@@ -450,7 +455,6 @@ find_cut_from_bin(
             sa_right = calc_surface_area( bmin_right, bmax_right );
 
             cost = SAH( tris_left, sa_left, tris_right, sa_right, sa_total );
-            printf("cost [%d][%d] = %f\n", j, i, cost);
             
             if (cost < min_cost) {
                 min_cost      = cost;
@@ -465,8 +469,6 @@ find_cut_from_bin(
     (*cut_axis_out) = min_cost_axis;
     (*cut_pos_out)  = min_cost_pos;
 
-    printf("min_cost_axis = %d\n", min_cost_axis);
-    printf("min_cost_pos  = %f\n", min_cost_pos);
 
     return 0;   /* OK */
    
@@ -560,7 +562,7 @@ bvh_construct(
 
                 /* right    */
 
-                assert(ntris_right >= 0);
+                assert(ntris_right < n);
 
                 memcpy(tri_bboxes + index_left + ntris_right,
                        tri_bboxes_buf + i,
@@ -572,7 +574,6 @@ bvh_construct(
 
         }
 
-        printf("nleft = %d, nright = %d\n", ntris_left, ntris_right);
 
         if( ntris_left == 0 || ntris_left == n ) {
 
@@ -590,10 +591,11 @@ bvh_construct(
      * 4. Subdivide.
      */
     {
-        ri_vector_t bmin_left,  bmax_left;
-        ri_vector_t bmin_right, bmax_right;
-        ri_qbvh_node_t *node_left, *node_right;
-
+        ri_vector_t     bmin_left ,  bmax_left;
+        ri_vector_t     bmin_right,  bmax_right;
+        ri_qbvh_node_t *node_left , *node_right;
+        ri_float_t      scale_left,  scale_right;
+        double          eps = 1.0e-14;
 
         node_left      = ri_qbvh_node_new();
         root->child[0] = node_left;
@@ -610,16 +612,30 @@ bvh_construct(
             tri_bboxes + index_left,
             ntris_left);
 
-        root->bbox[0] = bmin_left[0];
-        root->bbox[1] = bmin_left[1];
-        root->bbox[2] = bmin_left[2];
-        root->bbox[3] = bmax_left[0];
-        root->bbox[4] = bmax_left[1];
-        root->bbox[5] = bmax_left[2];
+        /*
+         * Slightly extend bbox to avoid numeric error.
+         */
 
-        printf("left: (%f, %f, %f)-(%f, %f, %f)\n",
-                bmin_left[0], bmin_left[1], bmin_left[2],
-                bmax_left[0], bmax_left[1], bmax_left[2]);
+        scale_left = bmax_left[0] - bmin_left[0];
+        if (scale_left > (bmax_left[1] - bmin_left[1])) {
+            scale_left = (bmax_left[1] - bmin_left[1]);
+        }
+        if (scale_left > (bmax_left[2] - bmin_left[2])) {
+            scale_left = (bmax_left[2] - bmin_left[2]);
+        }
+
+        assert( scale_left >= 0.0 );
+
+        if (scale_left < eps) {
+            scale_left = eps;
+        }
+
+        root->bbox[0] = bmin_left[0] - eps * scale_left;
+        root->bbox[1] = bmin_left[1] - eps * scale_left;
+        root->bbox[2] = bmin_left[2] - eps * scale_left;
+        root->bbox[3] = bmax_left[0] + eps * scale_left;
+        root->bbox[4] = bmax_left[1] + eps * scale_left;
+        root->bbox[5] = bmax_left[2] + eps * scale_left;
 
         bvh_construct( 
             node_left,
@@ -642,12 +658,26 @@ bvh_construct(
             tri_bboxes + index_left + ntris_left,
             n - ntris_left);
 
-        root->bbox[6+0] = bmin_right[0];
-        root->bbox[6+1] = bmin_right[1];
-        root->bbox[6+2] = bmin_right[2];
-        root->bbox[6+3] = bmax_right[0];
-        root->bbox[6+4] = bmax_right[1];
-        root->bbox[6+5] = bmax_right[2];
+        scale_right = bmax_right[0] - bmin_right[0];
+        if (scale_right > (bmax_right[1] - bmin_right[1])) {
+            scale_right = (bmax_right[1] - bmin_right[1]);
+        }
+        if (scale_right > (bmax_right[2] - bmin_right[2])) {
+            scale_right = (bmax_right[2] - bmin_right[2]);
+        }
+        
+        assert( scale_right >= 0.0 );
+
+        if (scale_right < eps) {
+            scale_right = eps;
+        }
+
+        root->bbox[6+0] = bmin_right[0] - eps * scale_right;
+        root->bbox[6+1] = bmin_right[1] - eps * scale_right;
+        root->bbox[6+2] = bmin_right[2] - eps * scale_right;
+        root->bbox[6+3] = bmax_right[0] + eps * scale_right;
+        root->bbox[6+4] = bmax_right[1] + eps * scale_right;
+        root->bbox[6+5] = bmax_right[2] + eps * scale_right;
 
         bvh_construct( 
             node_right,
@@ -680,6 +710,8 @@ bin_triangle_edge(
 {
     uint64_t i;
 
+    double      eps = 1.0e-14;
+
     ri_vector_t bmin;
     ri_vector_t bmax;
 
@@ -702,12 +734,27 @@ bin_triangle_edge(
 
 
         // [0, BIN_SIZE)
-        assert(scene_size[0] > 0.0);
-        assert(scene_size[1] > 0.0);
-        assert(scene_size[2] > 0.0);
-        scene_invsize[0] = binsize / scene_size[0];
-        scene_invsize[1] = binsize / scene_size[1];
-        scene_invsize[2] = binsize / scene_size[2];
+        assert(scene_size[0] >= 0.0);
+        assert(scene_size[1] >= 0.0);
+        assert(scene_size[2] >= 0.0);
+        if (scene_size[0] > eps) {
+            scene_invsize[0] = binsize / scene_size[0];
+        } else {
+            scene_invsize[0] = 0.0;
+        }
+        
+        if (scene_size[1] > eps) {
+            scene_invsize[1] = binsize / scene_size[1];
+        } else {
+            scene_invsize[1] = 0.0;
+        }
+        
+        if (scene_size[2] > eps) {
+            scene_invsize[2] = binsize / scene_size[2];
+        } else {
+            scene_invsize[2] = 0.0;
+        }
+
     }
 
     // clear bin data
@@ -728,8 +775,6 @@ bin_triangle_edge(
         vcpy(bmin, tri_bboxes[i].bmin);
         vcpy(bmax, tri_bboxes[i].bmax);
 
-        printf("bmin = %f, %f, %f\n", bmin[0], bmin[1], bmin[2]);
-        printf("bmax = %f, %f, %f\n", bmax[0], bmax[1], bmax[2]);
 
         quantized_bmin[0] = (bmin[0] - scene_bmin[0]) * scene_invsize[0];
         quantized_bmin[1] = (bmin[1] - scene_bmin[1]) * scene_invsize[1];
