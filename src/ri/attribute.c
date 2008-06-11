@@ -43,8 +43,8 @@ ri_attribute_new()
 	/*
 	 * Set default value.
 	 */
-	ri_vector_set_rman(&(attribute->color), one);
-	ri_vector_set_rman(&(attribute->opacity), one);
+	ri_vector_set_from_rman(attribute->color, one);
+	ri_vector_set_from_rman(attribute->opacity, one);
 
 	attribute->material = ri_material_new();
 
@@ -186,19 +186,19 @@ ri_api_attribute(RtToken token, RtInt n, RtToken tokens[], RtPointer params[])
 					vec[j] = *((RtFloat *)params[i] + j);
 				}
 			
-				ri_vector_set_rman(&(attr->material->kd), vec);	
+				ri_vector_set_from_rman(attr->material->kd, vec);	
 			} else if (strcmp(tokens[i], "specular") == 0) {
 				for (j = 0; j < 3; j++) {
 					vec[j] = *((RtFloat *)params[i] + j);
 				}
 			
-				ri_vector_set_rman(&(attr->material->ks), vec);	
+				ri_vector_set_from_rman(attr->material->ks, vec);	
 			} else if (strcmp(tokens[i], "transmittance") == 0) {
 				for (j = 0; j < 3; j++) {
 					vec[j] = *((RtFloat *)params[i] + j);
 				}
 			
-				ri_vector_set_rman(&(attr->material->kt), vec);	
+				ri_vector_set_from_rman(attr->material->kt, vec);	
 			} else if (strcmp(tokens[i], "refraction_index") == 0) {
 				vec[0] = *((RtFloat *)params[i]);
 			
@@ -244,7 +244,7 @@ ri_api_color(RtColor color)
 
 	attr = ri_stack_get(ri_render_get()->context->attr_stack);
 
-	ri_vector_set_rman(&(attr->color), color);
+	ri_vector_set_from_rman(attr->color, color);
 }
 
 void
@@ -256,7 +256,7 @@ ri_api_opacity(RtColor color)
 
 	attr = ri_stack_get(ri_render_get()->context->attr_stack);
 
-	ri_vector_set_rman(&attr->opacity, color);
+	ri_vector_set_from_rman(attr->opacity, color);
 }
 
 void

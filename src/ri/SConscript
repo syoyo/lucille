@@ -8,7 +8,6 @@ declare.c
 display.c
 lightsource.c
 option.c
-polygon.c
 quadric.c
 ri.c
 subdivision.c

@@ -78,8 +78,8 @@ ri_api_light_source(RtToken name, RtInt n,
 			if (strcmp(tokens[i], "from") == 0) {
 
 				from = (RtPoint *)params[i];
-				ri_vector_set_rman(&v, *from);
-				ri_vector_transform(&(light->pos), &v, &o2c);
+				ri_vector_set_from_rman(v, *from);
+				ri_vector_transform(light->pos, v, &o2c);
 
 			} else if (strcmp(tokens[i], "intensity") == 0) {
 
@@ -90,7 +90,7 @@ ri_api_light_source(RtToken name, RtInt n,
 
 				lightcol = (RtColor *)params[i];
 				
-				ri_vector_set_rman(&(light->col), *lightcol);
+				ri_vector_set_from_rman(light->col, *lightcol);
 
 			}
 		}
@@ -150,9 +150,9 @@ ri_api_area_light_source(RtToken name,
 		 */
 		sunlight = ri_light_new();
 		sunlight->type = LIGHTTYPE_DIRECTIONAL;
-		sunlight->direction.f[0] = sunsky->sun_dir[0];
-		sunlight->direction.f[1] = sunsky->sun_dir[2];	/* swap y and z */
-		sunlight->direction.f[2] = sunsky->sun_dir[1];
+		sunlight->direction[0] = sunsky->sun_dir[0];
+		sunlight->direction[1] = sunsky->sun_dir[2];	/* swap y and z */
+		sunlight->direction[2] = sunsky->sun_dir[1];
 
 		printf("sundir = %f, %f, %f\n",
 			sunsky->sun_dir[0],
@@ -160,9 +160,9 @@ ri_api_area_light_source(RtToken name,
 			sunsky->sun_dir[2]);
 		
 		ri_sunsky_get_sunlight_rgb(rgb, sunsky);
-		sunlight->col.f[0] = rgb[0];
-		sunlight->col.f[1] = rgb[1];
-		sunlight->col.f[2] = rgb[2];
+		sunlight->col[0] = rgb[0];
+		sunlight->col[1] = rgb[1];
+		sunlight->col[2] = rgb[2];
 
 		ri_list_append(ri_render_get()->scene->light_list, sunlight);
 
@@ -173,15 +173,15 @@ ri_api_area_light_source(RtToken name,
 		for (i = 0; i < n; i++) {
 			if (strcmp(tokens[i], "direction") == 0) {
 				valp = (RtFloat *)params[i];
-				light->direction.f[0] =	(float)(*valp++);
-				light->direction.f[1] =	(float)(*valp++);
-				light->direction.f[2] =	(float)(*valp);
-				light->direction.f[3] =	1.0;
+				light->direction[0] = (ri_float_t)(*valp++);
+				light->direction[1] = (ri_float_t)(*valp++);
+				light->direction[2] = (ri_float_t)(*valp);
+				light->direction[3] = 1.0;
 
-				ri_vector_normalize3(&(light->direction));
-				printf("dir = (%f, %f, %f)\n", light->direction.f[0],
-							       light->direction.f[1],
-							       light->direction.f[2]);
+				ri_vector_normalize(light->direction);
+				printf("dir = (%f, %f, %f)\n", light->direction[0],
+							       light->direction[1],
+							       light->direction[2]);
 		
 				light->type = LIGHTTYPE_DIRECTIONAL;
 			} else if (strcmp(tokens[i], "ibl") == 0) {

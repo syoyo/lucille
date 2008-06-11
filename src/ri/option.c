@@ -93,8 +93,8 @@ ri_option_new()
 	p->prt_do_distscale          = 0;
 	p->prt_scale                 = 1.0;
 
-	ri_vector_zero(&(p->bgcolor));
-	ri_vector_zero(&(p->ambcolor));
+	ri_vector_setzero( p->bgcolor );
+	ri_vector_setzero( p->ambcolor );
 
 #if defined(WITH_PTHREAD) || (!defined(NOTHREAD) && defined(WIN32))
 	/*
@@ -116,7 +116,7 @@ ri_option_new()
 	p->bsp_tree_depth = 6;
 	p->kd_tree_depth = 16;
 
-	p->pixel_filter = RiBoxFilter;
+	//p->pixel_filter = RiBoxFilter;
 	p->pixel_filter_widthx = 1.0;
 	p->pixel_filter_widthy = 1.0;
 
@@ -293,9 +293,9 @@ ri_api_option(RtToken token, RtInt n, RtToken tokens[], RtPointer params[])
 			if (strcmp(tokens[i], "background") == 0) {
 				valp = (RtFloat *)params[i];
 
-				ctxopt->bgcolor.f[0] = (float)(*valp++);
-				ctxopt->bgcolor.f[1] = (float)(*valp++);
-				ctxopt->bgcolor.f[2] = (float)(*valp);
+				ctxopt->bgcolor[0] = (ri_float_t)(*valp++);
+				ctxopt->bgcolor[1] = (ri_float_t)(*valp++);
+				ctxopt->bgcolor[2] = (ri_float_t)(*valp);
 			}
 		}
 	} else if (strcmp(token, "renderer") == 0) {
@@ -360,21 +360,21 @@ ri_api_option(RtToken token, RtInt n, RtToken tokens[], RtPointer params[])
 			} else if (strcmp(tokens[i], "origin") == 0) {
 				valp = (RtFloat *)params[i];
 
-				camera->cam_pos.f[0] = (float)(*valp++);
-				camera->cam_pos.f[1] = (float)(*valp++);
-				camera->cam_pos.f[2] = (float)(*valp);
+				camera->cam_pos[0] = (ri_float_t)(*valp++);
+				camera->cam_pos[1] = (ri_float_t)(*valp++);
+				camera->cam_pos[2] = (ri_float_t)(*valp);
 			} else if (strcmp(tokens[i], "target") == 0) {
 				valp = (RtFloat *)params[i];
 
-				camera->cam_at.f[0] = (float)(*valp++);
-				camera->cam_at.f[1] = (float)(*valp++);
-				camera->cam_at.f[2] = (float)(*valp);
+				camera->cam_at[0] = (ri_float_t)(*valp++);
+				camera->cam_at[1] = (ri_float_t)(*valp++);
+				camera->cam_at[2] = (ri_float_t)(*valp);
 			} else if (strcmp(tokens[i], "up") == 0) {
 				valp = (RtFloat *)params[i];
 
-				camera->cam_up.f[0] = (float)(*valp++);
-				camera->cam_up.f[1] = (float)(*valp++);
-				camera->cam_up.f[2] = (float)(*valp);
+				camera->cam_up[0] = (ri_float_t)(*valp++);
+				camera->cam_up[1] = (ri_float_t)(*valp++);
+				camera->cam_up[2] = (ri_float_t)(*valp);
 			}
 		}
 	}

@@ -94,8 +94,8 @@ extern void		ri_camera_get_glmatrix( ri_matrix_t *m,     /* [out] */
 					        const ri_camera_t *camera );
 
 extern void ri_camera_get_pos_and_dir(
-	ri_vector_t       *pos,  /* [out] */
-	ri_vector_t       *dir,  /* [out] */
+	ri_vector_t        pos,  /* [out] */
+	ri_vector_t        dir,  /* [out] */
 	const ri_camera_t *camera,
 	ri_float_t         x,
 	ri_float_t         y);
