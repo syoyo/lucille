@@ -6,7 +6,8 @@
  */
 
 //
-// To be SIMD(SSE) optimized Bounding Volume Hierarcies
+// TODO: SIMD(SSE) optimizatio for Bounding Volume Hierarcies construction and
+//       traversal.
 //
 
 #ifndef LUCILLE_BVH_H
