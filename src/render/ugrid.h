@@ -76,6 +76,7 @@ extern void *ri_ugrid_build    ();
 extern void  ri_ugrid_free     (void                    *accel);
 extern int   ri_ugrid_intersect(void                    *accel,
                                 ri_ray_t                *ray,
-                                ri_intersection_state_t *state);
+                                ri_intersection_state_t *state,
+                                void                    *user);
 
 #endif	// LUCILLE_UGRID_H

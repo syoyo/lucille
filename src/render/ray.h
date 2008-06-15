@@ -22,40 +22,47 @@ extern "C" {
  */
 typedef struct _ri_ray_t {
 
-	ri_vector_t org;		/* Position			*/
-	ri_vector_t dir;		/* Direction			*/
-	int         nbound_diffuse;	/* number of diffuse bounds	*/
-	int         nbound_specular;	/* number of specular bounds	*/
+    ri_vector_t org;                /* Position                     */
+    ri_vector_t dir;                /* Direction                    */
+    int         nbound_diffuse;     /* number of diffuse bounds     */
+    int         nbound_specular;    /* number of specular bounds    */
 
-	float       t;			/* dist from nearest hit pos	*/
-	float       max_t;		/* interval of t		*/
-	float       min_t;
+    float       t;                  /* dist from nearest hit pos    */
+    float       max_t;              /* interval of t                */
+    float       min_t;
 
-	float       weight;		/* weight			*/
-	char        prev_hit;		/* 'E','S','D',or 'L'		*/
+    float       weight;             /* weight                       */
+    char        prev_hit;           /* 'E','S','D',or 'L'           */
 
-	/*
-	 * quasi-Monte Carlo related variables.
-	 */
-	int         d;			/* current dimension		*/
-	int         i;			/* instance number		*/
+    /*
+     * Precomputed coefficients
+     */
+    int         dir_sign[3];        /* 1 if (dir < 0.0)             */
+    ri_vector_t invdir;             /* 1 / dir                      */
 
-	/*
-	 * variables for multi-threading
-	 */
-	int         thread_num;		/* thread number.
-					 * If multi-threading feature
-					 * is turned on this value
-					 * should be set		*/
+    /*
+     * quasi-Monte Carlo related variables.
+     */
+    int         d;                  /* current dimension            */
+    int         i;                  /* instance number              */
+
+    /*
+     * variables for multi-threading
+     */
+    int         thread_num;         /* thread number assigned to
+                                     * this ray.
+                                     * If multi-threading feature
+                                     * is turned on this value
+                                     * should be set                */
 
 #if 0
-	/* Ray differentials for better texture mapping, etc.
-	 * TODO: This feature is not yet implemented.
-	 */
-	ri_vector_t dPdx;		/*  dP / dx	*/
-	ri_vector_t dPdy;		/*  dP / dy	*/
-	ri_vector_t dDdx;		/*  dD / dx	*/
-	ri_vector_t dDdy;		/*  dD / dy	*/
+    /* Ray differentials for better texture mapping, etc.
+     * TODO: This feature is not yet implemented.
+     */
+    ri_vector_t dPdx;        /*  dP / dx    */
+    ri_vector_t dPdy;        /*  dP / dy    */
+    ri_vector_t dDdx;        /*  dD / dx    */
+    ri_vector_t dDdy;        /*  dD / dy    */
 #endif
 
 } ri_ray_t;
@@ -74,9 +81,9 @@ typedef struct _ri_ray_t {
  *
  *     None.
  */
-extern void	ri_ray_copy(
-	ri_ray_t       *dst,
-	const ri_ray_t *src );
+extern void    ri_ray_copy(
+    ri_ray_t       *dst,
+    const ri_ray_t *src );
 
 /*
  * Function: ri_ray_perturb
@@ -92,8 +99,8 @@ extern void	ri_ray_copy(
  *
  *     None.
  */
-extern void	ri_ray_perturb(
-	ri_ray_t *ray );
+extern void    ri_ray_perturb(
+    ri_ray_t *ray );
 
 #ifdef __cplusplus
 }       /* extern "C" */

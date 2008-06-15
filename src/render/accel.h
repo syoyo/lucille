@@ -29,8 +29,9 @@ typedef void  ( *accel_free_func )
 
 typedef int   ( *accel_intersect_func )
               ( void                    *accel,
-                ri_ray_t                *ray,           /* [in]    */
-                ri_intersection_state_t *state);        /* [inout] */
+                ri_ray_t                *ray,           /* [in]         */
+                ri_intersection_state_t *state,         /* [inout]      */
+                void                    *user );        /* user data    */
 
 
 

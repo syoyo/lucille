@@ -14,6 +14,7 @@
 #include <assert.h>
 
 #include "vector.h"
+#include "geometric.h"
 #include "list.h"
 #include "log.h"
 #include "raytrace.h"
@@ -88,7 +89,8 @@ ri_raytrace(
     assert(render->scene->accel->intersect);
     hit = render->scene->accel->intersect(  render->scene->accel->data,
                                             ray,
-                                           &state );
+                                           &state,
+                                            NULL );
 
     if (hit) {
         hashit  = 1;

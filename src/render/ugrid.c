@@ -376,7 +376,8 @@ int
 ri_ugrid_intersect(
     void                    *accel,
     ri_ray_t                *ray,
-    ri_intersection_state_t *state)
+    ri_intersection_state_t *state,
+    void                    *user)
 {
     // TODO:
 

@@ -6,7 +6,7 @@
  */
 
 /*
- * Bounding Volume Hierarchies implementation.
+ * Bounding Volume Hierarchies for raytracing acceleration.
  *
  * References.
  *  
@@ -38,6 +38,7 @@
 #include <emmintrin.h>
 #endif
 
+#include "common.h"
 #include "bvh.h"
 #include "accel.h"
 #include "memory.h"
@@ -52,7 +53,7 @@
 #define BVH_NTRIS_LEAF 4        /* TODO: parameterize.  */
 
 
-#define BVH_BIN_SIZE  32
+#define BVH_BIN_SIZE  64
 
 /*
  * Buffer for binning to compute approximated SAH 
@@ -100,26 +101,22 @@ typedef struct _interval_t {
     ri_float_t min, max;
 } interval_t;
 
+/*
+ * Traversal stack
+ */
 typedef struct _bvh_stack_t {
 
-    ri_qbvh_node_t *node;
+    ri_qbvh_node_t *nodestack[BVH_MAXDEPTH + 1];
+    int             depth;
 
 } bvh_stack_t;
 
-bvh_stack_t bvh_stack[BVH_MAXDEPTH + 1];
-int         bvh_stack_depth;
-
-typedef struct _bvh_stat_t {
-    uint64_t ntraversals;
-    uint64_t ntested_tris;
-    uint64_t nfailed_isects;
-} bvh_stat_t;
 
 
 /*
  * Singleton
  */
-bvh_stat_t  g_stat;
+ri_bvh_stat_traversal_t  g_stattrav;
 
 
 /* ----------------------------------------------------------------------------
@@ -145,6 +142,10 @@ static void create_triangle_list(
     uint64_t          *ntriangles,          /* [out]    */
     const ri_list_t   *geom_list);
 
+static void bbox_add_margin(
+    ri_vector_t        bmin,                /* [inout]  */
+    ri_vector_t        bmax);               /* [inout]  */
+
 static int bin_triangle_edge(
     bvh_bin_buffer_t  *binbuf,              /* [inout]  */
     const ri_vector_t  scene_bmin,
@@ -169,6 +170,15 @@ static int bvh_construct(
     uint64_t           index_left,          /* [index_left, index_right)    */
     uint64_t           index_right);
 
+static int bvh_traverse(
+    ri_intersection_state_t *state_out,     /* [out]        */
+    const ri_qbvh_node_t    *root,
+    ri_bvh_diag_t           *diag,          /* [modified]   */
+    ri_ray_t                *ray,
+    bvh_stack_t             *stack );       /* [buffer]     */
+
+    
+
 ri_qbvh_node_t *
 ri_qbvh_node_new()
 {
@@ -179,6 +189,362 @@ ri_qbvh_node_new()
     memset( node, 0, sizeof( ri_qbvh_node_t ));
 
     return node;
+}
+
+/*
+ * TODO: SIMD optimzation.
+ */
+static inline int
+triangle_isect(
+    uint32_t         *tid_inout,
+    ri_float_t       *t_inout,
+    ri_float_t       *u_inout,
+    ri_float_t       *v_inout,
+    const triangle_t *triangle,
+    ri_vector_t       rayorg,
+    ri_vector_t       raydir,
+    uint32_t          tid)
+{
+    ri_vector_t v0, v1, v2; 
+    ri_vector_t e1, e2; 
+    ri_vector_t p, s, q;
+    ri_float_t  a, inva;
+    ri_float_t  t, u, v;
+    double      eps = 1.0e-14;
+
+    v0[0] = triangle->v0x;
+    v0[1] = triangle->v0y;
+    v0[2] = triangle->v0z;
+    v1[0] = triangle->v1x;
+    v1[1] = triangle->v1y;
+    v1[2] = triangle->v1z;
+    v2[0] = triangle->v2x;
+    v2[1] = triangle->v2y;
+    v2[2] = triangle->v2z;
+
+    vsub( e1, v1, v0 );
+    vsub( e2, v2, v0 );
+
+    vcross( p, raydir, e2 );
+
+    a = vdot( e1, p );
+
+    if (fabs(a) > eps) {
+        inva = 1.0 / a;
+    } else {
+        return 0;
+    }
+
+    vsub( s, rayorg, v0 );
+    vcross( q, s, e1 );
+
+    u = vdot( s, p ) * inva;    
+    v = vdot( q, raydir ) * inva;    
+    t = vdot( e2, q ) * inva;    
+
+    if ( (u < 0.0) || (u > 1.0)) {
+        return 0;
+    }
+
+    if ( (v < 0.0) || ((u + v) > 1.0)) {
+        return 0;
+    }
+
+    if ( (t < 0.0) || (t > (*t_inout)) ) {
+        return 0;
+    }
+
+    (*t_inout)   = t;
+    (*u_inout)   = u;
+    (*v_inout)   = v;
+    (*tid_inout) = tid;
+
+    return 1;   /* hit */
+
+}
+
+int
+bvh_intersect_leaf_node(
+    ri_intersection_state_t *state_out,     /* [out]    */
+    const ri_qbvh_node_t    *node,
+    ri_ray_t                *ray )
+{
+    double      t, u, v;
+    uint32_t    tid;
+
+    int         hit;
+    int         hitsum;
+    uint32_t    i;
+    uint32_t    ntriangles;
+    triangle_t *triangles;
+
+    ri_vector_t rayorg; 
+    ri_vector_t raydir; 
+
+    //
+    // Init
+    //
+    t      = RI_INFINITY;
+    u      = 0.0;
+    v      = 0.0;
+    tid    = 0;
+    hit    = 0;
+    hitsum = 0;
+    vcpy( rayorg, ray->org );
+    vcpy( raydir, ray->dir );
+
+    triangles  = (triangle_t *)node->child[0];
+    ntriangles = (uintptr_t)node->child[1];
+
+#ifdef RI_BVH_TRACE_STATISTICS
+    g_stattrav.ntested_triangles += ntriangles;
+#endif
+
+    for (i = 0; i < ntriangles; i++) {
+
+        hit = triangle_isect(
+                    &tid, &t, &u, &v,
+                    &triangles[i],
+                    rayorg, raydir,
+                    i);
+
+#ifdef RI_BVH_TRACE_STATISTICS
+        if (hit) {
+            g_stattrav.nactually_hit_triangles++;
+        }
+#endif
+       
+        hitsum |= hit;
+    }
+
+    if (hitsum && (t < state_out->t)) {
+
+        /* 
+         * Update isect state
+         */
+        state_out->t     = t;
+        state_out->u     = u;
+        state_out->v     = v;
+        state_out->geom  = triangles[tid].geom;
+        state_out->index = triangles[tid].index;
+
+    }
+
+    return hitsum;
+}
+
+/*
+ * Ray - AABB intersection test
+ */
+static inline int
+test_ray_aabb(
+    ri_float_t        *tmin_out,             /* [out]    */
+    ri_float_t        *tmax_out,             /* [out]    */
+    const ri_vector_t  bmin,
+    const ri_vector_t  bmax,
+    ri_ray_t          *ray)
+{
+    /* TODO: handle extreme case: NaN, Inf */
+
+    double tmin, tmax;
+    
+    const double min_x = ray->dir_sign[0] ? bmax[0] : bmin[0];
+    const double min_y = ray->dir_sign[1] ? bmax[1] : bmin[1];
+    const double min_z = ray->dir_sign[2] ? bmax[2] : bmin[2];
+    const double max_x = ray->dir_sign[0] ? bmin[0] : bmax[0];
+    const double max_y = ray->dir_sign[1] ? bmin[1] : bmax[1];
+    const double max_z = ray->dir_sign[2] ? bmin[2] : bmax[2];
+
+    /*
+     * X
+     */
+    const double tmin_x = (min_x - ray->org[0]) * ray->invdir[0];
+    const double tmax_x = (max_x - ray->org[0]) * ray->invdir[0];
+
+    /*
+     * Y
+     */
+    const double tmin_y = (min_y - ray->org[1]) * ray->invdir[1];
+    const double tmax_y = (max_y - ray->org[1]) * ray->invdir[1];
+
+    /* Early exit: (tmin_x > tmax_y) || (tmin_y > tmax_x) => false  */
+    if ( (tmin_x > tmax_y) || (tmin_y > tmax_x) ) {
+        return 0;
+    }
+
+    tmin = (tmin_x > tmin_y) ? tmin_x : tmin_y;
+    tmax = (tmax_x < tmax_y) ? tmax_x : tmax_y;
+
+    /*
+     * Z
+     */
+    const double tmin_z = (min_z - ray->org[2]) * ray->invdir[2];
+    const double tmax_z = (max_z - ray->org[2]) * ray->invdir[2];
+
+    /* Early exit: (tmin > tmax_z) || (tmin_z > tmax) => false  */
+    if ( (tmin > tmax_z) || (tmin_z > tmax) ) {
+        return 0;
+    }
+
+    tmin = (tmin > tmin_z) ? tmin : tmin_z;
+    tmax = (tmax > tmax_z) ? tmax : tmax_z;
+
+    /* (tmax > 0.0) && (tmin < tmax) => hit */
+    if ( (tmax > 0.0) && (tmin < tmax) ) {
+
+        (*tmin_out) = tmin;
+        (*tmax_out) = tmax;
+
+        return 1;
+    }
+
+    return 0;   /* no hit */
+
+}
+
+static inline int
+test_ray_node(
+    int                  *order_out,      /* [out]    */
+    ri_float_t            tmax,
+    const ri_qbvh_node_t *node,
+    ri_ray_t             *ray)
+{
+    ri_vector_t bmin_left  , bmax_left;
+    ri_vector_t bmin_right , bmax_right;
+
+    ri_float_t  tmin_left  , tmax_left;
+    ri_float_t  tmin_right , tmax_right;
+
+    int         hit_left   , hit_right;
+
+    int         retcode = 0;
+
+    bmin_left[0]  = node->bbox[BMIN_X0];
+    bmin_left[1]  = node->bbox[BMIN_Y0];
+    bmin_left[2]  = node->bbox[BMIN_Z0];
+    bmax_left[0]  = node->bbox[BMAX_X0];
+    bmax_left[1]  = node->bbox[BMAX_Y0];
+    bmax_left[2]  = node->bbox[BMAX_Z0];
+    bmin_right[0] = node->bbox[BMIN_X1];
+    bmin_right[1] = node->bbox[BMIN_Y1];
+    bmin_right[2] = node->bbox[BMIN_Z1];
+    bmax_right[0] = node->bbox[BMAX_X1];
+    bmax_right[1] = node->bbox[BMAX_Y1];
+    bmax_right[2] = node->bbox[BMAX_Z1];
+
+    hit_left = test_ray_aabb( &tmin_left, &tmax_left,
+                               bmin_left,  bmax_left,
+                               ray );
+
+    hit_right = test_ray_aabb( &tmin_right, &tmax_right,
+                                bmin_right,  bmax_right,
+                                ray );
+    
+    if ( hit_left && (tmin_left < tmax) ) {
+        retcode |= 1;
+    }
+
+    if ( hit_right && (tmin_right < tmax) ) {
+        retcode |= 2;
+    }
+
+    (*order_out) = ray->dir_sign[node->axis0];
+
+    return retcode;
+}
+
+/*
+ * BVH traversal routine.
+ *
+ * Returns:
+ *
+ *   1 if ray hits any occluder, 0 if no hit.
+ */
+int
+bvh_traverse(
+    ri_intersection_state_t *state_out,     /* [out]        */
+    const ri_qbvh_node_t    *root,
+    ri_bvh_diag_t           *diag,          /* [modified]   */
+    ri_ray_t                *ray,
+    bvh_stack_t             *stack )        /* [buffer]     */
+{
+    
+    const ri_qbvh_node_t *node;
+    int                   ret;
+    int                   order;            /* traversal order  */
+
+    assert( root != NULL );
+
+    //
+    // Initialize intersection state.
+    // 
+    state_out->t     = RI_INFINITY;
+    state_out->u     = 0.0;
+    state_out->v     = 0.0;
+    state_out->geom  = NULL;
+    state_out->index = 0;
+
+    node = root;
+
+    while (1) {
+
+        if ( node->is_leaf ) {
+
+#ifdef RI_BVH_ENABLE_DIAGNOSTICS
+            diag->nleaf_node_traversals++;
+#endif
+
+            bvh_intersect_leaf_node( state_out,
+                                     node,
+                                     ray );
+
+            // pop
+            if (stack->depth < 1) goto end_traverse;
+            stack->depth--;
+            assert(stack->depth >= 0);
+            node = stack->nodestack[stack->depth];
+
+        } else {
+
+#ifdef RI_BVH_ENABLE_DIAGNOSTICS
+            diag->ninner_node_traversals++;
+#endif
+
+            ret = test_ray_node( &order, state_out->t, node, ray );
+
+            if (ret == 0) {
+
+                // pop
+                if (stack->depth < 1) goto end_traverse;
+                stack->depth--;
+                assert(stack->depth >= 0);
+                node = stack->nodestack[stack->depth];
+
+            } else if (ret == 1) {
+
+                node = node->child[0];
+
+            } else if (ret == 2) {
+
+                node = node->child[1];
+
+            } else {    // both
+
+                // push
+                stack->nodestack[stack->depth] = node->child[1 - order];
+                stack->depth++;
+                assert( stack->depth < BVH_MAXDEPTH );
+                node = node->child[order];
+            
+            }
+
+        }
+
+    }
+    
+end_traverse:
+
+    return (state_out->t < RI_INFINITY);
 }
 
 /* ----------------------------------------------------------------------------
@@ -209,7 +575,6 @@ ri_bvh_build(
     ri_qbvh_node_t     *root;
     ri_timer_t         *tm;
     ri_vector_t         bmin, bmax;
-    ri_float_t          eps = 0.00001;
 
     ri_scene_t         *scene = (ri_scene_t *)data;
     
@@ -250,13 +615,15 @@ ri_bvh_build(
     {
         calc_scene_bbox( bmin, bmax, tri_bboxes, ntriangles );
 
-        bvh->bmin[0] = bmin[0] * (1.0 - eps);
-        bvh->bmin[1] = bmin[1] * (1.0 - eps);
-        bvh->bmin[2] = bmin[2] * (1.0 - eps);
+        bbox_add_margin( bmin, bmax );
 
-        bvh->bmax[0] = bmax[0] * (1.0 + eps);
-        bvh->bmax[1] = bmax[1] * (1.0 + eps);
-        bvh->bmax[2] = bmax[2] * (1.0 + eps);
+        bvh->bmin[0] = bmin[0];
+        bvh->bmin[1] = bmin[1];
+        bvh->bmin[2] = bmin[2];
+
+        bvh->bmax[0] = bmax[0];
+        bvh->bmax[1] = bmax[1];
+        bvh->bmax[2] = bmax[2];
 
         ri_log(LOG_INFO, "  bmin (%f, %f, %f)",
             bvh->bmin[0], bvh->bmin[1], bvh->bmin[2]);
@@ -311,15 +678,80 @@ int
 ri_bvh_intersect(
     void                    *accel,
     ri_ray_t                *ray,
-    ri_intersection_state_t *state)
+    ri_intersection_state_t *state_out,
+    void                    *user)
 {
-    ri_bvh_t *bvh = (ri_bvh_t *)accel;
+    ri_bvh_diag_t *diag_ptr;
+    ri_bvh_t      *bvh;
 
-    (void)bvh;
-    (void)ray;
-    (void)state;
+    assert( accel     != NULL );
+    assert( ray       != NULL );
+    assert( state_out != NULL );
 
-    return 0;
+    bvh = (ri_bvh_t *)accel;
+
+    if (user) {
+        diag_ptr = (ri_bvh_diag_t *)user;
+    } else {
+        diag_ptr = NULL;
+    }
+    
+    int ret;
+
+    /*
+     * TODO: Provide indivisual stack for each thread.
+     */
+    bvh_stack_t stack;
+    stack.depth = 0;
+
+    /*
+     * Precalculate ray coefficient.
+     */
+    ray->dir_sign[0] = (ray->dir[0] < 0.0) ? 1 : 0;
+    ray->dir_sign[1] = (ray->dir[1] < 0.0) ? 1 : 0;
+    ray->dir_sign[2] = (ray->dir[2] < 0.0) ? 1 : 0;
+
+    if (fabs(ray->dir[0]) > RI_EPS) {
+        ray->invdir[0] = 1.0 / ray->dir[0];
+    } else {
+        ray->invdir[0] = RI_FLT_MAX;        // FIXME: make this +Inf ?
+    }
+
+    if (fabs(ray->dir[1]) > RI_EPS) {
+        ray->invdir[1] = 1.0 / ray->dir[1];
+    } else {
+        ray->invdir[1] = RI_FLT_MAX;
+    }
+
+    if (fabs(ray->dir[2]) > RI_EPS) {
+        ray->invdir[2] = 1.0 / ray->dir[2];
+    } else {
+        ray->invdir[2] = RI_FLT_MAX;
+    }
+
+    ray->dir_sign[0] = (ray->dir[0] < 0.0) ? 1 : 0;
+    ray->dir_sign[1] = (ray->dir[1] < 0.0) ? 1 : 0;
+    ray->dir_sign[2] = (ray->dir[2] < 0.0) ? 1 : 0;
+
+    /*
+     * First check if the ray hits scene bbox.
+     */
+    int hit;
+    ri_float_t tmin, tmax;
+    
+    hit = test_ray_aabb( &tmin, &tmax, bvh->bmin, bvh->bmax, ray );
+        
+    if (!hit) {
+        return 0;
+    }
+
+    ret = bvh_traverse(  state_out,
+                         bvh->root,
+                         diag_ptr, 
+                         ray,
+                        &stack );
+                        
+    return ret;
 }
 
 
@@ -497,12 +929,37 @@ bvh_construct(
     /*
      * 1. If # of triangles are less than threshold, make a leaf node.
      */
-    if (n < BVH_NTRIS_LEAF) {
+    if (n <= BVH_NTRIS_LEAF) {
 
-        root->child[0] = NULL;      // TODO: ptr to triangle list.
-        root->child[1] = NULL;      // TODO: # of triangles.
+        /*
+         * trianble bbox list is sorted at (3.), but triangle data itself is
+         * not.
+         * Defer sorting triangle data until making a leaf.
+         *
+         * 'triangles' contains sorted list of triangles.
+         * 'triangles_buf' contains unmodifiled list of triangles.
+         * if the tri_bbox has index 'i', we can pick up triangle data
+         * the tri_bbox points to by expressing triangles_buf[i].
+         */
 
-        (void)triangles;
+        gather_triangles(
+            triangles + index_left,
+            triangles_buf,                          /* No offset    */
+            tri_bboxes + index_left,
+            n);
+
+        /*
+         * After gather_triangles() was called,
+         * triangles[index_left, index_right) contains sorted list of
+         * triangles.
+         */
+
+        /*
+         * [0] ptr to triangle list.
+         * [1] ntriangles
+         */
+        root->child[0] = (ri_qbvh_node_t *)(triangles + index_left);
+        root->child[1] = (ri_qbvh_node_t *)(uint32_t)n; /* FIXME: support 64bit */
 
         root->is_leaf = 1;
 
@@ -584,6 +1041,8 @@ bvh_construct(
             
         }
 
+        // printf("left = %d, right = %d\n", ntris_left, n - ntris_right );
+
     }
 
 
@@ -594,14 +1053,14 @@ bvh_construct(
         ri_vector_t     bmin_left ,  bmax_left;
         ri_vector_t     bmin_right,  bmax_right;
         ri_qbvh_node_t *node_left , *node_right;
-        ri_float_t      scale_left,  scale_right;
-        double          eps = 1.0e-14;
 
         node_left      = ri_qbvh_node_new();
         root->child[0] = node_left;
 
         node_right     = ri_qbvh_node_new();
         root->child[1] = node_right;
+
+        root->axis0    = cut_axis;
 
         /*
          * left
@@ -615,27 +1074,14 @@ bvh_construct(
         /*
          * Slightly extend bbox to avoid numeric error.
          */
+        bbox_add_margin( bmin_left, bmax_left );
 
-        scale_left = bmax_left[0] - bmin_left[0];
-        if (scale_left > (bmax_left[1] - bmin_left[1])) {
-            scale_left = (bmax_left[1] - bmin_left[1]);
-        }
-        if (scale_left > (bmax_left[2] - bmin_left[2])) {
-            scale_left = (bmax_left[2] - bmin_left[2]);
-        }
-
-        assert( scale_left >= 0.0 );
-
-        if (scale_left < eps) {
-            scale_left = eps;
-        }
-
-        root->bbox[0] = bmin_left[0] - eps * scale_left;
-        root->bbox[1] = bmin_left[1] - eps * scale_left;
-        root->bbox[2] = bmin_left[2] - eps * scale_left;
-        root->bbox[3] = bmax_left[0] + eps * scale_left;
-        root->bbox[4] = bmax_left[1] + eps * scale_left;
-        root->bbox[5] = bmax_left[2] + eps * scale_left;
+        root->bbox[BMIN_X0] = bmin_left[0];
+        root->bbox[BMIN_Y0] = bmin_left[1];
+        root->bbox[BMIN_Z0] = bmin_left[2];
+        root->bbox[BMAX_X0] = bmax_left[0];
+        root->bbox[BMAX_Y0] = bmax_left[1];
+        root->bbox[BMAX_Z0] = bmax_left[2];
 
         bvh_construct( 
             node_left,
@@ -658,26 +1104,14 @@ bvh_construct(
             tri_bboxes + index_left + ntris_left,
             n - ntris_left);
 
-        scale_right = bmax_right[0] - bmin_right[0];
-        if (scale_right > (bmax_right[1] - bmin_right[1])) {
-            scale_right = (bmax_right[1] - bmin_right[1]);
-        }
-        if (scale_right > (bmax_right[2] - bmin_right[2])) {
-            scale_right = (bmax_right[2] - bmin_right[2]);
-        }
-        
-        assert( scale_right >= 0.0 );
+        bbox_add_margin( bmin_right, bmax_right );
 
-        if (scale_right < eps) {
-            scale_right = eps;
-        }
-
-        root->bbox[6+0] = bmin_right[0] - eps * scale_right;
-        root->bbox[6+1] = bmin_right[1] - eps * scale_right;
-        root->bbox[6+2] = bmin_right[2] - eps * scale_right;
-        root->bbox[6+3] = bmax_right[0] + eps * scale_right;
-        root->bbox[6+4] = bmax_right[1] + eps * scale_right;
-        root->bbox[6+5] = bmax_right[2] + eps * scale_right;
+        root->bbox[BMIN_X1] = bmin_right[0];
+        root->bbox[BMIN_Y1] = bmin_right[1];
+        root->bbox[BMIN_Z1] = bmin_right[2];
+        root->bbox[BMAX_X1] = bmax_right[0];
+        root->bbox[BMAX_Y1] = bmax_right[1];
+        root->bbox[BMAX_Z1] = bmax_right[2];
 
         bvh_construct( 
             node_right,
@@ -827,6 +1261,44 @@ bin_triangle_edge(
 
 }
 
+/*
+ * Add margin for bbox to avoid numeric problem.
+ */
+static void
+bbox_add_margin(
+    ri_vector_t        bmin,                /* [inout]  */
+    ri_vector_t        bmax)                /* [inout]  */
+{
+    int i;
+
+    ri_float_t scale[3];
+    ri_float_t scene_scale[3];
+
+    ri_float_t eps = RI_EPS;
+
+    /*
+     * Choose scale factor according to bbox's size.
+     */
+    for (i = 0; i < 3; i++) {
+        scale[i] = bmax[i] - bmin[i];
+        assert(scale[i] >= 0.0);
+
+        if (scale[i] < eps) {
+            scene_scale[i] = eps;
+        } else {
+            scene_scale[i] = eps * scale[i];
+        }
+    }
+    
+
+    bmin[0] -= scene_scale[0];
+    bmin[1] -= scene_scale[1];
+    bmin[2] -= scene_scale[2];
+    bmax[0] += scene_scale[0];
+    bmax[1] += scene_scale[1];
+    bmax[2] += scene_scale[2];
+
+}
 
 /*
  * Create an array of triangles and its bbox from the list of geometory.
@@ -1021,7 +1493,7 @@ gather_triangles(
     return 0;   /* OK */
 }
 
-#if 0
+#if 0   /* Future */
 static inline void
 get_bbox_of_triangle4(
     ri_vector_t        bminx_out,        /* [out] */  
