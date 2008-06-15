@@ -51,6 +51,10 @@ if env['build_target'] == 'debug':
 	env.Append(CFLAGS   = ['-g'])
 	env.Append(CXXFLAGS = ['-g'])
 
+if env['build_target'] == 'release':
+	env.Append(CFLAGS   = ['-O2'])
+	env.Append(CXXFLAGS = ['-O2'])
+
 #
 # LLVM
 #
