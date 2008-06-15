@@ -90,10 +90,12 @@ typedef struct _ri_bvh_diag_t
  */
 typedef struct _ri_bvh_stat_traversal_t {
 
-    uint64_t ntraversals;
+    uint64_t ninner_node_traversals;
+    uint64_t nleaf_node_traversals;
     uint64_t ntested_triangles;
     uint64_t nactually_hit_triangles;
     uint64_t nfailed_isects;
+    uint64_t nrays;
 
 } ri_bvh_stat_traversal_t;
 
@@ -150,6 +152,12 @@ extern int            ri_bvh_intersect(void                    *accel,
                                        ri_ray_t                *ray,
                                        ri_intersection_state_t *state_out,
                                        void                    *user);
+
+/*
+ * Debug
+ */
+extern void           ri_bvh_clear_stat_traversal();
+extern void           ri_bvh_report_stat_traversal();
 
 #ifdef __cplusplus
 }       /* extern "C" */

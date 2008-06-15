@@ -159,6 +159,19 @@ static void calc_bbox_of_triangles(
     const tri_bbox_t  *tri_bboxes,
     uint64_t           ntriangles);
 
+static int gather_triangles(
+    triangle_t       *triangles_to_out,    /* [out]    */
+    const triangle_t *triangles_from,
+    const tri_bbox_t *tri_bboxes,
+    uint64_t          ntriangles);
+
+static inline int test_ray_aabb(
+    ri_float_t        *tmin_out,             /* [out]    */
+    ri_float_t        *tmax_out,             /* [out]    */
+    const ri_vector_t  bmin,
+    const ri_vector_t  bmax,
+    ri_ray_t          *ray);
+
 static int bvh_construct(
     ri_qbvh_node_t    *root,
     ri_vector_t        bmin,
@@ -177,7 +190,270 @@ static int bvh_traverse(
     ri_ray_t                *ray,
     bvh_stack_t             *stack );       /* [buffer]     */
 
+
+/* ----------------------------------------------------------------------------
+ *
+ * Public functions
+ *
+ * ------------------------------------------------------------------------- */
+
+/*
+ * Function: ri_bvh_build
+ *
+ *     Builds Bounded Volume Hierarchy data structure for accelerated ray tracing.
+ *
+ * Parameters:
+ *
+ *     scenegeoms - geometry in the scene.
+ *     method     - bvh construction method. default is BVH_MEDIAN
+ *
+ * Returns:
+ *
+ *     Built BVH data strucure.
+ */
+void *
+ri_bvh_build(
+    const void *data)
+{
+    ri_bvh_t           *bvh;
+    ri_qbvh_node_t     *root;
+    ri_timer_t         *tm;
+    ri_vector_t         bmin, bmax;
+
+    ri_scene_t         *scene = (ri_scene_t *)data;
     
+    triangle_t         *triangles;
+    triangle_t         *triangles_buf;          /* temporal buffer  */
+    tri_bbox_t         *tri_bboxes;
+    tri_bbox_t         *tri_bboxes_buf;         /* temporal buffer  */
+    uint64_t            ntriangles;
+
+    tm = ri_render_get()->context->timer;
+
+    ri_log( LOG_INFO, "Building BVH ... " );
+    ri_timer_start( tm, "BVH Construction" );
+
+    bvh = ( ri_bvh_t * )ri_mem_alloc( sizeof( ri_bvh_t ) );
+    memset( bvh, 0, sizeof( ri_bvh_t ));
+
+
+    /*
+     * 1. Create 1D array of triangle and its bbox.
+     */
+    {
+        create_triangle_list(&triangles,
+                             &tri_bboxes,
+                             &ntriangles,
+                              scene->geom_list);
+
+        tri_bboxes_buf = ri_mem_alloc(sizeof(tri_bbox_t) * ntriangles);
+        ri_mem_copy(tri_bboxes_buf, tri_bboxes, sizeof(tri_bbox_t)*ntriangles);
+
+        triangles_buf = ri_mem_alloc(sizeof(triangle_t) * ntriangles);
+        ri_mem_copy(triangles_buf, triangles, sizeof(triangle_t)*ntriangles);
+    }
+
+    /*
+     * 2. Calculate bounding box of the scene.
+     */
+    {
+        calc_scene_bbox( bmin, bmax, tri_bboxes, ntriangles );
+
+        bbox_add_margin( bmin, bmax );
+
+        bvh->bmin[0] = bmin[0];
+        bvh->bmin[1] = bmin[1];
+        bvh->bmin[2] = bmin[2];
+
+        bvh->bmax[0] = bmax[0];
+        bvh->bmax[1] = bmax[1];
+        bvh->bmax[2] = bmax[2];
+
+        ri_log(LOG_INFO, "  bmin (%f, %f, %f)",
+            bvh->bmin[0], bvh->bmin[1], bvh->bmin[2]);
+        ri_log(LOG_INFO, "  bmax (%f, %f, %f)",
+            bvh->bmax[0], bvh->bmax[1], bvh->bmax[2]);
+    }
+    
+    ri_log(LOG_INFO, "  # of tris = %d", ntriangles);
+
+
+    /*
+     * 3. Construct BVH.
+     */
+    root      = ri_qbvh_node_new();
+    bvh->root = root;
+    
+    bvh_construct(
+        bvh->root,
+        bvh->bmin,
+        bvh->bmax,
+        triangles,
+        triangles_buf,
+        tri_bboxes,
+        tri_bboxes_buf,
+        0,
+        ntriangles);
+
+
+    ri_mem_free( triangles_buf );
+    ri_mem_free( tri_bboxes );
+    ri_mem_free( tri_bboxes_buf );
+
+    ri_timer_end( tm, "BVH Construction" );
+
+    ri_log( LOG_INFO, "BVH Construction time: %f sec",
+           ri_timer_elapsed( tm, "BVH Construction" ) );
+
+    ri_log( LOG_INFO, "Built BVH." );
+
+    return (void *)bvh;
+}
+
+void
+ri_bvh_free( void *accel )
+{
+    ri_bvh_t *bvh = (ri_bvh_t *)accel;
+
+    ri_mem_free(bvh);
+}
+
+int
+ri_bvh_intersect(
+    void                    *accel,
+    ri_ray_t                *ray,
+    ri_intersection_state_t *state_out,
+    void                    *user)
+{
+    ri_bvh_diag_t *diag_ptr;
+    ri_bvh_t      *bvh;
+
+    assert( accel     != NULL );
+    assert( ray       != NULL );
+    assert( state_out != NULL );
+
+    bvh = (ri_bvh_t *)accel;
+
+    if (user) {
+        diag_ptr = (ri_bvh_diag_t *)user;
+    } else {
+        diag_ptr = NULL;
+    }
+    
+    int ret;
+
+#ifdef RI_BVH_TRACE_STATISTICS
+    g_stattrav.nrays++;
+#endif
+
+    /*
+     * TODO: Provide indivisual stack for each thread.
+     */
+    bvh_stack_t stack;
+    stack.depth = 0;
+
+    /*
+     * Precalculate ray coefficient.
+     */
+    ray->dir_sign[0] = (ray->dir[0] < 0.0) ? 1 : 0;
+    ray->dir_sign[1] = (ray->dir[1] < 0.0) ? 1 : 0;
+    ray->dir_sign[2] = (ray->dir[2] < 0.0) ? 1 : 0;
+
+    if (fabs(ray->dir[0]) > RI_EPS) {
+        ray->invdir[0] = 1.0 / ray->dir[0];
+    } else {
+        ray->invdir[0] = RI_FLT_MAX;        // FIXME: make this +Inf ?
+    }
+
+    if (fabs(ray->dir[1]) > RI_EPS) {
+        ray->invdir[1] = 1.0 / ray->dir[1];
+    } else {
+        ray->invdir[1] = RI_FLT_MAX;
+    }
+
+    if (fabs(ray->dir[2]) > RI_EPS) {
+        ray->invdir[2] = 1.0 / ray->dir[2];
+    } else {
+        ray->invdir[2] = RI_FLT_MAX;
+    }
+
+    ray->dir_sign[0] = (ray->dir[0] < 0.0) ? 1 : 0;
+    ray->dir_sign[1] = (ray->dir[1] < 0.0) ? 1 : 0;
+    ray->dir_sign[2] = (ray->dir[2] < 0.0) ? 1 : 0;
+
+    /*
+     * First check if the ray hits scene bbox.
+     */
+    int hit;
+    ri_float_t tmin, tmax;
+    
+    hit = test_ray_aabb( &tmin, &tmax, bvh->bmin, bvh->bmax, ray );
+        
+    if (!hit) {
+        return 0;
+    }
+
+    ret = bvh_traverse(  state_out,
+                         bvh->root,
+                         diag_ptr, 
+                         ray,
+                        &stack );
+
+    /*
+     * If there's a hit, build intersection state.
+     */
+    if (ret) {
+        ri_intersection_state_build( state_out, ray->org, ray->dir );
+    }
+                        
+    return ret;
+}
+
+void
+ri_bvh_clear_stat_traversal()
+{
+    memset( &g_stattrav, 0, sizeof(ri_bvh_stat_traversal_t));
+}
+
+static double
+percentage( double val, double maxval )
+{
+    return 100.0 * (val / maxval);
+}
+
+void
+ri_bvh_report_stat_traversal()
+{
+    double nrays = g_stattrav.nrays;
+
+    double inner_node_travs_per_ray = g_stattrav.ninner_node_traversals / nrays;
+    double leaf_node_travs_per_ray  = g_stattrav.nleaf_node_traversals / nrays;
+    double tested_triangles_per_ray = g_stattrav.ntested_triangles / nrays;
+    double actually_hit_triangles_per_ray = g_stattrav.nactually_hit_triangles / nrays;
+
+    printf("== BVH traversal statistiscs ==================================================\n");
+    printf("# of rays                    %lld\n", g_stattrav.nrays);
+    printf("# of inner node travs        %lld\n", g_stattrav.ninner_node_traversals);
+    printf("  Per ray                    %f\n", inner_node_travs_per_ray);
+    printf("# of leaf node travs         %lld\n", g_stattrav.nleaf_node_traversals);
+    printf("  Per ray                    %f\n", leaf_node_travs_per_ray);
+    printf("# of tested triangles        %lld\n", g_stattrav.ntested_triangles);
+    printf("  Per ray                    %f\n", tested_triangles_per_ray);
+    printf("# of actually hit triangles  %lld\n", g_stattrav.nactually_hit_triangles);
+    printf("  Per ray                    %f\n", actually_hit_triangles_per_ray);
+    printf("  Hit rate                   %f %%\n", percentage(actually_hit_triangles_per_ray, tested_triangles_per_ray));
+
+
+    printf("===============================================================================\n");
+
+}
+
+
+/* ---------------------------------------------------------------------------
+ *
+ * Private functions
+ *
+ * ------------------------------------------------------------------------ */
 
 ri_qbvh_node_t *
 ri_qbvh_node_new()
@@ -493,6 +769,9 @@ bvh_traverse(
 #ifdef RI_BVH_ENABLE_DIAGNOSTICS
             diag->nleaf_node_traversals++;
 #endif
+#ifdef RI_BVH_TRACE_STATISTICS
+            g_stattrav.nleaf_node_traversals++;
+#endif
 
             bvh_intersect_leaf_node( state_out,
                                      node,
@@ -508,6 +787,10 @@ bvh_traverse(
 
 #ifdef RI_BVH_ENABLE_DIAGNOSTICS
             diag->ninner_node_traversals++;
+#endif
+
+#ifdef RI_BVH_TRACE_STATISTICS
+            g_stattrav.ninner_node_traversals++;
 #endif
 
             ret = test_ray_node( &order, state_out->t, node, ray );
@@ -546,221 +829,6 @@ end_traverse:
 
     return (state_out->t < RI_INFINITY);
 }
-
-/* ----------------------------------------------------------------------------
- *
- * Public functions
- *
- * ------------------------------------------------------------------------- */
-
-/*
- * Function: ri_bvh_build
- *
- *     Builds Bounded Volume Hierarchy data structure for accelerated ray tracing.
- *
- * Parameters:
- *
- *     scenegeoms - geometry in the scene.
- *     method     - bvh construction method. default is BVH_MEDIAN
- *
- * Returns:
- *
- *     Built BVH data strucure.
- */
-void *
-ri_bvh_build(
-    const void *data)
-{
-    ri_bvh_t           *bvh;
-    ri_qbvh_node_t     *root;
-    ri_timer_t         *tm;
-    ri_vector_t         bmin, bmax;
-
-    ri_scene_t         *scene = (ri_scene_t *)data;
-    
-    triangle_t         *triangles;
-    triangle_t         *triangles_buf;          /* temporal buffer  */
-    tri_bbox_t         *tri_bboxes;
-    tri_bbox_t         *tri_bboxes_buf;         /* temporal buffer  */
-    uint64_t            ntriangles;
-
-    tm = ri_render_get()->context->timer;
-
-    ri_log( LOG_INFO, "Building BVH ... " );
-    ri_timer_start( tm, "BVH Construction" );
-
-    bvh = ( ri_bvh_t * )ri_mem_alloc( sizeof( ri_bvh_t ) );
-    memset( bvh, 0, sizeof( ri_bvh_t ));
-
-
-    /*
-     * 1. Create 1D array of triangle and its bbox.
-     */
-    {
-        create_triangle_list(&triangles,
-                             &tri_bboxes,
-                             &ntriangles,
-                              scene->geom_list);
-
-        tri_bboxes_buf = ri_mem_alloc(sizeof(tri_bbox_t) * ntriangles);
-        ri_mem_copy(tri_bboxes_buf, tri_bboxes, sizeof(tri_bbox_t)*ntriangles);
-
-        triangles_buf = ri_mem_alloc(sizeof(triangle_t) * ntriangles);
-        ri_mem_copy(triangles_buf, triangles, sizeof(triangle_t)*ntriangles);
-    }
-
-    /*
-     * 2. Calculate bounding box of the scene.
-     */
-    {
-        calc_scene_bbox( bmin, bmax, tri_bboxes, ntriangles );
-
-        bbox_add_margin( bmin, bmax );
-
-        bvh->bmin[0] = bmin[0];
-        bvh->bmin[1] = bmin[1];
-        bvh->bmin[2] = bmin[2];
-
-        bvh->bmax[0] = bmax[0];
-        bvh->bmax[1] = bmax[1];
-        bvh->bmax[2] = bmax[2];
-
-        ri_log(LOG_INFO, "  bmin (%f, %f, %f)",
-            bvh->bmin[0], bvh->bmin[1], bvh->bmin[2]);
-        ri_log(LOG_INFO, "  bmax (%f, %f, %f)",
-            bvh->bmax[0], bvh->bmax[1], bvh->bmax[2]);
-    }
-    
-    ri_log(LOG_INFO, "  # of tris = %d", ntriangles);
-
-
-    /*
-     * 3. Construct BVH.
-     */
-    root      = ri_qbvh_node_new();
-    bvh->root = root;
-    
-    bvh_construct(
-        bvh->root,
-        bvh->bmin,
-        bvh->bmax,
-        triangles,
-        triangles_buf,
-        tri_bboxes,
-        tri_bboxes_buf,
-        0,
-        ntriangles);
-
-
-    ri_mem_free( triangles_buf );
-    ri_mem_free( tri_bboxes );
-    ri_mem_free( tri_bboxes_buf );
-
-    ri_timer_end( tm, "BVH Construction" );
-
-    ri_log( LOG_INFO, "BVH Construction time: %f sec",
-           ri_timer_elapsed( tm, "BVH Construction" ) );
-
-    ri_log( LOG_INFO, "Built BVH." );
-
-    return (void *)bvh;
-}
-
-void
-ri_bvh_free( void *accel )
-{
-    ri_bvh_t *bvh = (ri_bvh_t *)accel;
-
-    ri_mem_free(bvh);
-}
-
-int
-ri_bvh_intersect(
-    void                    *accel,
-    ri_ray_t                *ray,
-    ri_intersection_state_t *state_out,
-    void                    *user)
-{
-    ri_bvh_diag_t *diag_ptr;
-    ri_bvh_t      *bvh;
-
-    assert( accel     != NULL );
-    assert( ray       != NULL );
-    assert( state_out != NULL );
-
-    bvh = (ri_bvh_t *)accel;
-
-    if (user) {
-        diag_ptr = (ri_bvh_diag_t *)user;
-    } else {
-        diag_ptr = NULL;
-    }
-    
-    int ret;
-
-    /*
-     * TODO: Provide indivisual stack for each thread.
-     */
-    bvh_stack_t stack;
-    stack.depth = 0;
-
-    /*
-     * Precalculate ray coefficient.
-     */
-    ray->dir_sign[0] = (ray->dir[0] < 0.0) ? 1 : 0;
-    ray->dir_sign[1] = (ray->dir[1] < 0.0) ? 1 : 0;
-    ray->dir_sign[2] = (ray->dir[2] < 0.0) ? 1 : 0;
-
-    if (fabs(ray->dir[0]) > RI_EPS) {
-        ray->invdir[0] = 1.0 / ray->dir[0];
-    } else {
-        ray->invdir[0] = RI_FLT_MAX;        // FIXME: make this +Inf ?
-    }
-
-    if (fabs(ray->dir[1]) > RI_EPS) {
-        ray->invdir[1] = 1.0 / ray->dir[1];
-    } else {
-        ray->invdir[1] = RI_FLT_MAX;
-    }
-
-    if (fabs(ray->dir[2]) > RI_EPS) {
-        ray->invdir[2] = 1.0 / ray->dir[2];
-    } else {
-        ray->invdir[2] = RI_FLT_MAX;
-    }
-
-    ray->dir_sign[0] = (ray->dir[0] < 0.0) ? 1 : 0;
-    ray->dir_sign[1] = (ray->dir[1] < 0.0) ? 1 : 0;
-    ray->dir_sign[2] = (ray->dir[2] < 0.0) ? 1 : 0;
-
-    /*
-     * First check if the ray hits scene bbox.
-     */
-    int hit;
-    ri_float_t tmin, tmax;
-    
-    hit = test_ray_aabb( &tmin, &tmax, bvh->bmin, bvh->bmax, ray );
-        
-    if (!hit) {
-        return 0;
-    }
-
-    ret = bvh_traverse(  state_out,
-                         bvh->root,
-                         diag_ptr, 
-                         ray,
-                        &stack );
-                        
-    return ret;
-}
-
-
-
-/* ---------------------------------------------------------------------------
- *
- * Private functions
- *
- * ------------------------------------------------------------------------ */
 
 static inline ri_float_t
 calc_surface_area(
