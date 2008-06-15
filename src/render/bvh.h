@@ -23,6 +23,9 @@ extern "C" {
 #endif
 
 
+/*
+ * Flags for (Visual) debugging.
+ */
 #define RI_BVH_ENABLE_DIAGNOSTICS
 #define RI_BVH_TRACE_STATISTICS
 
@@ -55,11 +58,20 @@ extern "C" {
 /*
  * Struct: ri_qbvh_node_t
  *
- *     Structure for QBVH(Quad BVH) node
+ *   Structure for QBVH(Quad BVH) node
  */
 typedef struct _ri_qbvh_node_t {
 
-    /* layout =  bmin:xxxx, yyyy, zzzz, bmax:xxxx, yyyy, zzzz */
+    /*
+     * bbox's memory layout.
+     *
+     *  bmin                 bmax
+     *
+     *   0      4      8     12     16     20     24 
+     * +------+------+------+------+------+------+
+     * | xxxx | yyyy | zzzz | xxxx | yyyy | zzzz |
+     * +------+------+------+------+------+------+
+     */
 
     float                   bbox[4 * 3 * 2];
     struct _ri_qbvh_node_t *child[4];         /* ptr to child node    */
@@ -70,8 +82,11 @@ typedef struct _ri_qbvh_node_t {
 } ri_qbvh_node_t;
 
 /*
- * Diagnositics for each ri_bvh_intersect query.
- * This is debug purpose. 
+ * Struct: ri_bvh_diag_t
+ *
+ *   Diagnositics for each ri_bvh_intersect query.
+ *   This structure is used for visual debugging purpose when
+ *   RI_BVH_ENABLE_DIAGNOSTICS is on.
  */
 typedef struct _ri_bvh_diag_t
 {
@@ -86,7 +101,7 @@ typedef struct _ri_bvh_diag_t
 /*
  * Struct: ri_bvh_stat_traversal_t
  *
- *     Structure of statistics for BVH traversal phase.
+ *   Structure of statistics for BVH traversal phase.
  *
  */
 typedef struct _ri_bvh_stat_traversal_t {
@@ -103,7 +118,7 @@ typedef struct _ri_bvh_stat_traversal_t {
 /*
  * Struct: ri_bvh_stat_construction_t
  *
- *     Structure of statistics for BVH construction phase.
+ *   Structure of statistics for BVH construction phase.
  *
  */
 typedef struct _ri_bvh_stat_construction_t {
@@ -117,7 +132,7 @@ typedef struct _ri_bvh_stat_construction_t {
 /*
  * Struct: ri_bvh_t
  *
- *     Structure for BVH.
+ *   Structure for BVH.
  */
 typedef struct _ri_bvh_t {
 
@@ -136,13 +151,7 @@ typedef struct _ri_bvh_t {
     ri_bvh_stat_construction_t  stat_construction;
 
 
-    // BVH_PAD(32);
-
 } ri_bvh_t;
-
-extern ri_qbvh_node_t *ri_qbvh_node_new();
-extern void            ri_bvh_stat_traversal_clear(
-                                       ri_bvh_stat_traversal_t  *stat);
 
 /*
  * Implementation of ri_accel_t interface
@@ -153,6 +162,9 @@ extern int            ri_bvh_intersect(void                    *accel,
                                        ri_ray_t                *ray,
                                        ri_intersection_state_t *state_out,
                                        void                    *user);
+
+// extern ri_qbvh_node_t *ri_qbvh_node_new();
+
 
 /*
  * Debug

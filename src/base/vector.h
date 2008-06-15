@@ -46,6 +46,7 @@ static FORCE_INLINE void ri_vector_normalize(ri_vector_t dst)
         dst[2] *= rsq;                     
     }                                                 
 }
+#define vnormalize(dst) ri_vector_normalize(dst)
 
 #define ri_vector_add(dst, a, b) do { \
     (dst)[0] = (a)[0] + (b)[0]; \
@@ -139,6 +140,7 @@ static FORCE_INLINE void ri_vector_transform(
     (dst)[2] = 0.0; \
     (dst)[3] = 0.0; \
 } while (0);
+#define vzero(dst) ri_vector_setzero(dst)
 
 #define ri_vector_neg(dst) do { \
     (dst)[0] = -(dst)[0]; \

@@ -19,8 +19,12 @@
 
 #include <stdint.h>
 #include <math.h>
+#include <float.h>
 
+#define RI_DOUBLE_PRECISION
 #define ri_float_t double
+#define RI_FLT_MAX   (DBL_MAX)
+#define RI_EPS       (1.0e-14)
 
 #ifdef WIN32
 #define DLLEXPORT         __declspec(dllexport )

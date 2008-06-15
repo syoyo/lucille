@@ -47,7 +47,7 @@
 
 
 #ifdef HAVE_ZLIB
-#include <zlib.h>        // Blocked texture is saved with zlib comporession.
+#include <zlib.h>        /* Blocked texture is saved with zlib comporession. */
 #endif
 
 #include "memory.h"
@@ -60,30 +60,34 @@
 #include "jpeg.h"
 #endif
 
-#define TEXBLOCKSIZE 64        // block map size in miplevel 0.
-#define MAXMIPLEVEL  16        // 16 can represent a mipmap for 65536x65536.
+#define TEXBLOCKSIZE 64        /* block map size in miplevel 0. */
+#define MAXMIPLEVEL  16        /* 16 can represent a mipmap for 65536x65536. */
 
 typedef struct _texblock_t
 {
-    int x, y;        // upper-left position in original texture map.
-                // (according to miplevel 0)
+    int          x, y;        /* upper-left position in original texture map. 
+                               * (in miplevel 0)
+                               */
 
     ri_vector_t *image;
+
 } texblock_t;
 
 typedef struct _blockedmipmap_t
 {
-    int nmiplevels;        // The number of mipmap levels 
+    int nmiplevels;             /* The number of mipmap levels              */
 
-    int width, height;    // Original texture size
+    int width, height;          /* Original texture size                    */
 
-    int nxblocks, nyblocks;    // The number of texture blocks.
-                // Counted in miplevel 0.
-                // Thus e.g. miplevel 1 contains
-                // (nxblocks/2) * (nyblocks/2) texture blocks.
+    int nxblocks, nyblocks;     /* The number of texture blocks.
+                                 * Counted in miplevel 0.
+                                 * Thus e.g. miplevel 1 contains
+                                 * (nxblocks/2) * (nyblocks/2) texture blocks.
+                                 */
 
-    texblock_t *blocks[MAXMIPLEVEL];    // list of texture blocks
-                        // in each miplevel.
+    texblock_t *blocks[MAXMIPLEVEL];    /* list of texture blocks
+                                         * in each miplevel.
+                                         */
 
 } blockedmipmap_t;
 

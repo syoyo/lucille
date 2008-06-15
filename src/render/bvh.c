@@ -8,23 +8,38 @@
 /*
  * Bounding Volume Hierarchies for raytracing acceleration.
  *
- * References.
+ * BVH Construction uses binning-based SAH [2] for fast and robust BVH
+ * constriction.
+ *
+ * At this time, 2-ary BVH is constructed while data structure uses qbvh node.
+ *
+ * TODO:
+ *
+ *   - Construct 4-ary BVH [1].
+ *   - Optimize BVH construction and traversal by MUDA language.
+ *   - Reduce memory consuption for large data.
+ *     - e.g. LBVH(lightweight BVH)
+ *   - Out-of-core construction and traversal for massive data?
+ *
+ *
+ * References:
  *  
- * - 4-ary BVH by Kimura's thesis.
- *   <http://www.jaist.ac.jp/library/thesis/ks-master-2007/paper/h-kimura/paper.pdf>
+ * [1] 4-ary BVH by Kimura's thesis.
+ *     <http://www.jaist.ac.jp/library/thesis/ks-master-2007/paper/
+ *      h-kimura/paper.pdf>
  *
- * - Highly Parallel Fast KD-tree Construction for Interactive Ray Tracing
- *   of Dynamic Scenes
- *   Maxim Shevtsov, Alexei Soupikov and Alexander Kapustin.
- *   EUROGRAPHICS 2007
- *   <http://graphics.cs.uni-sb.de/Courses/ss07/sem/index.html>
+ * [2] Highly Parallel Fast KD-tree Construction for Interactive Ray Tracing
+ *     of Dynamic Scenes
+ *     Maxim Shevtsov, Alexei Soupikov and Alexander Kapustin.
+ *     EUROGRAPHICS 2007
+ *     <http://graphics.cs.uni-sb.de/Courses/ss07/sem/index.html>
  *
- * - Ray Tracing Deformable Scenes using Dynamic Bounding Volume Hierarchies
- *   (revised version)
- *   Ingo Wald, Solomon Boulos, and Peter Shirley
- *   Technical Report, SCI Institute, University of Utah, No UUSCI-2006-023
- *   (conditionally accepted at ACM Transactions on Graphics), 2006
- *   <http://www.sci.utah.edu/~wald/Publications/index.html>
+ * [3] Ray Tracing Deformable Scenes using Dynamic Bounding Volume Hierarchies
+ *     (revised version)
+ *     Ingo Wald, Solomon Boulos, and Peter Shirley
+ *     Technical Report, SCI Institute, University of Utah, No UUSCI-2006-023
+ *     (conditionally accepted at ACM Transactions on Graphics), 2006
+ *     <http://www.sci.utah.edu/~wald/Publications/index.html>
  *
  */
 
@@ -125,6 +140,8 @@ ri_bvh_stat_traversal_t  g_stattrav;
  *
  * ------------------------------------------------------------------------- */
 
+static ri_qbvh_node_t *ri_qbvh_node_new();
+
 static void get_bbox_of_triangle(
     ri_vector_t        bmin_out,            /* [out] */  
     ri_vector_t        bmax_out,            /* [out] */  
@@ -189,6 +206,8 @@ static int bvh_traverse(
     ri_bvh_diag_t           *diag,          /* [modified]   */
     ri_ray_t                *ray,
     bvh_stack_t             *stack );       /* [buffer]     */
+
+static ri_bvh_diag_t *gdiag;                /* TODO: thread-safe    */
 
 
 /* ----------------------------------------------------------------------------
@@ -572,6 +591,9 @@ bvh_intersect_leaf_node(
     triangles  = (triangle_t *)node->child[0];
     ntriangles = (uintptr_t)node->child[1];
 
+#ifdef RI_BVH_ENABLE_DIAGNOSTICS
+    if (gdiag) gdiag->ntriangle_isects++;
+#endif
 #ifdef RI_BVH_TRACE_STATISTICS
     g_stattrav.ntested_triangles += ntriangles;
 #endif
@@ -688,8 +710,8 @@ test_ray_node(
     ri_vector_t bmin_left  , bmax_left;
     ri_vector_t bmin_right , bmax_right;
 
-    ri_float_t  tmin_left  , tmax_left;
-    ri_float_t  tmin_right , tmax_right;
+    ri_float_t  tmin_left  = 0.0, tmax_left  = 0.0;
+    ri_float_t  tmin_right = 0.0, tmax_right = 0.0;
 
     int         hit_left   , hit_right;
 
@@ -751,6 +773,13 @@ bvh_traverse(
 
     assert( root != NULL );
 
+#ifdef RI_BVH_ENABLE_DIAGNOSTICS
+    gdiag = diag;
+    if (gdiag) {
+        memset( gdiag, 0, sizeof(ri_bvh_diag_t));
+    }
+#endif
+
     //
     // Initialize intersection state.
     // 
@@ -767,7 +796,7 @@ bvh_traverse(
         if ( node->is_leaf ) {
 
 #ifdef RI_BVH_ENABLE_DIAGNOSTICS
-            diag->nleaf_node_traversals++;
+            if (gdiag) gdiag->nleaf_node_traversals++;
 #endif
 #ifdef RI_BVH_TRACE_STATISTICS
             g_stattrav.nleaf_node_traversals++;
@@ -786,7 +815,7 @@ bvh_traverse(
         } else {
 
 #ifdef RI_BVH_ENABLE_DIAGNOSTICS
-            diag->ninner_node_traversals++;
+            if (gdiag) gdiag->ninner_node_traversals++;
 #endif
 
 #ifdef RI_BVH_TRACE_STATISTICS
@@ -1416,6 +1445,8 @@ create_triangle_list(
     ri_vector_t bmin, bmax;
 
     idx = 0;
+    vzero( bmin );
+    vzero( bmax );
 
     for (itr  = ri_list_first( (ri_list_t *)geom_list );
          itr != NULL;
@@ -1443,7 +1474,6 @@ create_triangle_list(
 
             (*triangles_out)[idx].geom  = geom;
             (*triangles_out)[idx].index = 3 * i;
-
 
             get_bbox_of_triangle( bmin, bmax, &((*triangles_out)[idx]) );
 

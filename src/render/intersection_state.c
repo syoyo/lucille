@@ -129,6 +129,7 @@ ri_intersection_state_build(
     isectpoint[0] = eye[0] + dir[0] * t;
     isectpoint[1] = eye[1] + dir[1] * t;
     isectpoint[2] = eye[2] + dir[2] * t;
+    isectpoint[3] = 0.0;
 
     ri_vector_copy( state_inout->P, isectpoint );
 
