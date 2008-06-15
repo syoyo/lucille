@@ -34,6 +34,14 @@ class GLView : public Fl_Gl_Window {
         bvhVisualizer = new BVHVisualizer();
 
         wireMode      = false;
+
+        //
+        // Settings for render image
+        //
+        image       = new unsigned char[3 * w * h];
+        floatImage  = new float[3 * w * h];
+        imageWidth  = w;
+        imageHeight = h;
     }
 
     void           renderImage();
@@ -50,6 +58,7 @@ class GLView : public Fl_Gl_Window {
     int            pressedButton;
   
     unsigned char *image;
+    float         *floatImage;
     int            imageWidth;
     int            imageHeight;
     

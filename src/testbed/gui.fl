@@ -29,7 +29,7 @@ Function {make_window()} {open
       }
     }
     Fl_Box guiGLView {selected
-      xywh {15 40 512 512}
+      xywh {15 40 256 256}
       class GLView
     }
   }

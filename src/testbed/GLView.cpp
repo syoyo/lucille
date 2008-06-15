@@ -6,6 +6,7 @@
 
 #include "GLView.h"
 #include "timer.h"
+#include "controller.h"
 
 
 void GLView::glInit()
@@ -71,6 +72,7 @@ GLView::handle(int e)
 {
     int x, y;
     int mx, my;
+    int state;
     float t = -1.0f;
 
     bool needRedraw = false;
@@ -93,8 +95,17 @@ GLView::handle(int e)
     
         case FL_PUSH:
 
+            state = Fl::event_state();
+
             this->pressed = 1;
+
             this->pressedButton = Fl::event_button();
+            
+            // Shift + L mouse -> M mouse
+            if ( (state & FL_SHIFT) && (this->pressedButton == FL_LEFT_MOUSE) ) {
+                this->pressedButton = FL_MIDDLE_MOUSE;
+            }
+
             this->mouseX = Fl::event_x();
             this->mouseY = Fl::event_y();
 
@@ -128,10 +139,10 @@ GLView::handle(int e)
 
                 } else if (this->pressedButton == FL_MIDDLE_MOUSE) {
 
-                    this->viewOrg[0]    += 4.0 * (mx - (float)x) / (float)w();
-                    this->viewOrg[1]    += 4.0 * ((float)y - my) / (float)h();
-                    this->viewTarget[0] += 4.0 * (mx - (float)x) / (float)w();
-                    this->viewTarget[1] += 4.0 * ((float)y - my) / (float)h();
+                    this->viewOrg[0]    -= 8.0 * (mx - (float)x) / (float)w();
+                    this->viewOrg[1]    += 8.0 * ((float)y - my) / (float)h();
+                    this->viewTarget[0] -= 8.0 * (mx - (float)x) / (float)w();
+                    this->viewTarget[1] += 8.0 * ((float)y - my) / (float)h();
 
                 } else if (this->pressedButton == FL_RIGHT_MOUSE) {
 
@@ -234,6 +245,7 @@ GLView::draw()
 
         glPushMatrix();
 
+#if 1
         //
         // Draw obj
         //
@@ -246,6 +258,7 @@ GLView::draw()
                 glPolygonMode( GL_FRONT, GL_FILL );
             }
         }
+#endif
 
         //
         // Draw bbox
@@ -253,6 +266,8 @@ GLView::draw()
         if (this->bvhVisualizer) {
             this->bvhVisualizer->drawBVH();
         }
+
+
 
         glPopMatrix();
 
@@ -325,14 +340,110 @@ GLView::getView( float eye[4], float lookat[4], float up[4] )
     
 }
 
+static inline float
+fclamp( float f, float fmin, float fmax )
+{
+    if (f < fmin) f = fmin;
+    if (f > fmax) f = fmax;
+
+    return f;      
+}
+
+static inline unsigned char
+clamp( float f )
+{
+    int i;
+
+    i = f * 255.5f;
+
+    if (i < 0  ) i = 0;
+    if (i > 255) i = 255;
+
+    return (unsigned char)i;
+
+}
+
+static void
+value_to_heatmap( float col[3], float val, float minval, float maxval )
+{
+    float red[3]   = { 1.0, 0.0, 0.0 };
+    float green[3] = { 0.0, 1.0, 0.0 };
+    float blue[3]  = { 0.0, 0.0, 1.0 };
+
+    float s = val / (maxval - minval);
+    float t = s * 2.0;
+
+    if (s < 0.5) {
+
+        col[0] = t * blue[0] + (1.0 - t) * green[0];
+        col[1] = t * blue[1] + (1.0 - t) * green[1];
+        col[2] = t * blue[2] + (1.0 - t) * green[2];
+
+    } else {
+
+        col[0] = t * green[0] + (1.0 - t) * red[0];
+        col[1] = t * green[1] + (1.0 - t) * red[1];
+        col[2] = t * green[2] + (1.0 - t) * red[2];
+
+    }
+
+}
+
+static void
+tonemap( unsigned char *image, float *fimage, int width, int height, float minval, float maxval )
+{
+    int i;
+    float fval;
+    float invscale;
+    
+    invscale = 1.0f / (maxval - minval);
+    for (i = 0; i < width * height * 3; i++) {
+        fval = (fimage[i] - minval) * invscale;
+        image[i] = clamp(fclamp(fval, 0.0f, 1.0f));
+    }
+
+}
+
+static void
+find_minmaxval( float *minval, float *maxval, float *fimage, int width, int height )
+{
+    int i;
+    float fmax = fimage[0];
+    float fmin = fimage[0];
+    
+    for (i = 1; i < width * height * 3; i++) {
+        if (fmax < fimage[i]) fmax = fimage[i];
+        if (fmin > fimage[i]) fmin = fimage[i];
+    }
+
+    printf("maxval = %f\n", fmax);
+    printf("minval = %f\n", fmin);
+
+    (*minval) = fmin;
+    (*maxval) = fmax;
+}
+
+
 void
 GLView::renderImage()
 {
     float eye[4], lookat[4], up[4];
 
+    vec   veye, vlookat, vup;
+
     printf("[render] renderImage()\n");
 
     this->getView( eye, lookat, up );
+
+    veye[0]    = eye[0];
+    veye[1]    = eye[1];
+    veye[2]    = eye[2];
+    vlookat[0] = lookat[0];
+    vlookat[1] = lookat[1];
+    vlookat[2] = lookat[2];
+    vup[0]     = up[0];
+    vup[1]     = up[1];
+    vup[2]     = up[2];
 
     mytimer_t s, e;
     
@@ -340,11 +451,21 @@ GLView::renderImage()
     
     // TODO: refactor
     // render_image( eye, lookat, up );
-
+    //
+    
+    render( this->floatImage, this->imageWidth, this->imageHeight,
+            veye, vlookat, vup );
+            
     get_time(&e);
 
     // this->setImage( grender->image, grender->width, grender->height );
     // this->showImage();
+     
+    float minval, maxval;
+    find_minmaxval( &minval, &maxval, this->floatImage, this->imageWidth, this->imageHeight);
+
+    tonemap( this->image, this->floatImage, this->imageWidth, this->imageHeight , minval, maxval);
+    this->displayImage = true;
 
     double elap = elapsed_time(&s, &e);
     printf("[render] renderImage() finished: %f sec\n", elap);

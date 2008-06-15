@@ -65,12 +65,14 @@ drawBoundingBox(double bmin[3], double bmax[3])
 
 	glEnable(GL_BLEND);
 	glDisable(GL_LIGHTING);
+    glDisable(GL_DEPTH_TEST);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glColor4f(0.3f, 0.6f, 0.3f, 0.2f);
 
 	drawCube(2.0);
 
 	glDisable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
 
 	glColor3f(1.0f, 1.0f, 0.0f);
 	drawWireCube(2.0);
@@ -117,6 +119,55 @@ drawBoundingBoxWithColor(float bmin[4], float bmax[4], float col[4])
 
 }
 
+typedef struct _triangle_t {
+
+    ri_float_t v0x, v0y, v0z;
+    ri_float_t v1x, v1y, v1z;
+    ri_float_t v2x, v2y, v2z;
+
+    void       *geom;
+    uint32_t    index;
+
+} triangle_t;
+
+static void
+drawTriangles( ri_qbvh_node_t *node )
+{
+    float v[3][3];
+
+    int i;
+    triangle_t *triangles;
+    int ntriangles;
+
+    if (node == NULL) return;
+    if (!node->is_leaf) return;
+
+    triangles = (triangle_t *)node->child[0];
+    ntriangles = (int)node->child[1];
+
+    glBegin(GL_TRIANGLES);
+
+    for (i = 0; i < ntriangles; i++) {
+
+        v[0][0] = triangles[i].v0x;
+        v[0][1] = triangles[i].v0y;
+        v[0][2] = triangles[i].v0z;
+        v[1][0] = triangles[i].v1x;
+        v[1][1] = triangles[i].v1y;
+        v[1][2] = triangles[i].v1z;
+        v[2][0] = triangles[i].v2x;
+        v[2][1] = triangles[i].v2y;
+        v[2][2] = triangles[i].v2z;
+
+        glVertex3f( v[0][0], v[0][1], v[0][2] );
+        glVertex3f( v[1][0], v[1][1], v[1][2] );
+        glVertex3f( v[2][0], v[2][1], v[2][2] );
+
+    }
+
+    glEnd();
+}
+
 void
 BVHVisualizer::drawBVH()
 {
@@ -134,25 +185,27 @@ BVHVisualizer::drawBVH()
 
     float bmin[3], bmax[3];
 
+    // printf("left\n");
+    // drawTriangles( node->child[0] );
+    // printf("right\n");
+    // drawTriangles( node->child[1] );
+
     // left
-    bmin[0] = node->bbox[0] - 0.01;
-    bmin[1] = node->bbox[1] - 0.01;
-    bmin[2] = node->bbox[2] - 0.01;
-    bmax[0] = node->bbox[3] + 0.01;
-    bmax[1] = node->bbox[4] + 0.01;
-    bmax[2] = node->bbox[5] + 0.01;
-    printf("left: (%f, %f, %f)-(%f, %f, %f)\n",
-        bmin[0], bmin[1], bmin[2],
-        bmax[0], bmax[1], bmax[2]);
+    bmin[0] = node->bbox[BMIN_X0] - 0.01;
+    bmin[1] = node->bbox[BMIN_Y0] - 0.01;
+    bmin[2] = node->bbox[BMIN_Z0] - 0.01;
+    bmax[0] = node->bbox[BMAX_X0] + 0.01;
+    bmax[1] = node->bbox[BMAX_Y0] + 0.01;
+    bmax[2] = node->bbox[BMAX_Z0] + 0.01;
     drawBoundingBoxWithColor(bmin, bmax, colors[0]);
 
     // right
-    bmin[0] = node->bbox[6+0] - 0.01;
-    bmin[1] = node->bbox[6+1] - 0.01;
-    bmin[2] = node->bbox[6+2] - 0.01;
-    bmax[0] = node->bbox[6+3] + 0.01;
-    bmax[1] = node->bbox[6+4] + 0.01;
-    bmax[2] = node->bbox[6+5] + 0.01;
+    bmin[0] = node->bbox[BMIN_X1] - 0.01;
+    bmin[1] = node->bbox[BMIN_Y1] - 0.01;
+    bmin[2] = node->bbox[BMIN_Z1] - 0.01;
+    bmax[0] = node->bbox[BMAX_X1] + 0.01;
+    bmax[1] = node->bbox[BMAX_Y1] + 0.01;
+    bmax[2] = node->bbox[BMAX_Z1] + 0.01;
     drawBoundingBoxWithColor(bmin, bmax, colors[1]);
 
 }

@@ -9,6 +9,10 @@
 #include "bvh.h"
 
 #include "glm.h"
+#include "simplerender.h"
+
+GLMmodel   *gobj;
+ri_scene_t *gscene;
 
 void get_grpname(char *dst, char *str)
 {
@@ -46,8 +50,6 @@ parse_geom(
     unsigned int i;
     unsigned int tid;
     unsigned int id[3];
-
-    int          idx;
 
     float        v[3];
 
@@ -146,4 +148,18 @@ scene_add_obj(
     }
     
     return 0;
+}
+
+void
+render(
+    float *image,
+    int    width,
+    int    height,
+    vec    eye,
+    vec    lookat,
+    vec    up)
+{
+
+    simple_render( (ri_bvh_t *)gscene->accel->data, image, width, height, eye, lookat, up );
+
 }

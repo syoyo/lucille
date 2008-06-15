@@ -95,11 +95,12 @@ srcs=Split("""
 main.cpp
 trackball.cpp
 GLView.cpp
-timer.c
 fluid_gui.cpp
 glm.cpp
 controller.cpp
 BVHVisualizer.cpp
+timer.c
+simplerender.c
 """)
 
 target = "testbed"
