@@ -243,7 +243,7 @@ GLView::restore()
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glViewport(0,0,w(),h());
-    gluPerspective(fov, (float)w() / (float)h(), 0.01f, 100.0f);
+    gluPerspective(fov, (float)w() / (float)h(), 0.01f, 5000.0f);
     glMatrixMode(GL_MODELVIEW); 
     glLoadIdentity();
 
