@@ -1,3 +1,5 @@
+import os, sys
+
 srcs=Split("""
 lsh.c
 main.c
@@ -7,9 +9,18 @@ main.c
 
 Import('env')
 
+env = env.Clone()
+
 incPath=['../base', '../transport', '../render', '../ri', '../../include']
 
+#
+# Lib
+#
 libs=['riri', 'rirender', 'ritransport', 'ridisplay',  'ribase', 'm']
+
+if sys.platform == 'linux2':
+	libs.append(['dl'])
+	
 if env['with_zlib']:
 	libs.append([env['ZLIB_LIB_NAME']]) 
 
