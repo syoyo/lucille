@@ -4,6 +4,7 @@
 
 #include "bvh.h"
 
+#include "controller.h"
 #include "simplerender.h"
 
 static void
@@ -135,9 +136,19 @@ simple_render(
 
             if (hit) {
 
-                radiance[0] = state.t;
-                radiance[1] = state.t;
-                radiance[2] = state.t;
+                if (gvisualizeMode == VISUALIZE_NUM_TRAVERSALS) {
+                    radiance[0] = diag.ninner_node_traversals;
+                    radiance[1] = diag.ninner_node_traversals;
+                    radiance[2] = diag.ninner_node_traversals;
+                } else if (gvisualizeMode == VISUALIZE_NUM_ISECTS) {
+                    radiance[0] = diag.ntriangle_isects;
+                    radiance[1] = diag.ntriangle_isects;
+                    radiance[2] = diag.ntriangle_isects;
+                } else if (gvisualizeMode == VISUALIZE_IMAGE) {
+                    radiance[0] = state.t;
+                    radiance[1] = state.t;
+                    radiance[2] = state.t;
+                }
 
             } else {
 

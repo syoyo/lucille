@@ -42,6 +42,9 @@ class GLView : public Fl_Gl_Window {
         floatImage  = new float[3 * w * h];
         imageWidth  = w;
         imageHeight = h;
+
+
+        visualizeMode = 0;
     }
 
     void           renderImage();
@@ -71,5 +74,7 @@ class GLView : public Fl_Gl_Window {
     void           setObj(GLMmodel *obj) { this->obj = obj; }
 
     BVHVisualizer *bvhVisualizer;
+
+    int            visualizeMode;
 
 };

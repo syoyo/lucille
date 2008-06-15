@@ -26,11 +26,34 @@ Function {make_window()} {open
           callback {exit(1);}
           xywh {0 0 100 20} shortcut 0x71
         }
+        MenuItem {} {
+          label {Save image as PNG}
+          callback save_image_png_cb selected
+          xywh {0 0 100 20}
+        }
       }
     }
-    Fl_Box guiGLView {selected
-      xywh {15 40 256 256}
+    Fl_Box guiGLView {
+      xywh {15 40 512 512}
       class GLView
+    }
+  }
+} 
+
+Function {make_param_window()} {open
+} {
+  Fl_Window {} {open
+    xywh {402 285 330 365} type Double visible
+  } {
+    Fl_Group {} {
+      label {BVH diagnostics} open
+      xywh {10 20 310 140} box THIN_UP_FRAME
+    } {
+      Fl_Choice paramVisualizeChoice {
+        label {Visualize:}
+        callback visualize_choice_cb open
+        xywh {85 40 225 25} down_box BORDER_BOX
+      } {}
     }
   }
 } 

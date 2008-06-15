@@ -88,8 +88,8 @@ def ParseConfig(env,command,options):
 
     return static_libs
 
-ParseConfig(env, "fltk-config", "--use-gl --cxxflags")
-ParseConfig(env, "fltk-config", "--use-gl --ldflags")
+ParseConfig(env, "fltk-config", "--use-gl --use-images --cxxflags")
+ParseConfig(env, "fltk-config", "--use-gl --use-images --ldflags")
 
 srcs=Split("""
 main.cpp
@@ -99,8 +99,8 @@ fluid_gui.cpp
 glm.cpp
 controller.cpp
 BVHVisualizer.cpp
+simplerender.cpp
 timer.c
-simplerender.c
 """)
 
 target = "testbed"

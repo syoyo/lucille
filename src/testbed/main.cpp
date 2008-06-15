@@ -81,10 +81,16 @@ main(int argc, char **argv)
     }
 
 
-    Fl_Double_Window *mainWindow = make_window();
+    Fl_Double_Window *mainWindow  = make_window();
+    Fl_Double_Window *paramWindow = make_param_window();
+    setup_param_gui();
+
+    paramWindow->position( mainWindow->x() + mainWindow->w() + 15,
+                           mainWindow->y() );
 
     init(filename);
 
+    paramWindow->show();
     mainWindow->show();
 
 

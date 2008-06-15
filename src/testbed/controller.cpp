@@ -8,11 +8,108 @@
 #include "geom.h"
 #include "bvh.h"
 
+#include <png.h>
+
+#include <FL/Fl.H>
+#include "fluid_gui.h"
 #include "glm.h"
+#include "defines.h"
 #include "simplerender.h"
 
 GLMmodel   *gobj;
 ri_scene_t *gscene;
+int         gvisualizeMode = VISUALIZE_IMAGE;
+
+Fl_Menu_Item visualizeMenu[] = {
+    { "Image"      , 0, 0, (void *)VISUALIZE_IMAGE          },
+    { "# of travs" , 0, 0, (void *)VISUALIZE_NUM_TRAVERSALS },
+    { "# of isects", 0, 0, (void *)VISUALIZE_NUM_ISECTS     },
+    { 0 }
+};
+
+void
+setup_param_gui()
+{
+    paramVisualizeChoice->menu( visualizeMenu );
+
+}
+
+//
+// GUI callbacks
+//
+void
+visualize_choice_cb(Fl_Choice *w, void *arg)
+{
+    // switch ( (int)(w->mvalue()->user_data()) ) {
+    // case VISUALIZE_IMAGE:
+    // case VISUALIZE_NUM_TRAVERSALS:
+    // case VISUALIZE_NUM_ISECTS:
+    // }
+  
+    gvisualizeMode = (int)(w->mvalue()->user_data()); 
+
+}
+
+static void
+savePNGFile(
+    const char *pngfilename,
+    unsigned char *img,
+    int width,
+    int height)
+{
+	int i, j;
+
+	FILE *fp;
+	png_structp png_ptr;
+	png_infop info_ptr;
+	const char *filename;
+	png_bytep *rowp;
+
+	fp = fopen(pngfilename, "wb");
+	if (!fp) {
+		fprintf(stderr, "Cannot save the file.\n");
+		return;
+	}
+
+	rowp = (png_bytep *)malloc(sizeof(png_bytep *) * height);
+	assert(rowp);
+
+	for (i = 0; i < height; i++) {
+		rowp[i] = (png_bytep)&img[3 * ((height - i - 1) * width)];
+		
+	}
+
+	png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING,
+					  NULL, NULL, NULL);
+	assert(png_ptr);
+	info_ptr = png_create_info_struct(png_ptr);
+	assert(info_ptr);
+
+	png_init_io(png_ptr, fp);
+	png_set_IHDR(png_ptr, info_ptr, width, height, 8, PNG_COLOR_TYPE_RGB,
+		     PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT,
+		     PNG_FILTER_TYPE_DEFAULT);
+	png_write_info(png_ptr, info_ptr);
+	png_write_image(png_ptr, rowp);
+	png_write_end(png_ptr, info_ptr);
+	png_destroy_write_struct(&png_ptr, &info_ptr);
+
+	free(rowp);
+
+	fclose(fp);
+
+	printf("Image saved to [ %s ].\n", pngfilename );
+}
+
+void save_image_png_cb(Fl_Menu_*w, void *arg)
+{
+    savePNGFile( "output.png",
+                 guiGLView->image,
+                 guiGLView->imageWidth,
+                 guiGLView->imageHeight );
+
+}
+
 
 void get_grpname(char *dst, char *str)
 {

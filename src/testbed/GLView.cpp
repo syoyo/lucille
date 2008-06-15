@@ -28,6 +28,50 @@ void GLView::glInit()
 
 }
 
+static const char *viewfile = "view.dat";
+
+static void saveView(GLView *w)
+{
+    FILE *fp;
+
+    fp = fopen(viewfile, "w");
+    if (!fp) {
+        return;
+    }
+
+    fprintf(fp, "%f %f %f\n",
+        w->viewOrg[0], w->viewOrg[1], w->viewOrg[2]);
+    fprintf(fp, "%f %f %f\n",
+        w->viewTarget[0], w->viewTarget[1], w->viewTarget[2]);
+    fprintf(fp, "%f %f %f %f\n",
+        w->currQuat[0], w->currQuat[1], w->currQuat[2], w->currQuat[3]);
+
+    fclose(fp);
+
+    printf("saved view.\n");
+}
+
+static void loadView(GLView *w)
+{
+    FILE *fp;
+
+    fp = fopen(viewfile, "r");
+    if (!fp) {
+        return;
+    }
+
+    fscanf(fp, "%f %f %f\n",
+        &w->viewOrg[0], &w->viewOrg[1], &w->viewOrg[2]);
+    fscanf(fp, "%f %f %f\n",
+        &w->viewTarget[0], &w->viewTarget[1], &w->viewTarget[2]);
+    fscanf(fp, "%f %f %f %f\n",
+        &w->currQuat[0], &w->currQuat[1], &w->currQuat[2], &w->currQuat[3]);
+
+    fclose(fp);
+
+    printf("loaded view.\n");
+}
+
 bool
 GLView::handleKey(int k)
 {
@@ -35,6 +79,15 @@ GLView::handleKey(int k)
     bool needRedraw = false;
 
     switch (k) {
+    case 's':
+        loadView(this);
+        needRedraw = true;
+        break;
+
+    case 'e':
+        saveView(this);
+        break;
+
     case 'w':
         this->wireMode = !this->wireMode;
         needRedraw = true;
@@ -370,21 +423,46 @@ value_to_heatmap( float col[3], float val, float minval, float maxval )
     float green[3] = { 0.0, 1.0, 0.0 };
     float blue[3]  = { 0.0, 0.0, 1.0 };
 
-    float s = val / (maxval - minval);
-    float t = s * 2.0;
+    float s = (val - minval) / (maxval - minval);
+    float t;
+
+    if (s < 0.0) s = 0.0;
+    if (s > 1.0) s = 1.0;
 
     if (s < 0.5) {
 
-        col[0] = t * blue[0] + (1.0 - t) * green[0];
-        col[1] = t * blue[1] + (1.0 - t) * green[1];
-        col[2] = t * blue[2] + (1.0 - t) * green[2];
+        t = s * 2.0;
+        col[0] = (1.0 - t) * blue[0] + t * green[0];
+        col[1] = (1.0 - t) * blue[1] + t * green[1];
+        col[2] = (1.0 - t) * blue[2] + t * green[2];
 
     } else {
 
-        col[0] = t * green[0] + (1.0 - t) * red[0];
-        col[1] = t * green[1] + (1.0 - t) * red[1];
-        col[2] = t * green[2] + (1.0 - t) * red[2];
+        t = (s - 0.5) * 2.0;
+        col[0] = (1.0 - t) * green[0] + t * red[0];
+        col[1] = (1.0 - t) * green[1] + t * red[1];
+        col[2] = (1.0 - t) * green[2] + t * red[2];
 
+    }
+
+}
+
+static void
+heatmap( unsigned char *image, float *fimage, int width, int height, float minval, float maxval )
+{
+    int i;
+    float fval;
+    float invscale;
+    float col[3];
+    
+    invscale = 1.0f / (maxval - minval);
+
+    for (i = 0; i < width * height; i++) {
+        fval = fimage[3*i];
+        value_to_heatmap( col, fval, minval, maxval );
+        image[3*i+0] = clamp(col[0]);
+        image[3*i+1] = clamp(col[1]);
+        image[3*i+2] = clamp(col[2]);
     }
 
 }
@@ -464,7 +542,21 @@ GLView::renderImage()
     float minval, maxval;
     find_minmaxval( &minval, &maxval, this->floatImage, this->imageWidth, this->imageHeight);
 
-    tonemap( this->image, this->floatImage, this->imageWidth, this->imageHeight , minval, maxval);
+    switch (gvisualizeMode) {
+    case VISUALIZE_NUM_TRAVERSALS:
+        heatmap( this->image, this->floatImage, this->imageWidth, this->imageHeight , 0.0, 150.0);
+        break;
+
+    case VISUALIZE_NUM_ISECTS:
+        heatmap( this->image, this->floatImage, this->imageWidth, this->imageHeight , 0.0, 50.0);
+        break;
+
+    default:
+        tonemap( this->image, this->floatImage, this->imageWidth, this->imageHeight , minval, maxval);
+        break;
+
+    }
+
     this->displayImage = true;
 
     double elap = elapsed_time(&s, &e);
