@@ -12,7 +12,8 @@ env = env.Clone()
 def fluidEmitter(target, source, env):
   file = os.path.splitext(str(source[0].name))[0]
   file = os.path.join(str(target[0].get_dir()), file)
-  target.append(file + ".h")
+  target.append("fluid_" + os.path.basename(file) + ".h")
+
   return target, source
 
 fluidBuilder = Builder(action = "cd ${SOURCE.dir} && " +
@@ -25,7 +26,7 @@ fluidBuilder = Builder(action = "cd ${SOURCE.dir} && " +
 
 # register builder
 env.Append( BUILDERS = { 'Fluid': fluidBuilder } )
-env.Fluid( 'gui.cpp', 'gui.fl' )
+env.Fluid( 'fluid_gui.cpp', 'gui.fl' )
 
 # add builder to the builders for shared and static objects, 
 # so we can use all sources in one list
@@ -92,10 +93,10 @@ ParseConfig(env, "fltk-config", "--use-gl --use-images --cxxflags")
 ParseConfig(env, "fltk-config", "--use-gl --use-images --ldflags")
 
 srcs=Split("""
+fluid_gui.cpp
 main.cpp
 trackball.cpp
 GLView.cpp
-fluid_gui.cpp
 glm.cpp
 controller.cpp
 BVHVisualizer.cpp

@@ -2,7 +2,11 @@
 #include <stdlib.h>
 
 #include <Fl/Fl.H>
+#ifdef __APPLE__
+#include <OpenGL/glu.h>
+#else
 #include <GL/glu.h>
+#endif
 
 #include "GLView.h"
 #include "timer.h"
