@@ -50,15 +50,21 @@ typedef struct _ri_intersection_state_t {
 
     ri_vector_t     color;
 
-    ri_vector_t     tangent;        /* tangent vector        */
-    ri_vector_t     binormal;       /* binormal vector        */
+    ri_vector_t     tangent;        /* tangent vector               */
+    ri_vector_t     binormal;       /* binormal vector              */
 
-    ri_float_t      u, v;           /* barycentric coord        */
+    ri_vector_t     stqr;           /* interpolated texture coord   */
+
+    ri_float_t      u, v;           /* barycentric coord            */
 
 } ri_intersection_state_t;
 
 extern ri_intersection_state_t *ri_intersection_state_new();
 extern void                     ri_intersection_state_free();
+extern void                     ri_intersection_state_build(
+                    ri_intersection_state_t *state_inout,    /* [inout] */
+                    const ri_vector_t        eye,
+                    const ri_vector_t        dir);
 
 #ifdef __cplusplus
 } /* extern "C" */
