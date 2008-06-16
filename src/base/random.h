@@ -14,7 +14,7 @@
 extern "C" {
 #endif
 
-extern void	 seedMT  (unsigned long seed);
+extern void      seedMT  (unsigned long seed);
 extern double    randomMT(void);
 
 /*
@@ -25,7 +25,7 @@ extern double    randomMT2(int thread_id);
 extern void      random_uniform_vector(ri_vector_t dst);
 
 #ifdef __cplusplus
-}	/* extern "C" */
+}    /* extern "C" */
 #endif
 
 #endif

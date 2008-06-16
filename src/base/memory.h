@@ -15,19 +15,6 @@
 extern "C" {
 #endif
 
-/* TODO: remove */
-#if 0
-/* this structure is used for SIMD arthmetric operation */
-typedef struct _ri_aligned_float_t
-{
-
-    float *aligned;            /* points 16-byte alighed location */
-    float *real;            /* real memory allocated  */
-
-} ri_aligned_float_t;
-#endif
-
-
 #define RI_MEM_DEFAULT_ALIGN   (16)
 
 /* Allocates 16 byte aligned memory */

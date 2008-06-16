@@ -22,10 +22,10 @@ extern unsigned int ri_util_min_prime    ();
 extern unsigned int ri_util_max_prime    ();
 
 extern unsigned int ri_util_paramlist_build(va_list     arg,
-					    RtToken   **tokens,
-					    RtPointer **values);
+                        RtToken   **tokens,
+                        RtPointer **values);
 extern void         ri_util_paramlist_free (RtToken    *tokens,
-					    RtPointer  *values);
+                        RtPointer  *values);
 
 /* 1 if little-endian, 0 if big-endian */
 extern int ri_util_is_little_endian();
@@ -33,7 +33,7 @@ extern int ri_util_is_little_endian();
 #define floateq(a,b) fabs((a) - (b)) < RI_EPSILON ? 1 : 0
 
 #ifdef __cplusplus
-}	/* extern "C" */
+}    /* extern "C" */
 #endif
 
 #endif
