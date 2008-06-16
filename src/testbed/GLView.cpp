@@ -131,6 +131,7 @@ GLView::handle(int e)
     int mx, my;
     int state;
     float t = -1.0f;
+    float s = this->sceneScale;
 
     bool needRedraw = false;
 
@@ -196,15 +197,15 @@ GLView::handle(int e)
 
                 } else if (this->pressedButton == FL_MIDDLE_MOUSE) {
 
-                    this->viewOrg[0]    -= 8.0 * (mx - (float)x) / (float)w();
-                    this->viewOrg[1]    += 8.0 * ((float)y - my) / (float)h();
-                    this->viewTarget[0] -= 8.0 * (mx - (float)x) / (float)w();
-                    this->viewTarget[1] += 8.0 * ((float)y - my) / (float)h();
+                    this->viewOrg[0]    -= s * 4.0 * (mx - (float)x) / (float)w();
+                    this->viewOrg[1]    += s * 4.0 * ((float)y - my) / (float)h();
+                    this->viewTarget[0] -= s * 4.0 * (mx - (float)x) / (float)w();
+                    this->viewTarget[1] += s * 4.0 * ((float)y - my) / (float)h();
 
                 } else if (this->pressedButton == FL_RIGHT_MOUSE) {
 
-                    this->viewOrg[2] += 10.0*((float)y - this->mouseY) / (float)h();
-                    this->viewOrg[2] += 10.0*((float)y - this->mouseY) / (float)h();
+                    this->viewOrg[2] += s * 5.0*((float)y - this->mouseY) / (float)h();
+                    this->viewOrg[2] += s * 5.0*((float)y - this->mouseY) / (float)h();
 
                 }
 
@@ -548,7 +549,7 @@ GLView::renderImage()
 
     switch (gvisualizeMode) {
     case VISUALIZE_NUM_TRAVERSALS:
-        heatmap( this->image, this->floatImage, this->imageWidth, this->imageHeight , 0.0, 150.0);
+        heatmap( this->image, this->floatImage, this->imageWidth, this->imageHeight , 0.0, 200.0);
         break;
 
     case VISUALIZE_NUM_ISECTS:

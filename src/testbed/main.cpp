@@ -70,6 +70,9 @@ init(const char *objname)
 int
 main(int argc, char **argv)
 {
+    float scale[3];
+    float maxscale;
+
     const char *defname = "cornellbox.obj";
     const char *filename;
 
@@ -89,6 +92,18 @@ main(int argc, char **argv)
                            mainWindow->y() );
 
     init(filename);
+
+    glmDimensions( gobj, scale );
+    maxscale = scale[0];
+    if (scale[0] < scale[1]) {
+        maxscale = scale[1];
+    }
+    if (maxscale < scale[2]) {
+        maxscale = scale[2];
+    }
+
+    guiGLView->viewOrg[2] = -2.0 * maxscale;
+    guiGLView->sceneScale = -2.0 * maxscale;
 
     paramWindow->show();
     mainWindow->show();

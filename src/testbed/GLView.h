@@ -29,6 +29,8 @@ class GLView : public Fl_Gl_Window {
         viewTarget[1] =   0.0f;
         viewTarget[2] =   0.0f;
 
+        sceneScale    =   1.0f;
+
         trackball( currQuat, 0.0, 0.0, 0.0, 0.0 );
 
         bvhVisualizer = new BVHVisualizer();
@@ -52,6 +54,7 @@ class GLView : public Fl_Gl_Window {
 
     float          viewOrg[3];
     float          viewTarget[3];
+    float          sceneScale;
 
     // mouse
     float          currQuat[4];
