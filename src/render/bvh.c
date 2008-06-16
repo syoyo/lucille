@@ -48,10 +48,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#ifdef WITH_SSE
-#include <xmmintrin.h>
-#include <emmintrin.h>
-#endif
 
 #include "common.h"
 #include "bvh.h"
@@ -60,9 +56,6 @@
 #include "timer.h"
 #include "render.h"
 #include "log.h"
-
-//#define LOCAL_TEST
-#define LOCAL_DEBUG
 
 #define BVH_MAXDEPTH   100
 #define BVH_NTRIS_LEAF 4        /* TODO: parameterize.  */
@@ -355,6 +348,7 @@ ri_bvh_intersect(
 
     if (user) {
         diag_ptr = (ri_bvh_diag_t *)user;
+        memset( diag_ptr, 0, sizeof(ri_bvh_diag_t));
     } else {
         diag_ptr = NULL;
     }
@@ -401,7 +395,7 @@ ri_bvh_intersect(
     ray->dir_sign[2] = (ray->dir[2] < 0.0) ? 1 : 0;
 
     /*
-     * First check if the ray hits scene bbox.
+     * Firstly check if the ray hits scene bbox.
      */
     int hit;
     ri_float_t tmin, tmax;
@@ -775,9 +769,6 @@ bvh_traverse(
 
 #ifdef RI_BVH_ENABLE_DIAGNOSTICS
     gdiag = diag;
-    if (gdiag) {
-        memset( gdiag, 0, sizeof(ri_bvh_diag_t));
-    }
 #endif
 
     //
@@ -963,15 +954,12 @@ find_cut_from_bin(
             tris_left  += binbuf->bin[0][j][i];
             tris_right -= binbuf->bin[1][j][i];
 
-            // printf("[%d], left = %lld, right = %lld\n", i, tris_left, tris_right);
-
-            //assert(tris_left  <= tris_right);
             assert(tris_left  <=  ntriangles);
             assert(tris_right <=  ntriangles);
 
             /*
              * split pos = bmin + (i + 1) * (bsize / BIN_SIZE)
-             * (i + 1) because we want right side of the cell.
+             * (i + 1) since we want right side of the cell.
              */
             
 
