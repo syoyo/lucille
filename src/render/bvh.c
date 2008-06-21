@@ -55,13 +55,27 @@
 #include "memory.h"
 #include "timer.h"
 #include "render.h"
+#include "beam.h"
 #include "log.h"
 
+/*
+ * Local flags
+ */
+//#define BVH_ENABLE_VOLUME_HEURISTIC_SPLIT
+
+/*
+ * BVH settings
+ */
 #define BVH_MAXDEPTH   100
 #define BVH_NTRIS_LEAF 4        /* TODO: parameterize.  */
-
-
 #define BVH_BIN_SIZE  64
+
+/*
+ * Flags for beam tracing
+ */
+#define BEAM_MISS_COMPLETELY    0
+#define BEAM_HIT_COMPLETELY     1
+#define BEAM_HIT_PARTIALLY      2
 
 /*
  * Buffer for binning to compute approximated SAH 
@@ -93,6 +107,17 @@ typedef struct _triangle_t {
     uint32_t    index;
 
 } triangle_t;
+
+typedef struct _triangle2d_t {
+
+    ri_float_t  v0u, v0v;
+    ri_float_t  v1u, v1v;
+    ri_float_t  v2u, v2v;
+
+    ri_geom_t  *geom;
+    uint32_t    index;
+
+} triangle2d_t;
 
 typedef struct _tri_bbox_t {
 
@@ -198,6 +223,14 @@ static int bvh_traverse(
     const ri_qbvh_node_t    *root,
     ri_bvh_diag_t           *diag,          /* [modified]   */
     ri_ray_t                *ray,
+    bvh_stack_t             *stack );       /* [buffer]     */
+
+
+static int bvh_traverse_beam(
+    ri_intersection_state_t *state_out,     /* [out]        */
+    const ri_qbvh_node_t    *root,
+    ri_bvh_diag_t           *diag,          /* [modified]   */
+    ri_beam_t               *beam,
     bvh_stack_t             *stack );       /* [buffer]     */
 
 static ri_bvh_diag_t *gdiag;                /* TODO: thread-safe    */
@@ -1639,3 +1672,626 @@ get_bbox_of_triangle4(
 
 }
 #endif
+
+/*
+ * Find n-vertex relative to the plane normal
+ *
+ * n-vertex : nearest vertex from the plane defined by `normal'
+ *
+ *                       
+ *   \                     
+ *    \    ^              +------+
+ *     \  / normal        |      |
+ *      \/                |      |
+ *       \                o------+
+ *        \              n-vertex
+ *         \
+ *
+ * Reference:
+ *   - http://www.cescg.org/CESCG-2002/DSykoraJJelinek/index.html
+ */
+static void
+get_n_point(
+    ri_vector_t np,
+    ri_vector_t bmin,
+    ri_vector_t bmax,
+    ri_vector_t plane)
+{
+    np[0] = (plane[0] > 0.0) ? bmin[0] : bmax[0]; 
+    np[1] = (plane[1] > 0.0) ? bmin[1] : bmax[1]; 
+    np[2] = (plane[2] > 0.0) ? bmin[2] : bmax[2]; 
+} 
+
+/*
+ * 1 if beam misses bbox, 0 if not.
+ */
+int
+test_beam_bbox_misses(
+          ri_vector_t  bmin,
+          ri_vector_t  bmax,
+    const ri_beam_t   *beam)
+{
+    ri_vector_t np;
+    ri_vector_t no;
+    ri_float_t  d;
+
+    ri_vector_t n;
+    
+    int i;
+
+    for (i = 0; i < 4; i++) {           /* for each frustum plane   */
+        
+        vcpy( n, beam->normal[i] ); 
+
+        get_n_point( np, bmin, bmax, n );
+
+        /*
+         * d = (np - org) . normal
+         *
+         * If any of d is greater than 0.0, bbox is completely
+         * outside of the beam frustum.
+         */
+        vsub( no, np, beam->org );
+        d = vdot( no, n );
+
+        if (d > 0.0) return 1;
+
+    }
+    
+    return 0;
+    
+}
+
+/*
+ * 0 if no hit.
+ * 1 if potentially hit.
+ */
+int
+test_beam_bbox(
+          ri_vector_t  bmin,
+          ri_vector_t  bmax,
+    const ri_beam_t   *beam)
+{
+
+    int axis;
+    int ret;
+
+    axis = beam->dominant_axis;
+
+#if 0
+    /*
+     * Cull by t.
+     * If beam's maximum hit distance t_max is less than the min of bbox,
+     * beam does not hit the bbox.
+     */
+    if ( beam->t_max < (bmin[axis] - beam->org[axis]) ) {
+        return 0;
+    }
+#endif
+
+    /*
+     * 2. Check if beam compiletely misses the bbox.
+     */
+
+    ret = test_beam_bbox_misses( bmin, bmax, beam );
+
+    if (ret) return 0;
+
+    /*
+     * Beam may hit the bbox.
+     */
+
+    return 1;
+}
+
+/*
+ * 0 - no hit.
+ * 1 - hit left node
+ * 2 - hit right node
+ * 3 - hit both
+ */
+int
+test_beam_node(
+    const ri_qbvh_node_t *node,
+    const ri_beam_t      *beam)
+{
+    ri_vector_t bmin_left , bmax_left;
+    ri_vector_t bmin_right, bmax_right;
+
+    bmin_left[0]  = node->bbox[ BMIN_X0 ];
+    bmin_left[1]  = node->bbox[ BMIN_Y0 ];
+    bmin_left[2]  = node->bbox[ BMIN_Z0 ];
+    bmax_left[0]  = node->bbox[ BMAX_X0 ];
+    bmax_left[1]  = node->bbox[ BMAX_Y0 ];
+    bmax_left[2]  = node->bbox[ BMAX_Z0 ];
+
+    bmin_right[0] = node->bbox[ BMIN_X1 ];
+    bmin_right[1] = node->bbox[ BMIN_Y1 ];
+    bmin_right[2] = node->bbox[ BMIN_Z1 ];
+    bmax_right[0] = node->bbox[ BMAX_X1 ];
+    bmax_right[1] = node->bbox[ BMAX_Y1 ];
+    bmax_right[2] = node->bbox[ BMAX_Z1 ];
+    
+    int hit_left, hit_right;
+
+    hit_left  = test_beam_bbox( bmin_left , bmax_left , beam );
+    hit_right = test_beam_bbox( bmin_right, bmax_right, beam );
+
+    return hit_left | hit_right;
+
+}
+
+/*
+ * Do ray - triangle intersection for each corner ray of beam.
+ * There are 3 cases of result.
+ *
+ * - Beam completely misses the triangle. 
+ * - Beam completely hits the triangle(inside of triangle). 
+ * - Beam partially hits the triangle(needs beam splitting)
+ */
+int
+test_beam_triangle(
+    const triangle_t  *triangle,
+    const ri_beam_t   *beam)
+{
+
+    int         i;
+
+    int         mask;
+    ri_float_t  u, v, t;
+
+    ri_vector_t v0, v1, v2;
+    ri_vector_t e1, e2;
+    ri_vector_t p, q, s; 
+    ri_float_t  a, inva;
+
+    v0[0] = triangle->v0x;
+    v0[1] = triangle->v0y;
+    v0[2] = triangle->v0z;
+    v1[0] = triangle->v1x;
+    v1[1] = triangle->v1y;
+    v1[2] = triangle->v1z;
+    v2[0] = triangle->v2x;
+    v2[1] = triangle->v2y;
+    v2[2] = triangle->v2z;
+
+    vsub( e1, v1, v0 );
+    vsub( e2, v2, v0 );
+
+    mask = 0;
+
+    for (i = 0; i < 4; i++) {
+
+        vcross( p, beam->dir[i], e2 );
+
+        a = vdot( e1, p );
+
+        if (fabs(a) > RI_EPS) {
+            inva = 1.0 / a;
+        } else {
+            inva = 0.0;
+        }
+
+        vsub( s, beam->org, v0 );
+        vcross( q, s, e1 );
+
+        u = vdot( s, p ) * inva;    
+        v = vdot( q, beam->dir[i] ) * inva;    
+        t = vdot( e2, q ) * inva;    
+
+        if ( (u < 0.0) || (u > 1.0)) {
+            continue;
+        }
+
+        if ( (v < 0.0) || ((u + v) > 1.0)) {
+            continue;
+        }
+
+        if ( (t < 0.0) || (t > beam->t_max) ) {
+            continue;
+        }
+
+        mask |= (1 << i);
+    }
+
+    if (mask == 0) {
+
+        /* Beam completely misses the triangle. */
+        return BEAM_MISS_COMPLETELY;
+
+    } else if (mask == 0xf) {
+
+        /* Beam completely hits the triangle. */
+        return BEAM_HIT_COMPLETELY;
+
+    } else {
+
+        /* Needs beam splitting   */
+        return BEAM_HIT_PARTIALLY;
+
+    }
+
+}
+
+#if 0
+int
+test_triangle2d_beam2d_cull_x(
+    triangle2d_t *triangle,
+    ri_vector_t   normal[4],
+    ri_vector_t   org[4])
+{
+    int        i;
+    int        axis0 = 1;
+    int        axis1 = 2;
+    ri_float_t d[3];
+
+    for (i = 0; i < 4; i++){
+
+        d[0] = (triangle->v0u - org[i][axis0]) * normal[i][axis0]
+             + (triangle->v0v - org[i][axis1]) * normal[i][axis1];
+        d[1] = (triangle->v1u - org[i][axis0]) * normal[i][axis0]
+             + (triangle->v1v - org[i][axis1]) * normal[i][axis1];
+        d[2] = (triangle->v2u - org[i][axis0]) * normal[i][axis0]
+             + (triangle->v2v - org[i][axis1]) * normal[i][axis1];
+
+        if ( (d[0] > 0.0) || (d[1] > 0.0) || (d[2] > 0.0) ) {
+
+            return 0;   /* culled   */
+
+        }
+
+    }
+
+}
+#endif
+
+int
+bvh_intersect_leaf_node_beam(
+    const ri_qbvh_node_t    *node,
+    ri_beam_t               *beam )
+{
+    uint32_t    tid;
+
+    int         ret;
+    uint32_t    i;
+    uint32_t    ntriangles;
+    triangle_t *triangles;
+
+    //
+    // Init
+    //
+    tid    = 0;
+
+    triangles  = (triangle_t *)node->child[0];
+    ntriangles = (uintptr_t)node->child[1];
+
+#ifdef RI_BVH_ENABLE_DIAGNOSTICS
+    if (gdiag) gdiag->ntriangle_isects++;
+#endif
+
+#ifdef RI_BVH_TRACE_STATISTICS
+    g_stattrav.ntested_triangles += ntriangles;
+#endif
+
+    for (i = 0; i < ntriangles; i++) {
+
+        ret = test_beam_triangle( triangles + i, beam );
+
+        switch (ret) {
+        case BEAM_MISS_COMPLETELY:
+            break;
+        case BEAM_HIT_COMPLETELY:
+            break;
+        case BEAM_HIT_PARTIALLY:
+            break;
+        }
+            
+    }
+
+    return 0;
+}
+
+/*
+ * Traverse BVH with beam
+ */
+int
+bvh_traverse_beam(
+    ri_intersection_state_t *state_out,     /* [out]        */
+    const ri_qbvh_node_t    *root,
+    ri_bvh_diag_t           *diag,          /* [modified]   */
+    ri_beam_t               *beam,
+    bvh_stack_t             *stack )        /* [buffer]     */
+{
+
+    const ri_qbvh_node_t *node;
+    int                   ret;
+    int                   order;            /* traversal order  */
+
+    assert( root != NULL );
+
+#ifdef RI_BVH_ENABLE_DIAGNOSTICS
+    gdiag = diag;
+#endif
+
+    //
+    // Initialize intersection state.
+    // 
+    state_out->t     = RI_INFINITY;
+    state_out->u     = 0.0;
+    state_out->v     = 0.0;
+    state_out->geom  = NULL;
+    state_out->index = 0;
+
+    node = root;
+
+    while (1) {
+
+        if ( node->is_leaf ) {
+
+#ifdef RI_BVH_ENABLE_DIAGNOSTICS
+            if (gdiag) gdiag->nleaf_node_traversals++;
+#endif
+#ifdef RI_BVH_TRACE_STATISTICS
+            g_stattrav.nleaf_node_traversals++;
+#endif
+
+            bvh_intersect_leaf_node_beam( node,
+                                          beam );
+
+            // pop
+            if (stack->depth < 1) goto end_traverse;
+            stack->depth--;
+            assert(stack->depth >= 0);
+            node = stack->nodestack[stack->depth];
+
+        } else {
+
+#ifdef RI_BVH_ENABLE_DIAGNOSTICS
+            if (gdiag) gdiag->ninner_node_traversals++;
+#endif
+
+#ifdef RI_BVH_TRACE_STATISTICS
+            g_stattrav.ninner_node_traversals++;
+#endif
+
+            ret = test_beam_node( node, beam );
+
+            if (ret == 0) {
+
+                // pop
+                if (stack->depth < 1) goto end_traverse;
+                stack->depth--;
+                assert(stack->depth >= 0);
+                node = stack->nodestack[stack->depth];
+
+            } else if (ret == 1) {
+
+                node = node->child[0];
+
+            } else if (ret == 2) {
+
+                node = node->child[1];
+
+            } else {    // both
+
+                order = beam->dirsign[beam->dominant_axis];
+
+                // push
+                stack->nodestack[stack->depth] = node->child[1 - order];
+                stack->depth++;
+                assert( stack->depth < BVH_MAXDEPTH );
+                node = node->child[order];
+            
+            }
+
+        }
+
+    }
+    
+end_traverse:
+
+    return (state_out->t < RI_INFINITY);
+
+    while (1) {
+
+
+
+    }
+
+    return 0;
+}
+
+void
+split(
+    triangle_t tri,
+    ri_float_t volume_threshold)
+{
+    /*
+     * Calculate bbox for each edge of triangle.
+     * (And the edge is a diagonal axis for bbox)
+     */ 
+
+    int         i;
+
+    ri_vector_t bmin[3];
+    ri_vector_t bmax[3];
+    
+    ri_float_t  volume;
+    ri_float_t  maxvolume;
+    int         axis;
+
+    
+    bmin[0][0] = (tri.v0x  < tri.v1x) ? tri.v0x : tri.v1x;
+    bmin[0][1] = (tri.v0y  < tri.v1y) ? tri.v0y : tri.v1y;
+    bmin[0][2] = (tri.v0z  < tri.v1z) ? tri.v0z : tri.v1z;
+    bmax[0][0] = (tri.v0x >= tri.v1x) ? tri.v0x : tri.v1x;
+    bmax[0][1] = (tri.v0y >= tri.v1y) ? tri.v0y : tri.v1y;
+    bmax[0][2] = (tri.v0z >= tri.v1z) ? tri.v0z : tri.v1z;
+
+    bmin[1][0] = (tri.v1x  < tri.v2x) ? tri.v1x : tri.v2x;
+    bmin[1][1] = (tri.v1y  < tri.v2y) ? tri.v1y : tri.v2y;
+    bmin[1][2] = (tri.v1z  < tri.v2z) ? tri.v1z : tri.v2z;
+    bmax[1][0] = (tri.v1x >= tri.v2x) ? tri.v1x : tri.v2x;
+    bmax[1][1] = (tri.v1y >= tri.v2y) ? tri.v1y : tri.v2y;
+    bmax[1][2] = (tri.v1z >= tri.v2z) ? tri.v1z : tri.v2z;
+
+    bmin[2][0] = (tri.v2x  < tri.v0x) ? tri.v2x : tri.v0x;
+    bmin[2][1] = (tri.v2y  < tri.v0y) ? tri.v2y : tri.v0y;
+    bmin[2][2] = (tri.v2z  < tri.v0z) ? tri.v2z : tri.v0z;
+    bmax[2][0] = (tri.v2x >= tri.v0x) ? tri.v2x : tri.v0x;
+    bmax[2][1] = (tri.v2y >= tri.v0y) ? tri.v2y : tri.v0y;
+    bmax[2][2] = (tri.v2z >= tri.v0z) ? tri.v2z : tri.v0z;
+
+    maxvolume = (bmax[0][0] - bmin[0][0])
+              * (bmax[0][1] - bmin[0][1])
+              * (bmax[0][2] - bmin[0][2]);
+              
+    axis      = 0;
+          
+    for (i = 1; i < 3; i++) { 
+
+        volume = (bmax[i][0] - bmin[i][0])
+               * (bmax[i][1] - bmin[i][1])
+               * (bmax[i][2] - bmin[i][2]);
+
+        if (volume > maxvolume) {
+
+            maxvolume = volume;
+            axis      = i;
+
+        }            
+
+    }
+
+    {
+        ri_vector_t  m; 
+        triangle_t   newtri;
+
+        if (maxvolume > volume_threshold) {
+
+            /* split    */
+
+            switch (axis) {
+
+            case 0:
+
+                /* split mid of v1 - v0 */ 
+
+                m[0] = tri.v0x + 0.5 * (tri.v1x - tri.v0x);
+                m[1] = tri.v0y + 0.5 * (tri.v1y - tri.v0y);
+                m[2] = tri.v0z + 0.5 * (tri.v1z - tri.v0z);
+
+                newtri.v0x = m[0]; 
+                newtri.v0y = m[1]; 
+                newtri.v0z = m[2]; 
+                newtri.v1x = tri.v1x; 
+                newtri.v1y = tri.v1y; 
+                newtri.v1z = tri.v1z; 
+                newtri.v2x = tri.v2x; 
+                newtri.v2y = tri.v2y; 
+                newtri.v2z = tri.v2z; 
+
+                break;
+
+            case 1:
+                /* split mid of v2 - v1 */ 
+
+                m[0] = tri.v1x + 0.5 * (tri.v2x - tri.v1x);
+                m[1] = tri.v1y + 0.5 * (tri.v2y - tri.v1y);
+                m[2] = tri.v1z + 0.5 * (tri.v2z - tri.v1z);
+
+                newtri.v0x = tri.v0x; 
+                newtri.v0y = tri.v0y; 
+                newtri.v0z = tri.v0z; 
+                newtri.v1x = m[0]; 
+                newtri.v1y = m[1]; 
+                newtri.v1z = m[2]; 
+                newtri.v2x = tri.v2x; 
+                newtri.v2y = tri.v2y; 
+                newtri.v2z = tri.v2z; 
+
+                break;
+
+            default:
+                /* split mid of v0 - v2 */ 
+
+                m[0] = tri.v2x + 0.5 * (tri.v0x - tri.v2x);
+                m[1] = tri.v2y + 0.5 * (tri.v0y - tri.v2y);
+                m[2] = tri.v2z + 0.5 * (tri.v0z - tri.v2z);
+
+                newtri.v0x = tri.v0x; 
+                newtri.v0y = tri.v0y; 
+                newtri.v0z = tri.v0z; 
+                newtri.v1x = tri.v1x; 
+                newtri.v1y = tri.v1y; 
+                newtri.v1z = tri.v1z; 
+                newtri.v2x = m[0]; 
+                newtri.v2y = m[1]; 
+                newtri.v2z = m[2]; 
+
+                break;
+            }
+
+        }
+
+    }
+}
+
+/*
+ *  Generate a list of 2D projected triangles.
+ *  The funciton generates 3 lists of 2d triangles(x, y and z axis).
+ */
+void
+generate_2d_triangles(
+    triangle2d_t **triangles_x_out,      /* [out] */
+    triangle2d_t **triangles_y_out,      /* [out] */
+    triangle2d_t **triangles_z_out,      /* [out] */
+    triangle_t    *triangles,
+    uint64_t       ntriangles)
+{
+    uint64_t i;
+    uint64_t n;
+
+    n = ntriangles;
+
+    (*triangles_x_out) = ri_mem_alloc( sizeof(triangle2d_t) * n );
+    (*triangles_y_out) = ri_mem_alloc( sizeof(triangle2d_t) * n );
+    (*triangles_z_out) = ri_mem_alloc( sizeof(triangle2d_t) * n );
+
+    /*
+     * X: uv = yz
+     */
+    for (i = 0; i < n; i++) {
+        (*triangles_x_out)[i].v0u = triangles[i].v0y;
+        (*triangles_x_out)[i].v0v = triangles[i].v0z;
+        (*triangles_x_out)[i].v1u = triangles[i].v1y;
+        (*triangles_x_out)[i].v1v = triangles[i].v1z;
+        (*triangles_x_out)[i].v2u = triangles[i].v2y;
+        (*triangles_x_out)[i].v2v = triangles[i].v2z;
+    }
+
+    /*
+     * Y: uv = zx
+     */ 
+    for (i = 0; i < n; i++) {
+        (*triangles_y_out)[i].v0u = triangles[i].v0z;
+        (*triangles_y_out)[i].v0v = triangles[i].v0x;
+        (*triangles_y_out)[i].v1u = triangles[i].v1z;
+        (*triangles_y_out)[i].v1v = triangles[i].v1x;
+        (*triangles_y_out)[i].v2u = triangles[i].v2z;
+        (*triangles_y_out)[i].v2v = triangles[i].v2x;
+    }
+
+    /*
+     * Z: uv = xy
+     */
+    for (i = 0; i < n; i++) {
+        (*triangles_z_out)[i].v0u = triangles[i].v0x;
+        (*triangles_z_out)[i].v0v = triangles[i].v0y;
+        (*triangles_z_out)[i].v1u = triangles[i].v1x;
+        (*triangles_z_out)[i].v1v = triangles[i].v1y;
+        (*triangles_z_out)[i].v2u = triangles[i].v2x;
+        (*triangles_z_out)[i].v2v = triangles[i].v2y;
+    }
+
+}

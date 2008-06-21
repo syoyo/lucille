@@ -1,5 +1,6 @@
 srcs=Split("""
 accel.c
+beam.c
 brdf.c
 bvh.c
 film.c
