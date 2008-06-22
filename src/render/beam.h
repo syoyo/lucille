@@ -30,11 +30,13 @@ typedef struct _ri_beam_t
     ri_vector_t     org;
 
     /*
-     * P[i] - org, where P[i] is lied onto the axis-aligned plane.a
+     * P[i] - org, where P[i] is lied onto the axis-aligned plane.
      */
     ri_vector_t     dir[4];
 
     ri_vector_t     length;                     /* Side length(xyz)         */
+
+    ri_float_t      d;                          /* distant to plane         */
 
 
     //i_float_t      t_min;

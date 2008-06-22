@@ -336,13 +336,70 @@ ri_beam_set(
     return 0;   /* OK   */
 }
 
+/*
+ * Project vertices of triangle onto axis-aligned plane.
+ */
+static void
+project_triangle(
+          ri_vector_t  pv_out[3],       /* [out] 2D projected triangle  */
+          ri_vector_t  v[3],            /* triangle                     */
+    const ri_beam_t   *beam)
+{
+
+    ri_vector_t planes[3] = {
+        { 1.0, 0.0, 0.0 },              /* x    */
+        { 0.0, 1.0, 0.0 },              /* y    */
+        { 0.0, 0.0, 1.0 } };            /* z    */
+
+    ri_vector_t n;
+
+    assert( beam->dominant_axis < 3 );
+
+    vcpy( n, planes[beam->dominant_axis] );
+
+    /*
+     * pv = prjected point of triangle's vertex P.
+     * pv = O + vO * (d / (vO . N))
+     */
+
+    int         i;
+    ri_vector_t pv[3]; 
+    ri_vector_t vo;
+    ri_float_t  t;
+    ri_float_t  k;
+
+    for (i = 0; i < 3; i++) {
+
+        vsub( vo, v[i], beam->org );
+
+        t = vdot( vo, n );
+
+        if (fabs(t) > RI_EPS) {
+            k = beam->d / t;
+        } else {
+            k = 0.0;
+        }
+
+        pv_out[i][0] = beam->org[0] + k * vo[0];
+        pv_out[i][1] = beam->org[1] + k * vo[1];
+        pv_out[i][2] = beam->org[2] + k * vo[2];
+
+    }
+    
+
+    
+
+
+}
+
+
 void ri_beam_clip_by_triangle(
           ri_beam_t   *outer_out,     /* [out]        */
           ri_beam_t   *inner_out,     /* [out]        */
           int         *nouter_out,    /* [out]        */
           int         *ninner_out,    /* [out]        */
           ri_float_t   v[3],          /* triangle     */
-    const ri_beam_t   *src)
+    const ri_beam_t   *beam)
 {
 
     plane_t plane;
