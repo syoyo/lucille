@@ -74,12 +74,14 @@ typedef struct _ri_qbvh_node_t {
      */
 
     float                   bbox[4 * 3 * 2];
-    struct _ri_qbvh_node_t *child[4];         /* ptr to child node    */
+    struct _ri_qbvh_node_t *child[4];         /* ptr to child node    
+                                               * TODO: make this offset
+                                               */
     
     int                     axis0, axis1, axis2;
     int                     is_leaf;
     
-} ri_qbvh_node_t;
+} ri_qbvh_node_t;   /* 128 bytes. */
 
 /*
  * Struct: ri_bvh_diag_t

@@ -99,9 +99,7 @@ typedef struct _triangle4_t {
 
 typedef struct _triangle_t {
 
-    ri_float_t v0x, v0y, v0z;
-    ri_float_t v1x, v1y, v1z;
-    ri_float_t v2x, v2y, v2z;
+    ri_vector_t v[3];
 
     ri_geom_t  *geom;
     uint32_t    index;
@@ -110,9 +108,7 @@ typedef struct _triangle_t {
 
 typedef struct _triangle2d_t {
 
-    ri_float_t  v0u, v0v;
-    ri_float_t  v1u, v1v;
-    ri_float_t  v2u, v2v;
+    ri_float_t  v[3][2];
 
     ri_geom_t  *geom;
     uint32_t    index;
@@ -161,79 +157,87 @@ ri_bvh_stat_traversal_t  g_stattrav;
 static ri_qbvh_node_t *ri_qbvh_node_new();
 
 static void get_bbox_of_triangle(
-    ri_vector_t        bmin_out,            /* [out] */  
-    ri_vector_t        bmax_out,            /* [out] */  
-    const triangle_t  *triangle);
+          ri_vector_t        bmin_out,           /* [out] */  
+          ri_vector_t        bmax_out,           /* [out] */  
+    const triangle_t        *triangle);
 
 static void calc_scene_bbox(
-    ri_vector_t        bmin_out,            /* [out]    */
-    ri_vector_t        bmax_out,            /* [out]    */
-    const tri_bbox_t  *tri_bboxes,
-    uint64_t           ntriangles);
+          ri_vector_t        bmin_out,           /* [out]    */
+          ri_vector_t        bmax_out,           /* [out]    */
+    const tri_bbox_t        *tri_bboxes,
+          uint64_t           ntriangles);
 
 static void create_triangle_list(
-    triangle_t       **triangles_out,       /* [out]    */
-    tri_bbox_t       **tri_bboxes_out,      /* [out]    */
-    uint64_t          *ntriangles,          /* [out]    */
-    const ri_list_t   *geom_list);
+          triangle_t       **triangles_out,      /* [out]    */
+          tri_bbox_t       **tri_bboxes_out,     /* [out]    */
+          uint64_t          *ntriangles,         /* [out]    */
+    const ri_list_t         *geom_list);
 
 static void bbox_add_margin(
-    ri_vector_t        bmin,                /* [inout]  */
-    ri_vector_t        bmax);               /* [inout]  */
+          ri_vector_t        bmin,               /* [inout]  */
+          ri_vector_t        bmax);              /* [inout]  */
 
 static int bin_triangle_edge(
-    bvh_bin_buffer_t  *binbuf,              /* [inout]  */
-    const ri_vector_t  scene_bmin,
-    const ri_vector_t  scene_bmax,
-    const tri_bbox_t  *tri_bboxes,
-    uint64_t           ntriangles);
+          bvh_bin_buffer_t  *binbuf,             /* [inout]  */
+    const ri_vector_t        scene_bmin,
+    const ri_vector_t        scene_bmax,
+    const tri_bbox_t        *tri_bboxes,
+          uint64_t           ntriangles);
 
 static void calc_bbox_of_triangles(
-    ri_vector_t        bmin_out,            /* [out]    */
-    ri_vector_t        bmax_out,            /* [out]    */
-    const tri_bbox_t  *tri_bboxes,
-    uint64_t           ntriangles);
+          ri_vector_t        bmin_out,           /* [out]    */
+          ri_vector_t        bmax_out,           /* [out]    */
+    const tri_bbox_t        *tri_bboxes,
+          uint64_t           ntriangles);
 
 static int gather_triangles(
-    triangle_t       *triangles_to_out,    /* [out]    */
-    const triangle_t *triangles_from,
-    const tri_bbox_t *tri_bboxes,
-    uint64_t          ntriangles);
+          triangle_t        *triangles_to_out,   /* [out]    */
+    const triangle_t        *triangles_from,
+    const tri_bbox_t        *tri_bboxes,
+          uint64_t           ntriangles);
 
 static inline int test_ray_aabb(
-    ri_float_t        *tmin_out,             /* [out]    */
-    ri_float_t        *tmax_out,             /* [out]    */
-    const ri_vector_t  bmin,
-    const ri_vector_t  bmax,
-    ri_ray_t          *ray);
+          ri_float_t        *tmin_out,           /* [out]    */
+          ri_float_t        *tmax_out,           /* [out]    */
+    const ri_vector_t        bmin,
+    const ri_vector_t        bmax,
+          ri_ray_t          *ray);
 
 static int bvh_construct(
-    ri_qbvh_node_t    *root,
-    ri_vector_t        bmin,
-    ri_vector_t        bmax,
-    triangle_t        *triangles,
-    triangle_t        *triangles_buf,
-    tri_bbox_t        *tri_bboxes,
-    tri_bbox_t        *tri_bboxes_buf,
-    uint64_t           index_left,          /* [index_left, index_right)    */
-    uint64_t           index_right);
+          ri_qbvh_node_t    *root,
+          ri_vector_t        bmin,
+          ri_vector_t        bmax,
+          triangle_t        *triangles,
+          triangle_t        *triangles_buf,
+          tri_bbox_t        *tri_bboxes,
+          tri_bbox_t        *tri_bboxes_buf,
+          uint64_t           index_left,
+          uint64_t           index_right);
 
 static int bvh_traverse(
-    ri_intersection_state_t *state_out,     /* [out]        */
-    const ri_qbvh_node_t    *root,
-    ri_bvh_diag_t           *diag,          /* [modified]   */
-    ri_ray_t                *ray,
-    bvh_stack_t             *stack );       /* [buffer]     */
+          ri_intersection_state_t *state_out,   /* [out]                */
+    const ri_qbvh_node_t          *root,
+          ri_bvh_diag_t           *diag,        /* [modified]           */
+          ri_ray_t                *ray,
+          bvh_stack_t             *stack );     /* [buffer]             */
 
 
 static int bvh_traverse_beam(
-    ri_intersection_state_t *state_out,     /* [out]        */
-    const ri_qbvh_node_t    *root,
-    ri_bvh_diag_t           *diag,          /* [modified]   */
-    ri_beam_t               *beam,
-    bvh_stack_t             *stack );       /* [buffer]     */
+          ri_intersection_state_t *state_out,   /* [out]                */
+    const ri_qbvh_node_t          *root,
+          ri_bvh_diag_t           *diag,        /* [modified]           */
+          ri_beam_t               *beam,
+          bvh_stack_t             *stack );     /* [buffer]             */
 
-static ri_bvh_diag_t *gdiag;                /* TODO: thread-safe    */
+static void project_triangles(
+          triangle2d_t *tri2d_out,              /* [out]                */
+    const triangle_t   *triangles,              /* [in]                 */
+          uint32_t      ntriangles,
+          int           axis,
+          ri_float_t    d,
+          ri_vector_t   org);
+
+static ri_bvh_diag_t *gdiag;                    /* TODO: thread-safe    */
 
 
 /* ----------------------------------------------------------------------------
@@ -534,15 +538,9 @@ triangle_isect(
     ri_float_t  t, u, v;
     double      eps = 1.0e-14;
 
-    v0[0] = triangle->v0x;
-    v0[1] = triangle->v0y;
-    v0[2] = triangle->v0z;
-    v1[0] = triangle->v1x;
-    v1[1] = triangle->v1y;
-    v1[2] = triangle->v1z;
-    v2[0] = triangle->v2x;
-    v2[1] = triangle->v2y;
-    v2[2] = triangle->v2z;
+    vcpy( v0, triangle->v[0] );
+    vcpy( v1, triangle->v[1] );
+    vcpy( v2, triangle->v[2] );
 
     vsub( e1, v1, v0 );
     vsub( e2, v2, v0 );
@@ -616,7 +614,7 @@ bvh_intersect_leaf_node(
     vcpy( raydir, ray->dir );
 
     triangles  = (triangle_t *)node->child[0];
-    ntriangles = (uintptr_t)node->child[1];
+    ntriangles = *((uint32_t *)&node->bbox[0]);
 
 #ifdef RI_BVH_ENABLE_DIAGNOSTICS
     if (gdiag) gdiag->ntriangle_isects++;
@@ -1038,6 +1036,7 @@ bvh_construct(
 {
 
     uint64_t n;
+    uint32_t n32;
 
     n = index_right - index_left;
 
@@ -1073,11 +1072,23 @@ bvh_construct(
          */
 
         /*
-         * [0] ptr to triangle list.
-         * [1] ntriangles
+         * bbox[0]    -> # of triangles.
+         * child[0]   -> ptr to 3D triangles.
+         * child[1:3] -> ptr to 2D triangles.
          */
+        
+        assert( n < 0x100000000ULL );
+        n32 = (uint32_t)n;
+
+        root->bbox[0]  = *((float *)&n32);
         root->child[0] = (ri_qbvh_node_t *)(triangles + index_left);
-        root->child[1] = (ri_qbvh_node_t *)(uint32_t)n; /* FIXME: support 64bit */
+
+        /*
+         * 2D triangles are generated on demand during beam traing.
+         */
+        root->child[1] = NULL;
+        root->child[2] = NULL;
+        root->child[3] = NULL;
 
         root->is_leaf = 1;
 
@@ -1481,17 +1492,9 @@ create_triangle_list(
             vcpy(v[1], geom->positions[geom->indices[3 * i + 1]]);    
             vcpy(v[2], geom->positions[geom->indices[3 * i + 2]]);    
 
-            (*triangles_out)[idx].v0x = v[0][0];
-            (*triangles_out)[idx].v0y = v[0][1];
-            (*triangles_out)[idx].v0z = v[0][2];
-
-            (*triangles_out)[idx].v1x = v[1][0];
-            (*triangles_out)[idx].v1y = v[1][1];
-            (*triangles_out)[idx].v1z = v[1][2];
-
-            (*triangles_out)[idx].v2x = v[2][0];
-            (*triangles_out)[idx].v2y = v[2][1];
-            (*triangles_out)[idx].v2z = v[2][2];
+            vcpy( (*triangles_out)[idx].v[0], v[0] );
+            vcpy( (*triangles_out)[idx].v[1], v[1] );
+            vcpy( (*triangles_out)[idx].v[2], v[2] );
 
             (*triangles_out)[idx].geom  = geom;
             (*triangles_out)[idx].index = 3 * i;
@@ -1539,28 +1542,16 @@ get_bbox_of_triangle(
     ri_vector_t        bmax_out,         /* [out] */  
     const triangle_t  *triangle)
 {
-    bmin_out[0] = triangle->v0x; 
-    bmin_out[1] = triangle->v0y; 
-    bmin_out[2] = triangle->v0z; 
-    bmax_out[0] = triangle->v0x; 
-    bmax_out[1] = triangle->v0y; 
-    bmax_out[2] = triangle->v0z; 
 
-    bmin_out[0] = (bmin_out[0] < triangle->v1x) ? bmin_out[0] : triangle->v1x;
-    bmin_out[1] = (bmin_out[1] < triangle->v1y) ? bmin_out[1] : triangle->v1y;
-    bmin_out[2] = (bmin_out[2] < triangle->v1z) ? bmin_out[2] : triangle->v1z;
+    vcpy( bmin_out, triangle->v[0] );
+    vcpy( bmax_out, triangle->v[0] );
 
-    bmin_out[0] = (bmin_out[0] < triangle->v2x) ? bmin_out[0] : triangle->v2x;
-    bmin_out[1] = (bmin_out[1] < triangle->v2y) ? bmin_out[1] : triangle->v2y;
-    bmin_out[2] = (bmin_out[2] < triangle->v2z) ? bmin_out[2] : triangle->v2z;
+    vmin( bmin_out, bmin_out, triangle->v[1] );
+    vmin( bmin_out, bmin_out, triangle->v[2] );
 
-    bmax_out[0] = (bmax_out[0] > triangle->v1x) ? bmax_out[0] : triangle->v1x;
-    bmax_out[1] = (bmax_out[1] > triangle->v1y) ? bmax_out[1] : triangle->v1y;
-    bmax_out[2] = (bmax_out[2] > triangle->v1z) ? bmax_out[2] : triangle->v1z;
+    vmax( bmax_out, bmax_out, triangle->v[1] );
+    vmax( bmax_out, bmax_out, triangle->v[2] );
 
-    bmax_out[0] = (bmax_out[0] > triangle->v2x) ? bmax_out[0] : triangle->v2x;
-    bmax_out[1] = (bmax_out[1] > triangle->v2y) ? bmax_out[1] : triangle->v2y;
-    bmax_out[2] = (bmax_out[2] > triangle->v2z) ? bmax_out[2] : triangle->v2z;
 }
 
 static void
@@ -1828,9 +1819,15 @@ test_beam_node(
  * - Beam completely misses the triangle. 
  * - Beam completely hits the triangle(inside of triangle). 
  * - Beam partially hits the triangle(needs beam splitting)
+ *
+ * u_out, v_out and t_out will be filled only when beam completely hits
+ * the triangle.
  */
 int
 test_beam_triangle(
+          ri_vector_t  u_out,       /* [out]    */
+          ri_vector_t  v_out,       /* [out]    */
+          ri_vector_t  t_out,       /* [out]    */
     const triangle_t  *triangle,
     const ri_beam_t   *beam)
 {
@@ -1838,22 +1835,16 @@ test_beam_triangle(
     int         i;
 
     int         mask;
-    ri_float_t  u, v, t;
+    ri_float_t  u[4], v[4], t[4];
 
     ri_vector_t v0, v1, v2;
     ri_vector_t e1, e2;
     ri_vector_t p, q, s; 
     ri_float_t  a, inva;
 
-    v0[0] = triangle->v0x;
-    v0[1] = triangle->v0y;
-    v0[2] = triangle->v0z;
-    v1[0] = triangle->v1x;
-    v1[1] = triangle->v1y;
-    v1[2] = triangle->v1z;
-    v2[0] = triangle->v2x;
-    v2[1] = triangle->v2y;
-    v2[2] = triangle->v2z;
+    vcpy( v0, triangle->v[0] );
+    vcpy( v1, triangle->v[1] );
+    vcpy( v2, triangle->v[2] );
 
     vsub( e1, v1, v0 );
     vsub( e2, v2, v0 );
@@ -1875,19 +1866,19 @@ test_beam_triangle(
         vsub( s, beam->org, v0 );
         vcross( q, s, e1 );
 
-        u = vdot( s, p ) * inva;    
-        v = vdot( q, beam->dir[i] ) * inva;    
-        t = vdot( e2, q ) * inva;    
+        u[i] = vdot( s, p ) * inva;    
+        v[i] = vdot( q, beam->dir[i] ) * inva;    
+        t[i] = vdot( e2, q ) * inva;    
 
-        if ( (u < 0.0) || (u > 1.0)) {
+        if ( (u[i] < 0.0) || (u[i] > 1.0)) {
             continue;
         }
 
-        if ( (v < 0.0) || ((u + v) > 1.0)) {
+        if ( (v[i] < 0.0) || ((u[i] + v[i]) > 1.0)) {
             continue;
         }
 
-        if ( (t < 0.0) || (t > beam->t_max) ) {
+        if ( (t[i] < 0.0) || (t[i] > beam->t_max) ) {
             continue;
         }
 
@@ -1896,12 +1887,21 @@ test_beam_triangle(
 
     if (mask == 0) {
 
-        /* Beam completely misses the triangle. */
+        /* 
+         * Beam completely misses the triangle.
+         * (but there is a case that beam contains the triangle.)
+         */
         return BEAM_MISS_COMPLETELY;
 
     } else if (mask == 0xf) {
 
         /* Beam completely hits the triangle. */
+        for (i = 0; i < 4; i++) {
+            u_out[i] = u[i];
+            v_out[i] = v[i];
+            t_out[i] = t[i];
+        }
+
         return BEAM_HIT_COMPLETELY;
 
     } else {
@@ -1950,12 +1950,15 @@ bvh_intersect_leaf_node_beam(
     const ri_qbvh_node_t    *node,
     ri_beam_t               *beam )
 {
-    uint32_t    tid;
+    uint32_t      tid;
 
-    int         ret;
-    uint32_t    i;
-    uint32_t    ntriangles;
-    triangle_t *triangles;
+    int           ret;
+    uint32_t      i;
+    uint32_t      ntriangles;
+    triangle_t   *triangles;
+    triangle2d_t *triangle2ds;
+
+    ri_vector_t   u, v, t;
 
     //
     // Init
@@ -1964,6 +1967,24 @@ bvh_intersect_leaf_node_beam(
 
     triangles  = (triangle_t *)node->child[0];
     ntriangles = (uintptr_t)node->child[1];
+
+    /*
+     * Firstly, check if it is the first time visiting to this node.
+     * This is determined whether child[1:3] is NULL or not.
+     * If NULL it is the first time, we create list of 2d projected triangles.
+     */
+    if (node->child[beam->dominant_axis + 1] == NULL) {
+
+        triangle2ds = ri_mem_alloc(sizeof(triangle2d_t) * ntriangles);
+        
+        project_triangles( triangle2ds,
+                           triangles,
+                           ntriangles,
+                           beam->dominant_axis,
+                           beam->d,
+                           beam->org );
+
+    }
 
 #ifdef RI_BVH_ENABLE_DIAGNOSTICS
     if (gdiag) gdiag->ntriangle_isects++;
@@ -1975,14 +1996,16 @@ bvh_intersect_leaf_node_beam(
 
     for (i = 0; i < ntriangles; i++) {
 
-        ret = test_beam_triangle( triangles + i, beam );
+        ret = test_beam_triangle( u, v, t, triangles + i, beam );
 
         switch (ret) {
-        case BEAM_MISS_COMPLETELY:
-            break;
         case BEAM_HIT_COMPLETELY:
             break;
+
+        case BEAM_MISS_COMPLETELY:
         case BEAM_HIT_PARTIALLY:
+
+            /* Subdivide beam.  */
             break;
         }
             
@@ -2101,6 +2124,70 @@ end_traverse:
     return 0;
 }
 
+/*
+ * Project vertices of triangle onto axis-aligned plane.
+ */
+static void project_triangles(
+          triangle2d_t *tri2d_out,      /* [out]                */
+    const triangle_t   *triangles,      /* [in]                 */
+          uint32_t      ntriangles,
+          int           axis,
+          ri_float_t    d,              /* distant to the plane         */
+          ri_vector_t   org)            /* origin of the beam           */
+{
+
+    int uv[3][2] = {
+        { 1, 2 }, { 2, 0 }, { 0, 1 } };
+
+    ri_vector_t planes[3] = {
+        { 1.0, 0.0, 0.0 },              /* x    */
+        { 0.0, 1.0, 0.0 },              /* y    */
+        { 0.0, 0.0, 1.0 } };            /* z    */
+
+    uint32_t    i, j;
+    ri_vector_t n;
+    ri_vector_t vo;
+    ri_float_t  t;
+    ri_float_t  k;
+
+    assert( axis < 3 );
+    assert( ntriangles > 0 );
+    assert( triangles != NULL );
+    assert( tri2d_out != NULL );
+
+
+    vcpy( n, planes[axis] );
+
+
+    for (i = 0; i < ntriangles; i++) {
+
+        /*
+         * pv = prjected point of triangle's vertex P.
+         * pv = O + vO * (d / (vO . N))
+         */
+
+        for (j = 0; j < 3; j++) {
+
+            vsub( vo, triangles[i].v[j], org );
+
+            t = vdot( vo, n );
+
+            if (fabs(t) > RI_EPS) {
+                k = d / t;
+            } else {
+                k = 0.0;
+            }
+
+            tri2d_out[i].v[j][0] = org[uv[axis][0]] + k * vo[uv[axis][0]];
+            tri2d_out[i].v[j][1] = org[uv[axis][1]] + k * vo[uv[axis][1]];
+
+        }
+
+    }
+
+}
+
+#if 0   // TODO
 void
 split(
     triangle_t tri,
@@ -2236,62 +2323,5 @@ split(
 
     }
 }
+#endif
 
-/*
- *  Generate a list of 2D projected triangles.
- *  The funciton generates 3 lists of 2d triangles(x, y and z axis).
- */
-void
-generate_2d_triangles(
-    triangle2d_t **triangles_x_out,      /* [out] */
-    triangle2d_t **triangles_y_out,      /* [out] */
-    triangle2d_t **triangles_z_out,      /* [out] */
-    triangle_t    *triangles,
-    uint64_t       ntriangles)
-{
-    uint64_t i;
-    uint64_t n;
-
-    n = ntriangles;
-
-    (*triangles_x_out) = ri_mem_alloc( sizeof(triangle2d_t) * n );
-    (*triangles_y_out) = ri_mem_alloc( sizeof(triangle2d_t) * n );
-    (*triangles_z_out) = ri_mem_alloc( sizeof(triangle2d_t) * n );
-
-    /*
-     * X: uv = yz
-     */
-    for (i = 0; i < n; i++) {
-        (*triangles_x_out)[i].v0u = triangles[i].v0y;
-        (*triangles_x_out)[i].v0v = triangles[i].v0z;
-        (*triangles_x_out)[i].v1u = triangles[i].v1y;
-        (*triangles_x_out)[i].v1v = triangles[i].v1z;
-        (*triangles_x_out)[i].v2u = triangles[i].v2y;
-        (*triangles_x_out)[i].v2v = triangles[i].v2z;
-    }
-
-    /*
-     * Y: uv = zx
-     */ 
-    for (i = 0; i < n; i++) {
-        (*triangles_y_out)[i].v0u = triangles[i].v0z;
-        (*triangles_y_out)[i].v0v = triangles[i].v0x;
-        (*triangles_y_out)[i].v1u = triangles[i].v1z;
-        (*triangles_y_out)[i].v1v = triangles[i].v1x;
-        (*triangles_y_out)[i].v2u = triangles[i].v2z;
-        (*triangles_y_out)[i].v2v = triangles[i].v2x;
-    }
-
-    /*
-     * Z: uv = xy
-     */
-    for (i = 0; i < n; i++) {
-        (*triangles_z_out)[i].v0u = triangles[i].v0x;
-        (*triangles_z_out)[i].v0v = triangles[i].v0y;
-        (*triangles_z_out)[i].v1u = triangles[i].v1x;
-        (*triangles_z_out)[i].v1v = triangles[i].v1y;
-        (*triangles_z_out)[i].v2u = triangles[i].v2x;
-        (*triangles_z_out)[i].v2v = triangles[i].v2y;
-    }
-
-}

@@ -16,6 +16,11 @@ extern "C" {
 
 typedef struct _ri_film_t
 {
+
+    float *image;
+    int    width;
+    int    height;
+
 	int dummy;
 } ri_film_t;
 

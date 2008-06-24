@@ -19,6 +19,16 @@ extern "C" {
 #endif
 
 #include "vector.h"
+#include "geom.h"
+
+typedef struct _ri_triangle2d_t {
+
+    ri_float_t  v[3][2];
+
+    ri_geom_t  *geom;
+    uint32_t    index;
+
+} ri_triangle2d_t;
 
 /*
  * Beam is defined as a frustum

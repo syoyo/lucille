@@ -37,11 +37,13 @@
 #include "beam.h"
 #include "bvh.h"
 
-typedef struct _plane_t
+typedef ri_float_t point2d_t[2];
+
+typedef struct _plane2d_t
 {
-    ri_vector_t p;      /* position */
-    ri_vector_t n;      /* normal   */
-} plane_t;
+    point2d_t p;      /* position */
+    point2d_t n;      /* normal   */
+} plane2d_t;
 
 
 
@@ -58,21 +60,21 @@ static ri_float_t safeinv( ri_float_t a, ri_float_t eps, ri_float_t val );
  */
 
 static void intersect(
-          ri_vector_t  i_out,           /* [out]    */
-    const ri_vector_t  s,
-    const ri_vector_t  p,
-    const plane_t     *b);
+          point2d_t    i_out,           /* [out]    */
+    const point2d_t    s,
+    const point2d_t    p,
+    const plane2d_t   *b);
 
 static int inside(
-          ri_vector_t  p,
-    const plane_t     *b);
+          point2d_t    p,
+    const plane2d_t   *b);
 
 static void clip(
-          ri_vector_t *vlist_out,       /* [out]    */
+          point2d_t   *vlist_out,       /* [out]    */
           int         *len_out,         /* [out]    */
-    const ri_vector_t *vlist_in,
+    const point2d_t   *vlist_in,
           int          len_in,
-    const plane_t     *clip_plane);
+    const plane2d_t   *clip_plane);
 
 
 
@@ -81,6 +83,8 @@ static void clip(
  * Private functions
  *
  * ------------------------------------------------------------------------- */
+
+#define vdot2d( a, b ) ((a)[0] * (b)[0] + (a)[1] * (b)[1])
 
 /*
  *   1.0 / a       if fabs(a) > eps
@@ -98,12 +102,12 @@ safeinv( ri_float_t a, ri_float_t eps, ri_float_t val )
 
 void
 intersect(
-          ri_vector_t  i_out,       /* [out]    */
-    const ri_vector_t  s,
-    const ri_vector_t  p,
-    const plane_t     *b)
+          point2d_t    i_out,       /* [out]    */
+    const point2d_t    s,
+    const point2d_t    p,
+    const plane2d_t   *b)
 {
-    ri_vector_t v;
+    point2d_t   v;
     ri_float_t  vdotn;
     ri_float_t  sdotn;
     ri_float_t  d;
@@ -114,9 +118,10 @@ intersect(
     /*
      * v = direction    
      */
-    vsub( v, p, s );
+    v[0] = p[0] - s[0];
+    v[1] = p[1] - s[1];
 
-    vdotn = vdot( v, b->n );
+    vdotn = vdot2d( v, b->n );
     if (fabs(vdotn) < RI_EPS) {
         printf("Error: vdotn is too small!\n");
         vdotn = 1.0;
@@ -125,9 +130,9 @@ intersect(
     /*
      * d = plane equation(= -(p . n) )
      */
-    d = -( vdot( b->p, b->n ) );
+    d = -( vdot2d( b->p, b->n ) );
 
-    sdotn = vdot( s, b->n );
+    sdotn = vdot2d( s, b->n );
     
     /*
      * t = ray parameter of intersection point.
@@ -137,7 +142,6 @@ intersect(
 
     i_out[0] = s[0] + t * v[0];
     i_out[1] = s[1] + t * v[1];
-    i_out[2] = s[2] + t * v[2];
 
 }
 
@@ -147,8 +151,8 @@ intersect(
  */
 int
 inside(
-          ri_vector_t  p,
-    const plane_t     *b)
+          point2d_t  p,
+    const plane2d_t *b)
 {
     ri_vector_t pb;
     ri_float_t  d;
@@ -168,9 +172,9 @@ inside(
  */
 void
 output(
-    ri_vector_t *list_out,          /* [out]    */
+    point2d_t   *list_out,          /* [out]    */
     int         *len_inout,         /* [inout]  */
-    ri_vector_t  p)
+    point2d_t    p)
 {
     int idx;
 
@@ -187,25 +191,25 @@ output(
  */
 void
 clip(
-          ri_vector_t *vlist_out,       /* [out]    */
+          point2d_t   *vlist_out,       /* [out]    */
           int         *len_out,         /* [out]    */
-    const ri_vector_t *vlist_in,
+    const point2d_t   *vlist_in,
           int          len_in,
-    const plane_t     *clip_plane)
+    const plane2d_t   *clip_plane)
 {
 
     int                j;
-    ri_vector_t       *s_ptr, *p_ptr;
-    ri_vector_t        newv;
+    point2d_t         *s_ptr, *p_ptr;
+    point2d_t          newv;
 
     (*len_out) = 0;
 
     /* start with last vertex.    */
-    s_ptr = (ri_vector_t *)&vlist_in[len_in - 1];    
+    s_ptr = (point2d_t *)&vlist_in[len_in - 1];    
 
     for (j = 0; j < len_in; j++) {
 
-        p_ptr = (ri_vector_t *)&vlist_in[j];    /* current vertex    */
+        p_ptr = (point2d_t *)&vlist_in[j];    /* current vertex    */
 
         if (inside( (*p_ptr), clip_plane )) {
 
@@ -336,78 +340,23 @@ ri_beam_set(
     return 0;   /* OK   */
 }
 
-/*
- * Project vertices of triangle onto axis-aligned plane.
- */
-static void
-project_triangle(
-          ri_vector_t  pv_out[3],       /* [out] 2D projected triangle  */
-          ri_vector_t  v[3],            /* triangle                     */
-    const ri_beam_t   *beam)
+
+
+void ri_beam_clip_by_triangle2d(
+          ri_beam_t       *outer_out,     /* [out]        */
+          ri_beam_t       *inner_out,     /* [out]        */
+          int             *nouter_out,    /* [out]        */
+          int             *ninner_out,    /* [out]        */
+          ri_triangle2d_t *triangle,          /* triangle     */
+    const ri_beam_t       *beam)
 {
 
-    ri_vector_t planes[3] = {
-        { 1.0, 0.0, 0.0 },              /* x    */
-        { 0.0, 1.0, 0.0 },              /* y    */
-        { 0.0, 0.0, 1.0 } };            /* z    */
+    // plane_t plane;
 
-    ri_vector_t n;
+    point2d_t buf[16];
+    int       new_len;
+    int       len;
 
-    assert( beam->dominant_axis < 3 );
-
-    vcpy( n, planes[beam->dominant_axis] );
-
-    /*
-     * pv = prjected point of triangle's vertex P.
-     * pv = O + vO * (d / (vO . N))
-     */
-
-    int         i;
-    ri_vector_t pv[3]; 
-    ri_vector_t vo;
-    ri_float_t  t;
-    ri_float_t  k;
-
-    for (i = 0; i < 3; i++) {
-
-        vsub( vo, v[i], beam->org );
-
-        t = vdot( vo, n );
-
-        if (fabs(t) > RI_EPS) {
-            k = beam->d / t;
-        } else {
-            k = 0.0;
-        }
-
-        pv_out[i][0] = beam->org[0] + k * vo[0];
-        pv_out[i][1] = beam->org[1] + k * vo[1];
-        pv_out[i][2] = beam->org[2] + k * vo[2];
-
-    }
-    
-
-    
-
-
-}
-
-
-void ri_beam_clip_by_triangle(
-          ri_beam_t   *outer_out,     /* [out]        */
-          ri_beam_t   *inner_out,     /* [out]        */
-          int         *nouter_out,    /* [out]        */
-          int         *ninner_out,    /* [out]        */
-          ri_float_t   v[3],          /* triangle     */
-    const ri_beam_t   *beam)
-{
-
-    plane_t plane;
-
-    /*
-     * Q: what plane is the best plane for clipping. triangle's plane?
-     *    axis-aligned xy, yz or zx plane?
-     */
 
 #if 0
     clip
