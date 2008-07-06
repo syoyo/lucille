@@ -41,6 +41,8 @@
  *     (conditionally accepted at ACM Transactions on Graphics), 2006
  *     <http://www.sci.utah.edu/~wald/Publications/index.html>
  *
+ * $Id$
+ *
  */
 
 #include <stdint.h>
@@ -66,9 +68,10 @@
 /*
  * BVH settings
  */
-#define BVH_MAXDEPTH   100
-#define BVH_NTRIS_LEAF 4        /* TODO: parameterize.  */
-#define BVH_BIN_SIZE  64
+#define BVH_MAXDEPTH          100
+#define BVH_NTRIS_LEAF          2        /* TODO: parameterize.  */
+#define BVH_BIN_SIZE           64
+#define BVH_MAXMISSBEAMS     1024
 
 /*
  * Flags for beam tracing
@@ -106,14 +109,6 @@ typedef struct _triangle_t {
 
 } triangle_t;
 
-typedef struct _triangle2d_t {
-
-    ri_float_t  v[3][2];
-
-    ri_geom_t  *geom;
-    uint32_t    index;
-
-} triangle2d_t;
 
 typedef struct _tri_bbox_t {
 
@@ -140,12 +135,23 @@ typedef struct _bvh_stack_t {
 
 } bvh_stack_t;
 
+/*
+ * Miss beam stack
+ */
+typedef struct _bvh_miss_beam_stack_t {
 
+    int        stack[BVH_MAXDEPTH + 1];      /* store offset for miss_beams */
+    int        depth;
+
+} bvh_miss_beam_stack_t;
+
+ri_beam_t  g_miss_beams[BVH_MAXMISSBEAMS];
 
 /*
  * Singleton
  */
-ri_bvh_stat_traversal_t  g_stattrav;
+ri_bvh_stat_traversal_t       g_stattrav;
+ri_bvh_stat_beam_traversal_t  g_beamstattrav;
 
 
 /* ----------------------------------------------------------------------------
@@ -223,19 +229,24 @@ static int bvh_traverse(
 
 
 static int bvh_traverse_beam(
-          ri_intersection_state_t *state_out,   /* [out]                */
-    const ri_qbvh_node_t          *root,
+          ri_raster_plane_t       *raster_out,  /* [out]                */
+          ri_qbvh_node_t          *root,
           ri_bvh_diag_t           *diag,        /* [modified]           */
           ri_beam_t               *beam,
           bvh_stack_t             *stack );     /* [buffer]             */
 
 static void project_triangles(
-          triangle2d_t *tri2d_out,              /* [out]                */
-    const triangle_t   *triangles,              /* [in]                 */
-          uint32_t      ntriangles,
-          int           axis,
-          ri_float_t    d,
-          ri_vector_t   org);
+          ri_triangle2d_t *tri2d_out,              /* [out]                */
+    const triangle_t      *triangles,              /* [in]                 */
+          uint32_t         ntriangles,
+          int              axis,
+          ri_float_t       d,
+          ri_vector_t      org);
+
+static int test_beam_aabb(
+          ri_vector_t  bmin,
+          ri_vector_t  bmax,
+    const ri_beam_t   *beam);
 
 static ri_bvh_diag_t *gdiag;                    /* TODO: thread-safe    */
 
@@ -454,6 +465,68 @@ ri_bvh_intersect(
      */
     if (ret) {
         ri_intersection_state_build( state_out, ray->org, ray->dir );
+    }
+                        
+    return ret;
+}
+
+int
+ri_bvh_intersect_beam(
+    void                    *accel,
+    ri_beam_t               *beam,
+    ri_raster_plane_t       *raster_out,
+    void                    *user)
+{
+    ri_bvh_diag_t *diag_ptr;
+    ri_bvh_t      *bvh;
+
+    assert( accel      != NULL );
+    assert( beam       != NULL );
+    assert( raster_out != NULL );
+
+    bvh = (ri_bvh_t *)accel;
+
+    if (user) {
+        diag_ptr = (ri_bvh_diag_t *)user;
+        memset( diag_ptr, 0, sizeof(ri_bvh_diag_t));
+    } else {
+        diag_ptr = NULL;
+    }
+    
+    int ret;
+
+#ifdef RI_BVH_TRACE_STATISTICS
+    g_stattrav.nbeams++;
+#endif
+
+    /*
+     * TODO: Provide indivisual stack for each thread.
+     */
+    bvh_stack_t stack;
+    stack.depth = 0;
+
+    /*
+     * Firstly check if the beam hits scene bbox.
+     */
+    int hit;
+    
+    hit = test_beam_aabb( bvh->bmin, bvh->bmax, beam );
+        
+    if (!hit) {
+        return 0;
+    }
+
+    ret = bvh_traverse_beam(  raster_out,
+                              bvh->root,
+                              diag_ptr, 
+                              beam,
+                             &stack );
+
+    /*
+     * If there's a hit, build intersection state.
+     */
+    if (ret) {
+        // ri_intersection_state_build( state_out, ray->org, ray->dir );
     }
                         
     return ret;
@@ -710,10 +783,13 @@ test_ray_aabb(
     }
 
     tmin = (tmin > tmin_z) ? tmin : tmin_z;
-    tmax = (tmax > tmax_z) ? tmax : tmax_z;
+    tmax = (tmax < tmax_z) ? tmax : tmax_z;
 
-    /* (tmax > 0.0) && (tmin < tmax) => hit */
-    if ( (tmax > 0.0) && (tmin < tmax) ) {
+    /* (tmax > 0.0) && (tmin <= tmax) => hit
+     *
+     * Include tmin == tmax case(hit 2D plane).
+     */
+    if ( (tmax > 0.0) && (tmin <= tmax) ) {
 
         (*tmin_out) = tmin;
         (*tmax_out) = tmax;
@@ -1091,6 +1167,8 @@ bvh_construct(
         root->child[3] = NULL;
 
         root->is_leaf = 1;
+
+        printf("make a leaf\n");
 
         return 0;
     }
@@ -1696,8 +1774,8 @@ get_n_point(
 /*
  * 1 if beam misses bbox, 0 if not.
  */
-int
-test_beam_bbox_misses(
+static int
+test_beam_aabb_misses(
           ri_vector_t  bmin,
           ri_vector_t  bmax,
     const ri_beam_t   *beam)
@@ -1737,8 +1815,8 @@ test_beam_bbox_misses(
  * 0 if no hit.
  * 1 if potentially hit.
  */
-int
-test_beam_bbox(
+static int
+test_beam_aabb(
           ri_vector_t  bmin,
           ri_vector_t  bmax,
     const ri_beam_t   *beam)
@@ -1764,7 +1842,7 @@ test_beam_bbox(
      * 2. Check if beam compiletely misses the bbox.
      */
 
-    ret = test_beam_bbox_misses( bmin, bmax, beam );
+    ret = test_beam_aabb_misses( bmin, bmax, beam );
 
     if (ret) return 0;
 
@@ -1805,10 +1883,10 @@ test_beam_node(
     
     int hit_left, hit_right;
 
-    hit_left  = test_beam_bbox( bmin_left , bmax_left , beam );
-    hit_right = test_beam_bbox( bmin_right, bmax_right, beam );
+    hit_left  = test_beam_aabb( bmin_left , bmax_left , beam );
+    hit_right = test_beam_aabb( bmin_right, bmax_right, beam );
 
-    return hit_left | hit_right;
+    return hit_left | (hit_right << 1);
 
 }
 
@@ -1947,35 +2025,36 @@ test_triangle2d_beam2d_cull_x(
 
 int
 bvh_intersect_leaf_node_beam(
-    const ri_qbvh_node_t    *node,
+    ri_qbvh_node_t          *node,
     ri_beam_t               *beam )
 {
-    uint32_t      tid;
+    uint32_t         tid;
 
-    int           ret;
-    uint32_t      i;
-    uint32_t      ntriangles;
-    triangle_t   *triangles;
-    triangle2d_t *triangle2ds;
+    uint32_t         i;
+    uint32_t         ntriangles;
+    triangle_t      *triangles;
+    ri_triangle2d_t *triangle2ds;
 
-    ri_vector_t   u, v, t;
 
     //
     // Init
     //
     tid    = 0;
 
+    ntriangles = *((uint32_t *)&node->bbox[0]);
     triangles  = (triangle_t *)node->child[0];
-    ntriangles = (uintptr_t)node->child[1];
 
     /*
      * Firstly, check if it is the first time visiting to this node.
      * This is determined whether child[1:3] is NULL or not.
      * If NULL it is the first time, we create list of 2d projected triangles.
      */
-    if (node->child[beam->dominant_axis + 1] == NULL) {
+    triangle2ds = (ri_triangle2d_t *)node->child[beam->dominant_axis + 1];
+    if (triangle2ds == NULL) {
 
-        triangle2ds = ri_mem_alloc(sizeof(triangle2d_t) * ntriangles);
+        printf("proj: %p, n = %d\n", &node->child[beam->dominant_axis + 1], ntriangles);
+
+        triangle2ds = ri_mem_alloc(sizeof(ri_triangle2d_t) * ntriangles);
         
         project_triangles( triangle2ds,
                            triangles,
@@ -1984,6 +2063,13 @@ bvh_intersect_leaf_node_beam(
                            beam->d,
                            beam->org );
 
+        /*
+         * TODO: sort triangles in its projectd size.
+         */
+
+        node->child[beam->dominant_axis + 1] = (ri_qbvh_node_t *)triangle2ds;
+
+        printf("node set: %p\n", node->child[beam->dominant_axis + 1]);
     }
 
 #ifdef RI_BVH_ENABLE_DIAGNOSTICS
@@ -1994,22 +2080,41 @@ bvh_intersect_leaf_node_beam(
     g_stattrav.ntested_triangles += ntriangles;
 #endif
 
-    for (i = 0; i < ntriangles; i++) {
+    {
+        int         nhit_beams;
+        int         nmiss_beams;
+        ri_beam_t   hit_beams[8];
 
+        for (i = 0; i < ntriangles; i++) {
+
+            ri_beam_clip_by_triangle2d(
+                &hit_beams[0], &g_miss_beams[0],
+                &nhit_beams, &nmiss_beams,
+                triangle2ds, beam);
+
+            printf("hit beams = %d, miss beams = %d\n", nhit_beams, nmiss_beams);
+
+        }
+
+    }
+
+#if 0
         ret = test_beam_triangle( u, v, t, triangles + i, beam );
 
         switch (ret) {
         case BEAM_HIT_COMPLETELY:
+            printf("hit completely. tri = %d of %d\n", i, ntriangles);
             break;
 
         case BEAM_MISS_COMPLETELY:
         case BEAM_HIT_PARTIALLY:
+            printf("miss or hit partially. tri = %d of %d\n", i, ntriangles);
 
             /* Subdivide beam.  */
             break;
         }
+#endif
             
-    }
 
     return 0;
 }
@@ -2019,14 +2124,14 @@ bvh_intersect_leaf_node_beam(
  */
 int
 bvh_traverse_beam(
-    ri_intersection_state_t *state_out,     /* [out]        */
-    const ri_qbvh_node_t    *root,
+    ri_raster_plane_t       *raster_out,    /* [out]        */
+    ri_qbvh_node_t          *root,
     ri_bvh_diag_t           *diag,          /* [modified]   */
     ri_beam_t               *beam,
     bvh_stack_t             *stack )        /* [buffer]     */
 {
 
-    const ri_qbvh_node_t *node;
+    ri_qbvh_node_t       *node;
     int                   ret;
     int                   order;            /* traversal order  */
 
@@ -2039,11 +2144,9 @@ bvh_traverse_beam(
     //
     // Initialize intersection state.
     // 
-    state_out->t     = RI_INFINITY;
-    state_out->u     = 0.0;
-    state_out->v     = 0.0;
-    state_out->geom  = NULL;
-    state_out->index = 0;
+    memset( raster_out->t,
+            0,
+            sizeof(ri_float_t) * raster_out->width * raster_out->height ); 
 
     node = root;
 
@@ -2113,14 +2216,6 @@ bvh_traverse_beam(
     
 end_traverse:
 
-    return (state_out->t < RI_INFINITY);
-
-    while (1) {
-
-
-
-    }
-
     return 0;
 }
 
@@ -2128,12 +2223,12 @@ end_traverse:
  * Project vertices of triangle onto axis-aligned plane.
  */
 static void project_triangles(
-          triangle2d_t *tri2d_out,      /* [out]                */
-    const triangle_t   *triangles,      /* [in]                 */
-          uint32_t      ntriangles,
-          int           axis,
-          ri_float_t    d,              /* distant to the plane         */
-          ri_vector_t   org)            /* origin of the beam           */
+          ri_triangle2d_t *tri2d_out,      /* [out]                */
+    const triangle_t      *triangles,      /* [in]                 */
+          uint32_t         ntriangles,
+          int              axis,
+          ri_float_t       d,              /* distant to the plane         */
+          ri_vector_t      org)            /* origin of the beam           */
 {
 
     int uv[3][2] = {
@@ -2181,11 +2276,134 @@ static void project_triangles(
             tri2d_out[i].v[j][0] = org[uv[axis][0]] + k * vo[uv[axis][0]];
             tri2d_out[i].v[j][1] = org[uv[axis][1]] + k * vo[uv[axis][1]];
 
+            printf("tri[%d] v[%d] = %f, %f\n",  i, j,
+                tri2d_out[i].v[j][0],
+                tri2d_out[i].v[j][1]);
         }
 
     }
 
 }
+
+void
+rasterize_triangle(
+          float        *image,
+          int           width,
+          int           height,
+          triangle_t   *triangle,
+          ri_vector_t   frame[3],
+          ri_vector_t   corner,
+          ri_vector_t   org,
+          ri_float_t    fov)
+{
+    int         s, t;
+
+    /*
+     * Use ray casting for robust rasterization.
+     */
+
+    int         i;
+    int         hit;
+    uint32_t    tid;
+    ri_float_t  tparam, uparam, vparam;
+
+    ri_vector_t dir;
+
+    /*
+     * p  = M F E v
+     *
+     *      | w                              w      |
+     * M  = | - ----------        0        - -   0  |
+     *      | 2 tan(fov/2)                   2      |
+     *      |                                       |
+     *      |                h               h      |
+     *      |      0         - ----------  - -   0  |
+     *      |                2 tan(fov/2)    2      |
+     *      |                                       |
+     *      |      0              0          1   0  |
+     *      |                                       |
+     *      |      0              0         -1   0  |
+     *
+     *  F = | du       0 |
+     *      | dv       0 |
+     *      | -dw      0 |
+     *      | 0  0  0  0 |
+     *
+     *  E = | 1  0  0 -org |
+     *      | 0  1  0      |
+     *      | 0  0  1      |
+     *      | 0  0  0  1   |
+     *
+     *  v = | x |
+     *      | y |
+     *      | z |
+     *      | w |
+     */
+
+    ri_vector_t vo;
+    ri_vector_t w;
+    ri_vector_t p[3];
+
+    for (i = 0; i < 3; i++) {
+
+        /* vo = E v */
+        vsub( vo, triangle->v[i], org );
+        
+        /* w = F E v */
+        w[0] =  frame[0][0] * vo[0] + frame[0][1] * vo[1] + frame[0][2] * vo[2];
+        w[1] =  frame[1][0] * vo[0] + frame[1][1] * vo[1] + frame[1][2] * vo[2];
+        w[2] = -frame[2][0] * vo[0] - frame[2][1] * vo[1] - frame[2][2] * vo[2];
+
+        /* p = M F E v */
+        p[i][0] = 0.5 * width  * tan(0.5 * fov) * w[0] - 0.5 * width  * w[2];
+        p[i][1] = 0.5 * height * tan(0.5 * fov) * w[1] - 0.5 * height * w[2];
+        p[i][2] = w[2];
+
+        printf("proj p = %f, %f, %f\n", p[i][0], p[i][1], p[i][2]);
+
+    }
+
+    /*
+     * Compute 2D bbox.
+     */
+    ri_float_t bmin[2], bmax[2];
+
+    bmin[0] = bmax[0] = p[0][0];
+    bmin[1] = bmax[1] = p[0][1];
+
+    bmin[0] = (p[1][0] < bmin[0]) ? p[1][0] : bmin[0];
+    bmax[0] = (p[1][0] > bmax[0]) ? p[1][0] : bmax[0];
+    bmin[1] = (p[2][1] < bmin[1]) ? p[2][1] : bmin[1];
+    bmax[1] = (p[2][1] > bmax[1]) ? p[2][1] : bmax[1];
+
+
+    for (t = (int)bmin[1]; t < (int)bmax[1]; t++) {
+
+        for (s = (int)bmin[0]; s < (int)bmax[0]; s++) {
+
+            dir[0] = corner[0] + s * frame[0][0] + t * frame[1][0];
+            dir[1] = corner[1] + s * frame[0][1] + t * frame[1][1];
+            dir[2] = corner[2] + s * frame[0][2] + t * frame[1][2];
+
+            hit = triangle_isect( &tid, &tparam, &uparam, &vparam,
+                                   triangle, org, dir, 0 );
+
+            if (hit) {
+#ifdef RI_BVH_TRACE_BEAM_STATISTICS
+                g_beamstattrav.nrasterpixels++;
+                if ( image[ t * width + s ] < tparam ) {
+                    g_beamstattrav.noverdraws++;
+                }
+#endif
+                image[ t * width + s ] = tparam; 
+            }
+                
+        }
+
+    }
+
+}
+
 
 #if 0   // TODO
 void

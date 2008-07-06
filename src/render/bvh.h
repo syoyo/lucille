@@ -5,6 +5,13 @@
  *
  */
 
+/*
+ * Bounding Volume Hierarchy.
+ *
+ * $Id$
+ *
+ */
+
 //
 // TODO: SIMD(SSE) optimizatio for Bounding Volume Hierarcies construction and
 //       traversal.
@@ -15,6 +22,7 @@
 
 #include "vector.h"
 #include "ray.h"
+#include "beam.h"
 #include "intersection_state.h"
 
 
@@ -28,6 +36,7 @@ extern "C" {
  */
 #define RI_BVH_ENABLE_DIAGNOSTICS
 #define RI_BVH_TRACE_STATISTICS
+#define RI_BVH_TRACE_BEAM_STATISTICS
 
 #define BMIN_X0    (0      )
 #define BMIN_X1    (1      )
@@ -73,7 +82,7 @@ typedef struct _ri_qbvh_node_t {
      * +------+------+------+------+------+------+
      */
 
-    float                   bbox[4 * 3 * 2];
+    ri_float_t              bbox[4 * 3 * 2];
     struct _ri_qbvh_node_t *child[4];         /* ptr to child node    
                                                * TODO: make this offset
                                                */
@@ -115,6 +124,8 @@ typedef struct _ri_bvh_stat_traversal_t {
     uint64_t nfailed_isects;
     uint64_t nrays;
 
+    uint64_t nbeams;
+
 } ri_bvh_stat_traversal_t;
 
 /*
@@ -130,6 +141,21 @@ typedef struct _ri_bvh_stat_construction_t {
     uint64_t naverage_triangels_per_leaf;
 
 } ri_bvh_stat_construction_t;
+
+/*
+ * Struct: ri_bvh_stat_beam_traversal_t
+ *
+ *   Structure of statistics for beam-BVH traversal phase.
+ *
+ */
+typedef struct _ri_bvh_stat_beam_traversal_t {
+
+    uint64_t noverdraws;
+    uint64_t nrasterpixels;
+
+    uint64_t nbeams;
+
+} ri_bvh_stat_beam_traversal_t;
 
 /*
  * Struct: ri_bvh_t
@@ -158,21 +184,23 @@ typedef struct _ri_bvh_t {
 /*
  * Implementation of ri_accel_t interface
  */
-extern void          *ri_bvh_build    (const void              *data);
-extern void           ri_bvh_free     (void                    *arg);
-extern int            ri_bvh_intersect(void                    *accel,
-                                       ri_ray_t                *ray,
-                                       ri_intersection_state_t *state_out,
-                                       void                    *user);
+extern void *ri_bvh_build         (const void                    *data);
+extern void  ri_bvh_free          (      void                    *arg);
+extern int   ri_bvh_intersect     (      void                    *accel,
+                                         ri_ray_t                *ray,
+                                         ri_intersection_state_t *state_out,
+                                         void                    *user);
 
-// extern ri_qbvh_node_t *ri_qbvh_node_new();
-
+extern int   ri_bvh_intersect_beam(      void                    *accel,
+                                         ri_beam_t               *beam,
+                                         ri_raster_plane_t       *raster_out,
+                                         void                    *user);
 
 /*
  * Debug
  */
-extern void           ri_bvh_clear_stat_traversal();
-extern void           ri_bvh_report_stat_traversal();
+extern void  ri_bvh_clear_stat_traversal();
+extern void  ri_bvh_report_stat_traversal();
 
 #ifdef __cplusplus
 }       /* extern "C" */
