@@ -229,7 +229,7 @@ static int bvh_traverse(
 
 
 static int bvh_traverse_beam(
-          ri_raster_plane_t       *raster_out,  /* [out]                */
+          ri_raster_plane_t       *raster_inout,/* [inout]              */
           ri_qbvh_node_t          *root,
           ri_bvh_diag_t           *diag,        /* [modified]           */
           ri_beam_t               *beam,
@@ -247,6 +247,18 @@ static int test_beam_aabb(
           ri_vector_t  bmin,
           ri_vector_t  bmax,
     const ri_beam_t   *beam);
+
+#if 0
+static void rasterize_triangle(
+          float        *image,
+          int           width,
+          int           height,
+          triangle_t   *triangle,
+          ri_vector_t   frame[3],
+          ri_vector_t   corner,
+          ri_vector_t   org,
+          ri_float_t    fov);
+#endif
 
 static ri_bvh_diag_t *gdiag;                    /* TODO: thread-safe    */
 
@@ -1156,7 +1168,11 @@ bvh_construct(
         assert( n < 0x100000000ULL );
         n32 = (uint32_t)n;
 
-        root->bbox[0]  = *((float *)&n32);
+        uint32_t *ptr;
+
+        ptr = (uint32_t *)&root->bbox[0];
+
+        (*ptr)         = n32;       /* root->bbox[0] = n32  */
         root->child[0] = (ri_qbvh_node_t *)(triangles + index_left);
 
         /*
@@ -2025,16 +2041,17 @@ test_triangle2d_beam2d_cull_x(
 
 int
 bvh_intersect_leaf_node_beam(
+    ri_raster_plane_t       *plane_inout,
     ri_qbvh_node_t          *node,
     ri_beam_t               *beam )
 {
     uint32_t         tid;
-
     uint32_t         i;
     uint32_t         ntriangles;
     triangle_t      *triangles;
     ri_triangle2d_t *triangle2ds;
 
+    (void)plane_inout;
 
     //
     // Init
@@ -2081,6 +2098,7 @@ bvh_intersect_leaf_node_beam(
 #endif
 
     {
+        int         j;
         int         nhit_beams;
         int         nmiss_beams;
         ri_beam_t   hit_beams[8];
@@ -2093,6 +2111,27 @@ bvh_intersect_leaf_node_beam(
                 triangle2ds, beam);
 
             printf("hit beams = %d, miss beams = %d\n", nhit_beams, nmiss_beams);
+
+            /*
+             * Raster hit beam
+             */
+            for (j = 0; j < nhit_beams; j++) {
+
+#if 0
+                rasterize_triangle(
+                    raster_inout->t,
+                    raster_inout->width,
+                    raster_inout->height,
+                    triangles + i,          // Original, unprojected triangle
+                    
+                    
+          triangle_t   *triangle,
+          ri_vector_t   frame[3],
+          ri_vector_t   corner,
+          ri_vector_t   org,
+          ri_float_t    fov)
+#endif
+            }
 
         }
 
@@ -2124,7 +2163,7 @@ bvh_intersect_leaf_node_beam(
  */
 int
 bvh_traverse_beam(
-    ri_raster_plane_t       *raster_out,    /* [out]        */
+    ri_raster_plane_t       *raster_inout,  /* [inout]      */
     ri_qbvh_node_t          *root,
     ri_bvh_diag_t           *diag,          /* [modified]   */
     ri_beam_t               *beam,
@@ -2144,9 +2183,9 @@ bvh_traverse_beam(
     //
     // Initialize intersection state.
     // 
-    memset( raster_out->t,
+    memset( raster_inout->t,
             0,
-            sizeof(ri_float_t) * raster_out->width * raster_out->height ); 
+            sizeof(ri_float_t) * raster_inout->width * raster_inout->height ); 
 
     node = root;
 
@@ -2161,7 +2200,8 @@ bvh_traverse_beam(
             g_stattrav.nleaf_node_traversals++;
 #endif
 
-            bvh_intersect_leaf_node_beam( node,
+            bvh_intersect_leaf_node_beam( raster_inout,
+                                          node,
                                           beam );
 
             // pop
@@ -2285,6 +2325,10 @@ static void project_triangles(
 
 }
 
+#if 0
+/*
+ * Rasterize triangle in 3D into 2D raster plane.
+ */
 void
 rasterize_triangle(
           float        *image,
@@ -2359,7 +2403,7 @@ rasterize_triangle(
         p[i][1] = 0.5 * height * tan(0.5 * fov) * w[1] - 0.5 * height * w[2];
         p[i][2] = w[2];
 
-        printf("proj p = %f, %f, %f\n", p[i][0], p[i][1], p[i][2]);
+        printf("[raster] proj p = %f, %f, %f\n", p[i][0], p[i][1], p[i][2]);
 
     }
 
@@ -2376,6 +2420,10 @@ rasterize_triangle(
     bmin[1] = (p[2][1] < bmin[1]) ? p[2][1] : bmin[1];
     bmax[1] = (p[2][1] > bmax[1]) ? p[2][1] : bmax[1];
 
+    printf("[raster] bbox = (%d, %d) - (%d, %d)\n",
+        (int)bmin[0], (int)bmin[1],
+        (int)bmax[0], (int)bmax[1] );
+        
 
     for (t = (int)bmin[1]; t < (int)bmax[1]; t++) {
 
@@ -2403,7 +2451,7 @@ rasterize_triangle(
     }
 
 }
-
+#endif
 
 #if 0   // TODO
 void

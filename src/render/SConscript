@@ -17,6 +17,7 @@ noise.c
 polygon.c
 qmc.c
 quadric.c
+raster.c
 ray.c
 raytrace.c
 reflection.c
@@ -32,6 +33,7 @@ subdivision.c
 sunsky.c
 texture.c
 tonemap.c
+triangle.c
 ugrid.c
 zorder2d.c
 """)

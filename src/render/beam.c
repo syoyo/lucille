@@ -34,6 +34,7 @@
 #include <stdint.h>
 #include <assert.h>
 
+#include "memory.h"
 #include "beam.h"
 #include "bvh.h"
 
@@ -272,6 +273,44 @@ clip(
     }
 }
 
+static void
+create_subbeam(
+          ri_beam_t *subbeam,
+          point2d_t *p,
+          int        is_tetrahedron,
+          int        idx0,
+          int        idx1,
+          int        idx2,
+          int        idx3,
+    const ri_beam_t *parent)
+{
+
+    int axis[3][2] = { {1, 2}, {2, 0}, {0, 1} }; 
+    int a0, a1;
+
+    memcpy(subbeam, parent, sizeof(ri_beam_t));
+
+    a0 = axis[parent->dominant_axis][0];
+    a1 = axis[parent->dominant_axis][1];
+
+    subbeam->dir[0][a0] = p[idx0][0];
+    subbeam->dir[0][a1] = p[idx0][1];
+    subbeam->dir[1][a0] = p[idx1][0];
+    subbeam->dir[1][a1] = p[idx1][1];
+    subbeam->dir[2][a0] = p[idx2][0];
+    subbeam->dir[2][a1] = p[idx2][1];
+    subbeam->dir[3][a0] = p[idx3][0];
+    subbeam->dir[3][a1] = p[idx3][1];
+
+    subbeam->is_tetrahedron = is_tetrahedron;
+}
+
+/* ----------------------------------------------------------------------------
+ *
+ * Public functions
+ *
+ * ------------------------------------------------------------------------- */
+
 /*
  * Function: ri_bem_set
  *
@@ -423,37 +462,6 @@ ri_beam_set(
     return 0;   /* OK   */
 }
 
-static void
-create_subbeam(
-          ri_beam_t *subbeam,
-          point2d_t *p,
-          int        is_tetrahedron,
-          int        idx0,
-          int        idx1,
-          int        idx2,
-          int        idx3,
-    const ri_beam_t *parent)
-{
-
-    int axis[3][2] = { {1, 2}, {2, 0}, {0, 1} }; 
-    int a0, a1;
-
-    memcpy(subbeam, parent, sizeof(ri_beam_t));
-
-    a0 = axis[parent->dominant_axis][0];
-    a1 = axis[parent->dominant_axis][1];
-
-    subbeam->dir[0][a0] = p[idx0][0];
-    subbeam->dir[0][a1] = p[idx0][1];
-    subbeam->dir[1][a0] = p[idx1][0];
-    subbeam->dir[1][a1] = p[idx1][1];
-    subbeam->dir[2][a0] = p[idx2][0];
-    subbeam->dir[2][a1] = p[idx2][1];
-    subbeam->dir[3][a0] = p[idx3][0];
-    subbeam->dir[3][a1] = p[idx3][1];
-
-    subbeam->is_tetrahedron = is_tetrahedron;
-}
 
 
 void ri_beam_clip_by_triangle2d(
@@ -706,3 +714,4 @@ void ri_beam_clip_by_triangle2d(
     }
 
 }
+
