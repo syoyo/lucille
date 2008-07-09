@@ -1,3 +1,16 @@
+/*
+ *   lucille | Global Illumination renderer
+ *
+ *             written by Syoyo Fujita.
+ *
+ */
+
+/*
+ * Triangle data structure and routines. Used by BVH and beam/ray tracing.
+ *
+ * $Id$
+ *
+ */
 #ifndef LUCILLE_TRIANGLE_H
 #define LUCILLE_TRIANGLE_H
 
@@ -16,6 +29,9 @@ typedef struct _ri_triangle_t {
 
 } ri_triangle_t;
 
+/*
+ * Ray-Triangle intersection test
+ */
 extern int ri_triangle_isect(       uint32_t      *tid_inout,
                                     ri_float_t    *t_inout,
                                     ri_float_t    *u_inout,

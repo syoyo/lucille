@@ -1,3 +1,16 @@
+/*
+ *   lucille | Global Illumination renderer
+ *
+ *             written by Syoyo Fujita.
+ *
+ */
+
+/*
+ * Triangle rasterizer for beam tracing.
+ *
+ * $Id$
+ *
+ */
 #ifndef LUCILLE_RASTER_H
 #define LUCILLE_RASTER_H
 
