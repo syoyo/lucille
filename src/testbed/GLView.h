@@ -1,4 +1,4 @@
-#include <FL/Fl_Gl_Window.h>
+#include <FL/Fl_Gl_Window.H>
 #include <Fl/gl.h>
 
 #include "trackball.h"

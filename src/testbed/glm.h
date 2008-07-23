@@ -17,7 +17,7 @@
 #ifdef __APPLE__
 #include <GLUT/glut.h>
 #else
-#include <FL/glut.h>
+#include <FL/glut.H>
 #endif
 
 

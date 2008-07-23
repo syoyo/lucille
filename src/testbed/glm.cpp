@@ -17,7 +17,7 @@
 //#include <GL/gl.h>
 //#include <GL/glu.h>
 //#include <GL/glut.h>
-#include <FL/glut.h>
+#include <FL/glut.H>
 #endif
 #include <math.h>
 #include <stdio.h>
