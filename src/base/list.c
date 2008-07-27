@@ -1,5 +1,5 @@
 /*
- * $Id: list.c,v 1.1.1.1 2004/01/06 13:57:09 syoyo Exp $
+ * $Id$
  *
  */
 
@@ -13,6 +13,20 @@
 #include "list.h"
 #include "memory.h"
 
+/*
+ * Function: ri_list_new
+ *
+ *   Create a list data structure.
+ * 
+ * Parameters:
+ *
+ *   None
+ *
+ * Returns:
+ *
+ *   Pointer to the newly created list data. 
+ *
+ */
 ri_list_t *
 ri_list_new()
 {
@@ -138,6 +152,20 @@ ri_list_remove_first(ri_list_t *list)
         
 }
 
+/*
+ * Function: ri_list_last
+ *
+ *   Gets last element in the list.
+ * 
+ * Parameters:
+ *
+ *   - list : The list 
+ *
+ * Returns:
+ *
+ *   Pointer to the last element in the list. 
+ *
+ */
 ri_list_t *
 ri_list_last(ri_list_t *list)
 {
@@ -150,6 +178,20 @@ ri_list_last(ri_list_t *list)
     return list;
 }
 
+/*
+ * Function: ri_list_fist
+ *
+ *   Gets first element in the list.
+ * 
+ * Parameters:
+ *
+ *   - list : The list 
+ *
+ * Returns:
+ *
+ *   Pointer to the first element in the list. 
+ *
+ */
 ri_list_t *
 ri_list_first(ri_list_t *list)
 {
@@ -165,7 +207,21 @@ ri_list_first(ri_list_t *list)
 }
 
 /*
- * free list element. ri_list_free() does not free its content(i.e. list->data)
+ * Function: ri_list_free
+ *
+ *   Frees the list data structure.
+ *   Not that ri_list_free()does not free its content(i.e, list->data)
+ *   Users should free each list->data in the list manually before calling
+ *   ri_list_free() to prevent memory leaks.
+ * 
+ * Parameters:
+ *
+ *   - list : The list to be freed
+ *
+ * Returns:
+ *
+ *   None. 
+ *
  */
 void
 ri_list_free(ri_list_t *list)
@@ -203,6 +259,21 @@ ri_list_free(ri_list_t *list)
     return;
 }
 
+/*
+ * Function: ri_list_next
+ *
+ *   Gets next element in the list.
+ * 
+ * Parameters:
+ *
+ *   - list : The list
+ *
+ * Returns:
+ *
+ *   Pointer to the next element of the list. 
+ *   If input is NULL, return NULL.
+ *
+ */
 ri_list_t *
 ri_list_next(ri_list_t *list)
 {
@@ -211,6 +282,21 @@ ri_list_next(ri_list_t *list)
     return NULL;
 }
 
+/*
+ * Function: ri_list_prev
+ *
+ *   Gets previous element in the list.
+ * 
+ * Parameters:
+ *
+ *   - list : The list
+ *
+ * Returns:
+ *
+ *   Pointer to the previous element of the list. 
+ *   If input is NULL, return NULL.
+ *
+ */
 ri_list_t *
 ri_list_prev(ri_list_t *list)
 {
