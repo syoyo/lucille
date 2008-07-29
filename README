@@ -1,0 +1,30 @@
+
+
+
+				 l u c i l l e
+
+			  Global Illumination Renderer
+
+
+ features:
+	- Monte Carlo ray tracing
+	- Photon mapping
+	- Supports RIB( The RenderMan(R) Interface Bytestream ) file format
+	- RenderMan Shading Language( limited and experimental )
+	- Parallel Rendering( with MPI )
+	- SIMD(x86 SSE) optimized ray tracing
+
+ supported platform:
+	- Mac OS-X
+	- Linux( x86 )
+	- Windows
+	
+
+ copyright:
+	- 2003-2202 Syoyo FUJITA( syoyo@lucillerender.org )
+
+
+
+	    The RenderMan(R) Interface Procedures and Protocol are:
+			Copyright 1988, 1989, 2000 Pixar
+			      All Rights Reserved
