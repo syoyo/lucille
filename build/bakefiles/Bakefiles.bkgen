@@ -1,0 +1,17 @@
+<?xml version="1.0" ?>
+
+<bakefile-gen>
+
+	<input>
+		lucille.bkl
+	</input>
+
+	<add-formats files="lucille.bkl">
+		gnu
+	</add-formats>
+
+	<add-flags files="lucille.bkl" formats="gnu">
+		-o../../GNUMakefile
+	</add-flags>
+
+</bakefile-gen>

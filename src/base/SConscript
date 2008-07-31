@@ -1,0 +1,28 @@
+srcs=Split("""
+array.c
+dlload.c
+hash.c
+list.c
+log.c
+matrix.c
+memory.c
+parallel.c
+quaternion.c
+queue.c
+random.c
+stack.c
+thread.c
+timer.c
+util.c
+vector.c
+geometric.c
+""")
+
+Import('env')
+#env=Environment();
+#env['CC']='gcc-mp-4.2'
+
+incPath=['../ri', '../../include']
+libName='ribase'
+
+env.Library(libName, srcs, CPPPATH=incPath)

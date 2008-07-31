@@ -1,0 +1,8 @@
+src/**/*.o
+src/**/*.a
+src/gui/lucille
+src/lsh/lsh
+src/lsh/parserib.output
+src/testbed/fluid_gui.*
+src/testbed/testbed
+.sconsign.dblite

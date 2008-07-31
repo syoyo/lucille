@@ -1,0 +1,31 @@
+INSTALL
+======= 
+
+  0. Requrement.
+  
+    To build lucille, you'll need tools below.
+  
+    - python ( for scons )
+    - scons ( http://www.scons.org/ )
+    - flex
+    - bison
+    - gcc > 4.0 (If you use gcc)
+    - cunit(Optional. Used for unit testing. http://cunit.sourceforge.net/ )
+  
+  
+  1. build
+
+    lucille uses scons for build system.
+    Edit `custom.py' if you want to set your specific setting, then
+
+    $ make
+
+    or 
+
+    $ scons
+
+
+    After the build successes, lsh(renderer program) is located at
+    src/lsh.
+
+

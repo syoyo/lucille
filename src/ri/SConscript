@@ -1,0 +1,22 @@
+srcs=Split("""
+apitable.c
+attribute.c
+backdoor.c
+camera.c
+context.c
+declare.c
+display.c
+lightsource.c
+option.c
+quadric.c
+ri.c
+subdivision.c
+transform.c
+""")
+
+Import('env')
+
+incPath=['../base', '../transport', '../render', '../ri', '../../include']
+libName='riri'
+
+env.Library(libName, srcs, CPPPATH=incPath)

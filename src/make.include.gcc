@@ -1,0 +1,36 @@
+CC = gcc
+RM = rm -rf
+LIBEXE = ar cr
+LIBPROG = ar cru
+LINK = gcc
+
+# ---------------------------------------------
+# Select your platform.
+PLATFORM = LINUX
+#PLATFORM = WIN32
+#PLATFORM = MACOSX
+
+# ----------------------------------------------
+# Compile options. choose the one as you like ;)
+#
+
+# Auto-vectorization
+VECTOPT = -ftree-vectorize -ftree-vectorizer-verbose=5
+# VECTOPT =
+
+# Profile guided optimzation 
+#PROFOPT = -fprofile-generate
+#PROFOPT = -fprofile-use
+#PROFOPT =
+
+# SSE enable, High performance.
+CFLAGS = -D$(PLATFORM) -DNDEBUG -DWITH_SSE -O2 -msse $(VECTOPT) $(PROFOPT)
+
+# SSE disable with optimization. 
+#CFLAGS = -D$(PLATFORM) -DNDEBUG -O3
+
+#
+#
+# ----------------------------------------------
+
+X11LIBS = -L/usr/X11R6/lib -lX11 -lXext -lXmu -lXi

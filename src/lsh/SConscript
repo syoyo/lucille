@@ -1,0 +1,45 @@
+import os, sys
+
+srcs=Split("""
+lsh.c
+main.c
+""")
+
+#my_getopt.c
+
+Import('env')
+
+env = env.Clone()
+
+incPath=['../base', '../transport', '../render', '../ri', '../../include']
+
+#
+# Lib
+#
+libs=['riri', 'rirender', 'ritransport', 'ridisplay',  'ribase', 'm']
+
+if sys.platform == 'linux2':
+	libs.append(['dl'])
+	
+if env['with_zlib']:
+	libs.append([env['ZLIB_LIB_NAME']]) 
+
+libPath=['../base', '../display', '../transport', '../render', '../ri']
+if env['with_zlib']:
+	libPath.append([env['ZLIB_LIB_PATH']])
+
+
+p = env.CFile(target='parserib.c', source='parserib.y')
+l = env.CFile(target='lexrib.c', source='lexrib.l')
+
+#lexTarget   = CFile(target='lexrib.c', source=['lexrib.l'])
+#parseTarget = CFile(target='parserib.c', source='parserib.y')
+
+env['YACCFLAGS'].append(['-d', '-v', '-t'])
+env.Depends(l, p);  # Should be lex before parse
+
+progName='lsh'
+
+lsh = env.Program(progName, srcs + p + l,
+            CPPPATH=incPath, LIBS=libs, LIBPATH=libPath)
+

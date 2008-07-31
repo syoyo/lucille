@@ -1,0 +1,35 @@
+This is a implementation of
+
+"Structured Importance Sampling"
+Sameer Agarwal, Ravi Ramamoorthi, Serge Belongie and Henrik Wann Jensen
+SIGGRAPH 2003
+
+command:
+  $ sisgen inputimage.float size [nsamples]
+
+input:
+  inputimage.float : Angular Map HDRI(raw float format)
+  size             : it's width size
+  nsamples         : Number of sampling points(optional. default = 300).
+
+output: 
+  generated sample points. 
+  It is saved as file "gensamples.dat" on current directory.
+  Format is as follows.
+
+NSAMPLES
+WIDTH HEIGHT
+X_POS Y_POS RED_INTENSITY GREEN_INTENSITY BLUE_INTENSITY
+...
+
+See also
+http://web.sfc.keio.ac.jp/~syoyo/lucille/rendered/sisteapot.html
+
+ChangeLog:
+	Mon Nov 24 16:35:25     2003
+
+	Modified that sampling points consider its corresponding area
+	on sphere(but still may incorrect factor exists).
+--
+Syoyo FUJITA
+Mon Nov 24 16:35:25     2003
