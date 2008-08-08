@@ -58,6 +58,7 @@
 #include "timer.h"
 #include "render.h"
 #include "beam.h"
+#include "raster.h"
 #include "log.h"
 
 /*
@@ -100,22 +101,13 @@ typedef struct _triangle4_t {
 
 } triangle4_t;
 
-typedef struct _triangle_t {
-
-    ri_vector_t v[3];
-
-    ri_geom_t  *geom;
-    uint32_t    index;
-
-} triangle_t;
-
 
 typedef struct _tri_bbox_t {
 
     ri_vector_t bmin;
     ri_vector_t bmax;
 
-    uint64_t    index;          // TODO: compaction.
+    uint64_t    index;          /* TODO: compaction.   */
 
 } tri_bbox_t;
 
@@ -165,7 +157,7 @@ static ri_qbvh_node_t *ri_qbvh_node_new();
 static void get_bbox_of_triangle(
           ri_vector_t        bmin_out,           /* [out] */  
           ri_vector_t        bmax_out,           /* [out] */  
-    const triangle_t        *triangle);
+    const ri_triangle_t     *triangle);
 
 static void calc_scene_bbox(
           ri_vector_t        bmin_out,           /* [out]    */
@@ -174,7 +166,7 @@ static void calc_scene_bbox(
           uint64_t           ntriangles);
 
 static void create_triangle_list(
-          triangle_t       **triangles_out,      /* [out]    */
+          ri_triangle_t    **triangles_out,      /* [out]    */
           tri_bbox_t       **tri_bboxes_out,     /* [out]    */
           uint64_t          *ntriangles,         /* [out]    */
     const ri_list_t         *geom_list);
@@ -197,8 +189,8 @@ static void calc_bbox_of_triangles(
           uint64_t           ntriangles);
 
 static int gather_triangles(
-          triangle_t        *triangles_to_out,   /* [out]    */
-    const triangle_t        *triangles_from,
+          ri_triangle_t     *triangles_to_out,   /* [out]    */
+    const ri_triangle_t     *triangles_from,
     const tri_bbox_t        *tri_bboxes,
           uint64_t           ntriangles);
 
@@ -213,8 +205,8 @@ static int bvh_construct(
           ri_qbvh_node_t    *root,
           ri_vector_t        bmin,
           ri_vector_t        bmax,
-          triangle_t        *triangles,
-          triangle_t        *triangles_buf,
+          ri_triangle_t     *triangles,
+          ri_triangle_t     *triangles_buf,
           tri_bbox_t        *tri_bboxes,
           tri_bbox_t        *tri_bboxes_buf,
           uint64_t           index_left,
@@ -237,7 +229,7 @@ static int bvh_traverse_beam(
 
 static void project_triangles(
           ri_triangle2d_t *tri2d_out,              /* [out]                */
-    const triangle_t      *triangles,              /* [in]                 */
+    const ri_triangle_t   *triangles,              /* [in]                 */
           uint32_t         ntriangles,
           int              axis,
           ri_float_t       d,
@@ -248,17 +240,6 @@ static int test_beam_aabb(
           ri_vector_t  bmax,
     const ri_beam_t   *beam);
 
-#if 0
-static void rasterize_triangle(
-          float        *image,
-          int           width,
-          int           height,
-          triangle_t   *triangle,
-          ri_vector_t   frame[3],
-          ri_vector_t   corner,
-          ri_vector_t   org,
-          ri_float_t    fov);
-#endif
 
 static ri_bvh_diag_t *gdiag;                    /* TODO: thread-safe    */
 
@@ -276,8 +257,7 @@ static ri_bvh_diag_t *gdiag;                    /* TODO: thread-safe    */
  *
  * Parameters:
  *
- *     scenegeoms - geometry in the scene.
- *     method     - bvh construction method. default is BVH_MEDIAN
+ *     data - scene data of type ri_scene_t.
  *
  * Returns:
  *
@@ -294,8 +274,8 @@ ri_bvh_build(
 
     ri_scene_t         *scene = (ri_scene_t *)data;
     
-    triangle_t         *triangles;
-    triangle_t         *triangles_buf;          /* temporal buffer  */
+    ri_triangle_t      *triangles;
+    ri_triangle_t      *triangles_buf;          /* temporal buffer  */
     tri_bbox_t         *tri_bboxes;
     tri_bbox_t         *tri_bboxes_buf;         /* temporal buffer  */
     uint64_t            ntriangles;
@@ -321,8 +301,8 @@ ri_bvh_build(
         tri_bboxes_buf = ri_mem_alloc(sizeof(tri_bbox_t) * ntriangles);
         ri_mem_copy(tri_bboxes_buf, tri_bboxes, sizeof(tri_bbox_t)*ntriangles);
 
-        triangles_buf = ri_mem_alloc(sizeof(triangle_t) * ntriangles);
-        ri_mem_copy(triangles_buf, triangles, sizeof(triangle_t)*ntriangles);
+        triangles_buf = ri_mem_alloc(sizeof(ri_triangle_t) * ntriangles);
+        ri_mem_copy(triangles_buf, triangles, sizeof(ri_triangle_t)*ntriangles);
     }
 
     /*
@@ -435,7 +415,7 @@ ri_bvh_intersect(
     if (fabs(ray->dir[0]) > RI_EPS) {
         ray->invdir[0] = 1.0 / ray->dir[0];
     } else {
-        ray->invdir[0] = RI_FLT_MAX;        // FIXME: make this +Inf ?
+        ray->invdir[0] = RI_FLT_MAX;        /* FIXME: make this +Inf ? */
     }
 
     if (fabs(ray->dir[1]) > RI_EPS) {
@@ -607,14 +587,14 @@ ri_qbvh_node_new()
  */
 static inline int
 triangle_isect(
-    uint32_t         *tid_inout,
-    ri_float_t       *t_inout,
-    ri_float_t       *u_inout,
-    ri_float_t       *v_inout,
-    const triangle_t *triangle,
-    ri_vector_t       rayorg,
-    ri_vector_t       raydir,
-    uint32_t          tid)
+    uint32_t            *tid_inout,
+    ri_float_t          *t_inout,
+    ri_float_t          *u_inout,
+    ri_float_t          *v_inout,
+    const ri_triangle_t *triangle,
+    ri_vector_t          rayorg,
+    ri_vector_t          raydir,
+    uint32_t             tid)
 {
     ri_vector_t v0, v1, v2; 
     ri_vector_t e1, e2; 
@@ -674,21 +654,21 @@ bvh_intersect_leaf_node(
     const ri_qbvh_node_t    *node,
     ri_ray_t                *ray )
 {
-    double      t, u, v;
-    uint32_t    tid;
+    double         t, u, v;
+    uint32_t       tid;
 
-    int         hit;
-    int         hitsum;
-    uint32_t    i;
-    uint32_t    ntriangles;
-    triangle_t *triangles;
+    int            hit;
+    int            hitsum;
+    uint32_t       i;
+    uint32_t       ntriangles;
+    ri_triangle_t *triangles;
 
     ri_vector_t rayorg; 
     ri_vector_t raydir; 
 
-    //
-    // Init
-    //
+    /*
+     * Init
+     */
     t      = RI_INFINITY;
     u      = 0.0;
     v      = 0.0;
@@ -698,7 +678,7 @@ bvh_intersect_leaf_node(
     vcpy( rayorg, ray->org );
     vcpy( raydir, ray->dir );
 
-    triangles  = (triangle_t *)node->child[0];
+    triangles  = (ri_triangle_t *)node->child[0];
     ntriangles = *((uint32_t *)&node->bbox[0]);
 
 #ifdef RI_BVH_ENABLE_DIAGNOSTICS
@@ -890,9 +870,9 @@ bvh_traverse(
     gdiag = diag;
 #endif
 
-    //
-    // Initialize intersection state.
-    // 
+    /*
+     * Initialize intersection state.
+     */ 
     state_out->t     = RI_INFINITY;
     state_out->u     = 0.0;
     state_out->v     = 0.0;
@@ -916,7 +896,7 @@ bvh_traverse(
                                      node,
                                      ray );
 
-            // pop
+            /* pop */
             if (stack->depth < 1) goto end_traverse;
             stack->depth--;
             assert(stack->depth >= 0);
@@ -936,7 +916,7 @@ bvh_traverse(
 
             if (ret == 0) {
 
-                // pop
+                /* pop */
                 if (stack->depth < 1) goto end_traverse;
                 stack->depth--;
                 assert(stack->depth >= 0);
@@ -950,9 +930,9 @@ bvh_traverse(
 
                 node = node->child[1];
 
-            } else {    // both
+            } else {    /* traverse both nodes */
 
-                // push
+                /* push */
                 stack->nodestack[stack->depth] = node->child[1 - order];
                 stack->depth++;
                 assert( stack->depth < BVH_MAXDEPTH );
@@ -997,7 +977,6 @@ SAH(
     ri_float_t right_area,
     ri_float_t s)
 {
-    // param
     const float Taabb = 0.2f;
     const float Ttri  = 0.8f;
 
@@ -1023,7 +1002,6 @@ find_cut_from_bin(
 
     ri_float_t  cost;
     int         min_cost_axis = 0;
-    uint32_t    min_cost_idx  = 0;
     ri_float_t  min_cost_pos  = 0.0;
     ri_float_t  min_cost      = RI_INFINITY;
         
@@ -1049,11 +1027,11 @@ find_cut_from_bin(
 
     sa_total    = calc_surface_area( bmin, bmax );
 
-    for (j = 0; j < 3; j++) {   // axis
+    for (j = 0; j < 3; j++) {   /* axis */
 
         /*
-         *  Compute SAH cost for right side of bbox cell.
-         *  Exclude both extreme side of bbox.
+         *  Compute SAH cost for right side of each cell of the bbox.
+         *  Exclude both extreme side of the bbox.
          *     
          *  i:      0    1    2    3    
          *     +----+----+----+----+----+
@@ -1078,7 +1056,7 @@ find_cut_from_bin(
 
             /*
              * split pos = bmin + (i + 1) * (bsize / BIN_SIZE)
-             * (i + 1) since we want right side of the cell.
+             * +1 for i since we want a position on right side of the cell.
              */
             
 
@@ -1092,10 +1070,9 @@ find_cut_from_bin(
 
             cost = SAH( tris_left, sa_left, tris_right, sa_right, sa_total );
             
-            if (cost < min_cost) {
+            if (cost < min_cost) {  /* update mincost   */
                 min_cost      = cost;
                 min_cost_axis = j;
-                min_cost_idx  = i + 1;  // TODO: remove
                 min_cost_pos  = pos; 
             }
         }
@@ -1115,8 +1092,8 @@ bvh_construct(
     ri_qbvh_node_t *root,
     ri_vector_t     bmin,
     ri_vector_t     bmax,
-    triangle_t     *triangles,
-    triangle_t     *triangles_buf,
+    ri_triangle_t  *triangles,
+    ri_triangle_t  *triangles_buf,
     tri_bbox_t     *tri_bboxes,
     tri_bbox_t     *tri_bboxes_buf,
     uint64_t        index_left,             /* [index_left, index_right)    */
@@ -1264,8 +1241,6 @@ bvh_construct(
             
         }
 
-        // printf("left = %d, right = %d\n", ntris_left, n - ntris_right );
-
     }
 
 
@@ -1390,7 +1365,7 @@ bin_triangle_edge(
         scene_size[2] = scene_bmax[2] - scene_bmin[2];
 
 
-        // [0, BIN_SIZE)
+        /* [0, BIN_SIZE) */
         assert(scene_size[0] >= 0.0);
         assert(scene_size[1] >= 0.0);
         assert(scene_size[2] >= 0.0);
@@ -1414,7 +1389,7 @@ bin_triangle_edge(
 
     }
 
-    // clear bin data
+    /* clear bin data */
     memset(binbuf, 0, sizeof(bvh_bin_buffer_t));
 
 
@@ -1450,10 +1425,6 @@ bin_triangle_edge(
         idx_bmax[1] = (uint32_t)(quantized_bmax[1]);
         idx_bmax[2] = (uint32_t)(quantized_bmax[2]);
 
-        // printf("min = %d, %d, %d, max = %d, %d, %d\n",
-        //     idx_bmin[0], idx_bmin[1], idx_bmin[2],
-        //     idx_bmax[0], idx_bmax[1], idx_bmax[2]);
-
         if (idx_bmin[0] >= BVH_BIN_SIZE) idx_bmin[0] = BVH_BIN_SIZE - 1;
         if (idx_bmin[1] >= BVH_BIN_SIZE) idx_bmin[1] = BVH_BIN_SIZE - 1;
         if (idx_bmin[2] >= BVH_BIN_SIZE) idx_bmin[2] = BVH_BIN_SIZE - 1;
@@ -1480,7 +1451,7 @@ bin_triangle_edge(
 
     }
 
-    return 0;   // OK
+    return 0;   /* OK */
 
 }
 
@@ -1528,7 +1499,7 @@ bbox_add_margin(
  */
 void
 create_triangle_list(
-    triangle_t       **triangles_out,       /* [out] */
+    ri_triangle_t    **triangles_out,       /* [out] */
     tri_bbox_t       **tri_bboxes_out,      /* [out] */
     uint64_t          *ntriangles,          /* [out] */
     const ri_list_t   *geom_list)
@@ -1559,7 +1530,7 @@ create_triangle_list(
 
     }
 
-    (*triangles_out)  = ri_mem_alloc(sizeof(triangle_t) * n);
+    (*triangles_out)  = ri_mem_alloc(sizeof(ri_triangle_t) * n);
     (*tri_bboxes_out) = ri_mem_alloc(sizeof(tri_bbox_t) * n);
     (*ntriangles)     = n;
 
@@ -1632,9 +1603,9 @@ calc_scene_bbox(
 
 static void
 get_bbox_of_triangle(
-    ri_vector_t        bmin_out,         /* [out] */  
-    ri_vector_t        bmax_out,         /* [out] */  
-    const triangle_t  *triangle)
+    ri_vector_t           bmin_out,         /* [out] */  
+    ri_vector_t           bmax_out,         /* [out] */  
+    const ri_triangle_t  *triangle)
 {
 
     vcpy( bmin_out, triangle->v[0] );
@@ -1677,10 +1648,10 @@ calc_bbox_of_triangles(
 
 int
 gather_triangles(
-    triangle_t       *triangles_to_out,    /* [out]    */
-    const triangle_t *triangles_from,
-    const tri_bbox_t *tri_bboxes,
-    uint64_t          ntriangles)
+    ri_triangle_t       *triangles_to_out,    /* [out]    */
+    const ri_triangle_t *triangles_from,
+    const tri_bbox_t    *tri_bboxes,
+    uint64_t             ntriangles)
 {
     uint64_t i;
     uint64_t j;
@@ -1689,7 +1660,7 @@ gather_triangles(
 
         j = tri_bboxes[i].index;
 
-        memcpy( triangles_to_out + i, triangles_from + j, sizeof(triangle_t));
+        memcpy( triangles_to_out + i, triangles_from + j, sizeof(ri_triangle_t));
         
 
     }
@@ -1761,7 +1732,7 @@ get_bbox_of_triangle4(
 /*
  * Find n-vertex relative to the plane normal
  *
- * n-vertex : nearest vertex from the plane defined by `normal'
+ * n-vertex : nearest vertex to the plane defined by `normal'
  *
  *                       
  *   \                     
@@ -1919,11 +1890,11 @@ test_beam_node(
  */
 int
 test_beam_triangle(
-          ri_vector_t  u_out,       /* [out]    */
-          ri_vector_t  v_out,       /* [out]    */
-          ri_vector_t  t_out,       /* [out]    */
-    const triangle_t  *triangle,
-    const ri_beam_t   *beam)
+          ri_vector_t     u_out,       /* [out]    */
+          ri_vector_t     v_out,       /* [out]    */
+          ri_vector_t     t_out,       /* [out]    */
+    const ri_triangle_t  *triangle,
+    const ri_beam_t      *beam)
 {
 
     int         i;
@@ -2048,23 +2019,24 @@ bvh_intersect_leaf_node_beam(
     uint32_t         tid;
     uint32_t         i;
     uint32_t         ntriangles;
-    triangle_t      *triangles;
+    ri_triangle_t   *triangles;
     ri_triangle2d_t *triangle2ds;
 
     (void)plane_inout;
 
-    //
-    // Init
-    //
+    /*
+     * Init
+     */
     tid    = 0;
 
     ntriangles = *((uint32_t *)&node->bbox[0]);
-    triangles  = (triangle_t *)node->child[0];
+    triangles  = (ri_triangle_t *)node->child[0];
 
     /*
      * Firstly, check if it is the first time visiting to this node.
      * This is determined whether child[1:3] is NULL or not.
-     * If NULL it is the first time, we create list of 2d projected triangles.
+     * If NULL, it is the first time, so we create list of 2d projected
+     * triangles.
      */
     triangle2ds = (ri_triangle2d_t *)node->child[beam->dominant_axis + 1];
     if (triangle2ds == NULL) {
@@ -2117,20 +2089,9 @@ bvh_intersect_leaf_node_beam(
              */
             for (j = 0; j < nhit_beams; j++) {
 
-#if 0
-                rasterize_triangle(
-                    raster_inout->t,
-                    raster_inout->width,
-                    raster_inout->height,
-                    triangles + i,          // Original, unprojected triangle
+                // Provide unprojectd(3D) triangle.
+                ri_rasterize_beam( plane_inout, &hit_beams[j], &triangles[i]);
                     
-                    
-          triangle_t   *triangle,
-          ri_vector_t   frame[3],
-          ri_vector_t   corner,
-          ri_vector_t   org,
-          ri_float_t    fov)
-#endif
             }
 
         }
@@ -2180,9 +2141,9 @@ bvh_traverse_beam(
     gdiag = diag;
 #endif
 
-    //
-    // Initialize intersection state.
-    // 
+    /*
+     * Initialize intersection state.
+     */ 
     memset( raster_inout->t,
             0,
             sizeof(ri_float_t) * raster_inout->width * raster_inout->height ); 
@@ -2204,7 +2165,7 @@ bvh_traverse_beam(
                                           node,
                                           beam );
 
-            // pop
+            /* pop */
             if (stack->depth < 1) goto end_traverse;
             stack->depth--;
             assert(stack->depth >= 0);
@@ -2224,7 +2185,7 @@ bvh_traverse_beam(
 
             if (ret == 0) {
 
-                // pop
+                /* pop */
                 if (stack->depth < 1) goto end_traverse;
                 stack->depth--;
                 assert(stack->depth >= 0);
@@ -2238,11 +2199,11 @@ bvh_traverse_beam(
 
                 node = node->child[1];
 
-            } else {    // both
+            } else {    /* both */
 
                 order = beam->dirsign[beam->dominant_axis];
 
-                // push
+                /* push */
                 stack->nodestack[stack->depth] = node->child[1 - order];
                 stack->depth++;
                 assert( stack->depth < BVH_MAXDEPTH );
@@ -2264,7 +2225,7 @@ end_traverse:
  */
 static void project_triangles(
           ri_triangle2d_t *tri2d_out,      /* [out]                */
-    const triangle_t      *triangles,      /* [in]                 */
+    const ri_triangle_t   *triangles,      /* [in]                 */
           uint32_t         ntriangles,
           int              axis,
           ri_float_t       d,              /* distant to the plane         */
@@ -2325,138 +2286,11 @@ static void project_triangles(
 
 }
 
-#if 0
-/*
- * Rasterize triangle in 3D into 2D raster plane.
- */
-void
-rasterize_triangle(
-          float        *image,
-          int           width,
-          int           height,
-          triangle_t   *triangle,
-          ri_vector_t   frame[3],
-          ri_vector_t   corner,
-          ri_vector_t   org,
-          ri_float_t    fov)
-{
-    int         s, t;
-
-    /*
-     * Use ray casting for robust rasterization.
-     */
-
-    int         i;
-    int         hit;
-    uint32_t    tid;
-    ri_float_t  tparam, uparam, vparam;
-
-    ri_vector_t dir;
-
-    /*
-     * p  = M F E v
-     *
-     *      | w                              w      |
-     * M  = | - ----------        0        - -   0  |
-     *      | 2 tan(fov/2)                   2      |
-     *      |                                       |
-     *      |                h               h      |
-     *      |      0         - ----------  - -   0  |
-     *      |                2 tan(fov/2)    2      |
-     *      |                                       |
-     *      |      0              0          1   0  |
-     *      |                                       |
-     *      |      0              0         -1   0  |
-     *
-     *  F = | du       0 |
-     *      | dv       0 |
-     *      | -dw      0 |
-     *      | 0  0  0  0 |
-     *
-     *  E = | 1  0  0 -org |
-     *      | 0  1  0      |
-     *      | 0  0  1      |
-     *      | 0  0  0  1   |
-     *
-     *  v = | x |
-     *      | y |
-     *      | z |
-     *      | w |
-     */
-
-    ri_vector_t vo;
-    ri_vector_t w;
-    ri_vector_t p[3];
-
-    for (i = 0; i < 3; i++) {
-
-        /* vo = E v */
-        vsub( vo, triangle->v[i], org );
-        
-        /* w = F E v */
-        w[0] =  frame[0][0] * vo[0] + frame[0][1] * vo[1] + frame[0][2] * vo[2];
-        w[1] =  frame[1][0] * vo[0] + frame[1][1] * vo[1] + frame[1][2] * vo[2];
-        w[2] = -frame[2][0] * vo[0] - frame[2][1] * vo[1] - frame[2][2] * vo[2];
-
-        /* p = M F E v */
-        p[i][0] = 0.5 * width  * tan(0.5 * fov) * w[0] - 0.5 * width  * w[2];
-        p[i][1] = 0.5 * height * tan(0.5 * fov) * w[1] - 0.5 * height * w[2];
-        p[i][2] = w[2];
-
-        printf("[raster] proj p = %f, %f, %f\n", p[i][0], p[i][1], p[i][2]);
-
-    }
-
-    /*
-     * Compute 2D bbox.
-     */
-    ri_float_t bmin[2], bmax[2];
-
-    bmin[0] = bmax[0] = p[0][0];
-    bmin[1] = bmax[1] = p[0][1];
-
-    bmin[0] = (p[1][0] < bmin[0]) ? p[1][0] : bmin[0];
-    bmax[0] = (p[1][0] > bmax[0]) ? p[1][0] : bmax[0];
-    bmin[1] = (p[2][1] < bmin[1]) ? p[2][1] : bmin[1];
-    bmax[1] = (p[2][1] > bmax[1]) ? p[2][1] : bmax[1];
-
-    printf("[raster] bbox = (%d, %d) - (%d, %d)\n",
-        (int)bmin[0], (int)bmin[1],
-        (int)bmax[0], (int)bmax[1] );
-        
-
-    for (t = (int)bmin[1]; t < (int)bmax[1]; t++) {
-
-        for (s = (int)bmin[0]; s < (int)bmax[0]; s++) {
-
-            dir[0] = corner[0] + s * frame[0][0] + t * frame[1][0];
-            dir[1] = corner[1] + s * frame[0][1] + t * frame[1][1];
-            dir[2] = corner[2] + s * frame[0][2] + t * frame[1][2];
-
-            hit = triangle_isect( &tid, &tparam, &uparam, &vparam,
-                                   triangle, org, dir, 0 );
-
-            if (hit) {
-#ifdef RI_BVH_TRACE_BEAM_STATISTICS
-                g_beamstattrav.nrasterpixels++;
-                if ( image[ t * width + s ] < tparam ) {
-                    g_beamstattrav.noverdraws++;
-                }
-#endif
-                image[ t * width + s ] = tparam; 
-            }
-                
-        }
-
-    }
-
-}
-#endif
 
 #if 0   // TODO
 void
 split(
-    triangle_t tri,
+    ri_triangle_t tri,
     ri_float_t volume_threshold)
 {
     /*
@@ -2518,7 +2352,7 @@ split(
 
     {
         ri_vector_t  m; 
-        triangle_t   newtri;
+        ri_triangle_t   newtri;
 
         if (maxvolume > volume_threshold) {
 

@@ -8,7 +8,7 @@
 /*
  * Triangle rasterizer for beam tracing.
  *
- * $Id$
+ * $Id: raster.h 259 2008-08-01 16:28:06Z syoyo $
  *
  */
 #ifndef LUCILLE_RASTER_H
@@ -19,18 +19,19 @@ extern "C" {
 #endif
 
 #include "triangle.h"
+#include "beam.h"
 
 typedef struct _ri_raster_plane_t
 {
 
-    ri_float_t  *t;             /* [width * height] */ 
-    ri_float_t  *u;             /* [width * height] */  
-    ri_float_t  *v;             /* [width * height] */ 
-    ri_geom_t  **geom;          /* [width * height] */ 
-    uint32_t    *index;         /* [width * height] */ 
-    
-    int          width;
-    int          height;
+    ri_float_t   *t;             /* [width * height] */ 
+    ri_float_t   *u;             /* [width * height] */  
+    ri_float_t   *v;             /* [width * height] */ 
+    ri_geom_t   **geom;          /* [width * height] */ 
+    uint32_t     *index;         /* [width * height] */ 
+   
+    int           width;
+    int           height;
 
     /*
      * Raster coord.
@@ -43,9 +44,11 @@ typedef struct _ri_raster_plane_t
 
 } ri_raster_plane_t;
 
+/* Allocates a memory for a raster plane object */
 extern ri_raster_plane_t *ri_raster_plane_new();
 
-extern int                ri_raster_plane_init(
+/* Initializes the raster plane with arguments */
+extern int                ri_raster_plane_setup(
                                 ri_raster_plane_t *plane,
                                 int                width,
                                 int                height,
@@ -54,13 +57,20 @@ extern int                ri_raster_plane_init(
                                 ri_vector_t        org,
                                 ri_float_t         fov);
     
+/* Frees a memory of the raster plane */
 extern int                ri_raster_plane_free(
                                 ri_raster_plane_t *plane);
 
-extern void               ri_raster_triangle( 
+/* Rasterizes a triangle onto the raster plane. */
+extern void               ri_rasterize_triangle( 
                                 ri_raster_plane_t *plane,
                                 ri_triangle_t     *triangle);
 
+/* Rasterizes a beam onto the raster plane. */
+extern void               ri_rasterize_beam( 
+                                ri_raster_plane_t *plane,
+                                ri_beam_t         *beam,
+                                ri_triangle_t     *triangle);
 #ifdef __cplusplus
 }
 #endif

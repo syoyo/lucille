@@ -8,7 +8,7 @@
 /*
  * Implements beam tracing algorithm.
  *
- * $Id$
+ * $Id: beam.c 242 2008-07-08 16:56:06Z syoyo $
  *
  *  inner node:
  *    - Do packet traversal

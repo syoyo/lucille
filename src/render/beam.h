@@ -8,7 +8,7 @@
 /*
  * Beam tracing facility.
  *
- * $Id$
+ * $Id: beam.h 259 2008-08-01 16:28:06Z syoyo $
  */
 
 #ifndef LUCILLE_BEAM_H
@@ -20,7 +20,6 @@ extern "C" {
 
 #include "vector.h"
 #include "geom.h"
-#include "raster.h"
 
 typedef struct _ri_triangle2d_t {
 
@@ -31,31 +30,6 @@ typedef struct _ri_triangle2d_t {
 
 } ri_triangle2d_t;
 
-
-#if 0
-typedef struct _ri_raster_plane_t
-{
-
-    ri_float_t  *t;             /* [width * height] */ 
-    ri_float_t  *u;             /* [width * height] */  
-    ri_float_t  *v;             /* [width * height] */ 
-    ri_geom_t  **geom;          /* [width * height] */ 
-    uint32_t    *index;         /* [width * height] */ 
-    
-    int          width;
-    int          height;
-
-    /*
-     * Raster coord.
-     * TODO: It is a good place to store raster coord here?
-     */
-    ri_vector_t   frame[3];     /* XYZ coordination frame               */
-    ri_vector_t   corner;       /* Lower-left of raster plane in 3D.    */
-    ri_vector_t   org;          /* eye origion                          */
-    ri_float_t    fov;          /* Field of view                        */
-
-} ri_raster_plane_t;
-#endif
 
 /*
  * Beam is defined as a frustum
@@ -122,20 +96,6 @@ extern void ri_beam_clip_by_triangle2d(
                                 ri_triangle2d_t *triangle2d,
                           const ri_beam_t       *beam);
 
-
-extern ri_raster_plane_t *ri_raster_plane_new();
-
-extern int                ri_raster_plane_init(
-                                ri_raster_plane_t *plane,
-                                int                width,
-                                int                height,
-                                ri_vector_t        frame[3],
-                                ri_vector_t        corner,
-                                ri_vector_t        org,
-                                ri_float_t         fov);
-    
-extern int                ri_raster_plane_free(
-                                ri_raster_plane_t *plane);
 #ifdef __cplusplus
 }
 #endif

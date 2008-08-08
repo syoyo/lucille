@@ -23,6 +23,7 @@
 #include "vector.h"
 #include "ray.h"
 #include "beam.h"
+#include "raster.h"
 #include "intersection_state.h"
 
 

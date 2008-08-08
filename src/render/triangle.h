@@ -8,7 +8,7 @@
 /*
  * Triangle data structure and routines. Used by BVH and beam/ray tracing.
  *
- * $Id$
+ * $Id: triangle.h 259 2008-08-01 16:28:06Z syoyo $
  *
  */
 #ifndef LUCILLE_TRIANGLE_H
@@ -40,6 +40,15 @@ extern int ri_triangle_isect(       uint32_t      *tid_inout,
                                     ri_vector_t    rayorg,
                                     ri_vector_t    raydir,
                                     uint32_t       tid);
+
+/*
+ * Calculate distant to the plane defined by the triangle.
+ */
+extern int ri_triangle_plane_dist(  
+                                    ri_float_t    *t_inout,
+                              const ri_triangle_t *triangle,
+                                    ri_vector_t    rayorg,
+                                    ri_vector_t    raydir);
 
 #ifdef __cplusplus
 }
