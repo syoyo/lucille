@@ -23,7 +23,7 @@ setup_camera(
     int        height,
     ri_float_t fov)
 {
-    float flen = 0.5 * width / tan(0.5 * (fov * M_PI / 180.0));
+    ri_float_t flen = 0.5 * width / tan(0.5 * (fov * M_PI / 180.0));
 
     /* dw = lookat - eye */
     vsub( dw, lookat, eye );
@@ -217,20 +217,23 @@ simple_render_beam(
     vec       lookat,
     vec       up)
 {
-    int      i, j;
-    int      u, v;
-    float    s, t;
+    int        i, j;
+    int        u, v;
+    float      s, t;
 
-    vec      corner;
-    vec      du; 
-    vec      dv; 
-    vec      dw; 
+    vec        corner;
+    vec        du; 
+    vec        dv; 
+    vec        dw; 
 
-    vec      radiance;
-    vec      beamdir[4];
-    vec      camera_frame[3];
-    vec      raster_frame[3];
-    vec      raster_corner;
+    vec        radiance;
+    vec        beamdir[4];
+    vec        camera_frame[3];
+    vec        raster_frame[3];
+    vec        raster_corner;
+
+    ri_float_t offset[2];
+    ri_float_t scale[2];
 
     int                     hit;
     int                     invalid;
@@ -253,6 +256,7 @@ simple_render_beam(
     vcpy( camera_frame[1], dv );
     vcpy( camera_frame[2], dw );
 
+#if 0
     ri_raster_plane_setup( 
         rasterplane,
         width,     
@@ -261,6 +265,7 @@ simple_render_beam(
         corner,
         eye,
         fov);
+#endif
 
     ri_bvh_clear_stat_traversal();
 
@@ -275,10 +280,6 @@ simple_render_beam(
             vcpy(raster_frame[0], du);
             vcpy(raster_frame[1], dv);
             vcpy(raster_frame[2], dw);
-
-            /* Rescale du and dv. TODO: Do we need rescale dw as well?    */
-            vscale(raster_frame[0], raster_frame[0], beamsize / (ri_float_t)raster_width);
-            vscale(raster_frame[1], raster_frame[1], beamsize / (ri_float_t)raster_height);
 
             /* Shift corner position */
             vcpy(raster_corner, corner);

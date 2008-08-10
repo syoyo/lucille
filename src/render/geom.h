@@ -21,31 +21,33 @@ extern "C" {
  * internal polygonal geometry structure
  */
 typedef struct _ri_geom_t {
-    ri_vector_t   *positions;    /* vertex position(P)      */
+    ri_vector_t   *positions;               /* vertex position(P)       */
     unsigned int   npositions;
-    ri_vector_t   *normals;        /* vertex normal(N)        */
+    ri_vector_t   *normals;                 /* vertex normal(N)         */
     unsigned int   nnormals;
-    ri_vector_t   *tangents;    /* tangent vector       */
+    ri_vector_t   *tangents;                /* tangent vector           */
     unsigned int   ntangents;
-    ri_vector_t   *binormals;    /* binormal vector       */
+    ri_vector_t   *binormals;               /* binormal vector          */
     unsigned int   nbinormals;
-    ri_vector_t   *colors;        /* vertex color(Cs)        */
+    ri_vector_t   *colors;                  /* vertex color(Cs)         */
     unsigned int   ncolors;
-    ri_vector_t   *opacities;    /* vertex opacity(Os)      */
+    ri_vector_t   *opacities;               /* vertex opacity(Os)       */
     unsigned int   nopacities;
-    RtFloat       *texcoords;    /* texture coordinates
-                     * (st, 2 floats)          */
+    RtFloat       *texcoords;               /* texture coordinates
+                                             * (st, 2 floats)           */
     unsigned int   ntexcoords;
-    unsigned int  *indices;         /* vertex index               */
+    unsigned int  *indices;                 /* vertex index             */
     unsigned int   nindices;
 
-    RtFloat        kd;        /* diffuse coefficient       */
-    RtFloat        ks;        /* specular coefficient       */
-    char          *shadername;    /* surface shader name       */
-    ri_shader_t   *shader;        /* surface shader       */
+    char          *shadername;              /* surface shader name      */
+    ri_shader_t   *shader;                  /* surface shader           */
     ri_material_t *material;
 
-    int            two_side;        /* two-sided or not        */
+    int            two_side;                /* two-sided or not         */
+
+    ri_float_t     kd;                      /* diffuse coefficient      */
+    ri_float_t     ks;                      /* specular coefficient     */
+
 } ri_geom_t;
 
 #if 0

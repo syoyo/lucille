@@ -42,6 +42,14 @@ typedef struct _ri_raster_plane_t
     ri_vector_t   org;          /* eye origion                          */
     ri_float_t    fov;          /* Field of view                        */
 
+    /*
+     * Local coord.
+     */
+    ri_float_t   offset[2];     /* Defines lower-left offset defined in
+                                 * raster 2D plane                      */ 
+
+    ri_float_t   scale[2];      /* scaling factor                       */
+
 } ri_raster_plane_t;
 
 /* Allocates a memory for a raster plane object */

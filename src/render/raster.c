@@ -79,6 +79,69 @@ ri_raster_plane_setup(
     vcpy( plane_inout->org   , org    );
     plane_inout->fov = fov;
 
+    /*
+     * Project lower-left point onto NDC coord. 
+     */
+
+    /*
+     * p  = M F v
+     * p' = p / p.z        - [0, 1)^2 
+     *
+     *      |     1                                |
+     * M  = | ----------         0          0   0  |
+     *      | tan(fov/2)                           |
+     *      |                                      |
+     *      |                    1                 |
+     *      |      0         ----------     0   0  |
+     *      |                tan(fov/2)            |
+     *      |                                      |
+     *      |      0             0          1   0  |
+     *      |                                      |
+     *      |      0             0         -1   0  |
+     *
+     *  F = |  du_x  du_y  du_z     0 |
+     *      |  dv_x  dv_y  dv_z     0 |
+     *      | -dw_x -dw_y -dw_z     0 |
+     *      |     0     0     0     0 |
+     *
+     *  v = | x |
+     *      | y |
+     *      | z |
+     *      | w |
+     */
+
+    {
+        vec        vo;
+        vec        w;
+        vec        p;
+        ri_float_t fov_rad  = plane_inout->fov * M_PI / 180.0;
+
+        /* vo = v */
+        vcpy( vo, plane_inout->corner );
+            
+        /* w = F v */
+        w[0] =  plane_inout->frame[0][0] * vo[0]
+             +  plane_inout->frame[0][1] * vo[1] 
+             +  plane_inout->frame[0][2] * vo[2];
+        w[1] =  plane_inout->frame[1][0] * vo[0] 
+             +  plane_inout->frame[1][1] * vo[1] 
+             +  plane_inout->frame[1][2] * vo[2];
+        w[2] = -plane_inout->frame[2][0] * vo[0] 
+             -  plane_inout->frame[2][1] * vo[1] 
+             -  plane_inout->frame[2][2] * vo[2];
+
+        /* p = M F v */
+        p[0] = (1.0 / tan(0.5 * fov_rad)) * w[0];
+        p[1] = (1.0 / tan(0.5 * fov_rad)) * w[1];
+        p[2] = w[2];
+
+        p[0] /= -w[2];       /* w = -z   */
+        p[1] /= -w[2];
+
+        printf("[raster] lowerleft = %f, %f\n", p[0], p[1]);
+    }
+
+
     return 0;
 }
 

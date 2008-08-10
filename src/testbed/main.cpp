@@ -73,7 +73,7 @@ main(int argc, char **argv)
     float scale[3];
     float maxscale;
 
-    const char *defname = "cornellbox.obj";
+    const char *defname = "plane.obj";
     const char *filename;
 
     filename = defname;
