@@ -2,7 +2,6 @@ srcs=Split("""
 framebufferdrv.c
 hdrdrv.c
 openexrdrv.c
-rgbe.c
 sockdrv.c
 """)
 
@@ -10,7 +9,7 @@ sockdrv.c
 
 Import('env')
 
-incPath=['../base', '../ri', '../../include']
+incPath=['../base', '../ri', '../imageio', '../../include']
 libName='ridisplay'
 
 env.Library(libName, srcs, CPPPATH=incPath)
