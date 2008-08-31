@@ -1,0 +1,20 @@
+srcs=Split("""
+rgbe.c
+image_loader.c
+""")
+
+Import('env')
+
+incPath=['../base', '../../include']
+
+#
+# JPEG
+#
+if env['with_jpeglib']:
+	srcs.append(['jpeg.c'])
+	incPath.append([env['JPEGLIB_INC_PATH']])
+
+
+libName='riimageio'
+
+env.Library(libName, srcs, CPPPATH=incPath)
