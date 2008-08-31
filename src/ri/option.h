@@ -110,6 +110,9 @@ extern int          ri_option_find_file(char *fullpath,
 					const ri_option_t *option,
 					const char *file);
 
+/* For debug    */
+extern void         ri_option_show_searchpath(ri_option_t *option);
+
 /* implemetation specific option */
 extern void	    ri_impl_option_insert   (const char *name, void *val);
 extern void        *ri_impl_option_get      (const char *name);

@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "accel.h"
 #include "option.h"
@@ -38,19 +39,35 @@ typedef struct _opt_t
 
 static ri_hash_t *impl_options;
 
+/* --------------------------------------------------------------------------
+ *
+ * Private function definitions
+ *
+ * ----------------------------------------------------------------------- */
+
 static void       free_func(void *data);
+
+static void       parse_and_add_searchpath(
+                         ri_option_t *option,    /* [inout] */
+                         const char  *path);
 
 /* detect the number of cpus in the system. */
 #if defined(WITH_PTHREAD) || (!defined(NOTHREAD) && defined(WIN32))
-static int get_numcpus();
+static int        get_numcpus();
 #endif
 
-static int toInt(RtPointer p)
+static int to_int(RtPointer p)
 {
 	RtFloat *f;
 	f = (RtFloat *)p;
 	return (int)(*f);
 }
+
+/* --------------------------------------------------------------------------
+ *
+ * Public functions
+ *
+ * ----------------------------------------------------------------------- */
 
 ri_option_t *
 ri_option_new()
@@ -139,13 +156,98 @@ ri_option_free(ri_option_t *option)
 void
 ri_option_add_searchpath(ri_option_t *option, const char *path)
 {
-	char *p = NULL;
+    char       *p = NULL;
+    char        filtered_path[2048], buf[2048];
+    char       *bufp;
+    const char *ptr;
+    int         len;
 
-	p = strdup(path);
+#if defined(WIN32) && !defined(__CYGWIN__)
+    char *sep = "\\";
+#else
+    char *sep = "/";
+#endif
 
-	ri_ptr_array_insert(option->searchpath,
-			    option->searchpath->nelems,
-			    (void *)p);
+    /*
+     * Filter path string
+     */
+
+    ptr  = path;
+    bufp = filtered_path;
+
+    /* '//' -> '/' */
+
+    while ( ptr != NULL && (*ptr) != '\0') {
+
+        (*bufp) = (*ptr);
+
+        if (strlen(ptr) > 1) {
+
+            if ( (ptr[0] == (*sep)) && (ptr[1] == (*sep)) ) {
+
+                ptr++;    /* skip one '/' */
+            }
+        }
+
+        bufp++;
+        ptr++;
+
+    }
+
+#if defined(WIN32) && !defined(__CYGWIN__)
+    (*bufp) = '\\'; bufp++;
+#else
+    (*bufp) = '/'; bufp++;
+#endif
+    (*bufp) = '\0';
+
+
+
+    p = strdup(filtered_path);
+
+    ri_ptr_array_insert(option->searchpath,
+                option->searchpath->nelems,
+                (void *)p);
+ 
+    /*
+     * If the path does not start with '/'
+     * add (ribpath(base RIB filename path) + path) to the list also.
+     * TODO: Windows env support.
+     */
+
+    if (path[0] != '/') {
+
+        bufp = buf;
+
+        strcpy(bufp, ri_render_get()->ribpath);
+        bufp += strlen(ri_render_get()->ribpath);
+
+        strcpy(bufp, filtered_path);
+
+        p = strdup(buf);
+
+        ri_ptr_array_insert(option->searchpath,
+                    option->searchpath->nelems,
+                    (void *)p);
+
+    }
+
+}
+
+void
+ri_option_show_searchpath(ri_option_t *option)
+{
+    int   i;
+	char *path;
+
+	for (i = 0; i < option->searchpath->nelems; i++) {
+		path = (char *)ri_ptr_array_at(option->searchpath, i);
+
+		if (path) {
+            printf("%s\n", path);
+        }
+    }
+
 }
 
 /* Function: ri_option_find_file
@@ -237,7 +339,23 @@ ri_api_option(RtToken token, RtInt n, RtToken tokens[], RtPointer params[])
 	ctxopt  = ri_render_get()->context->option;
 	camera  = ctxopt->camera;
 
-	if (strcmp(token, "raytrace") == 0) {
+    if (strcmp(token, "searchpath")  == 0 ||
+        strcmp(token, "search path") == 0 ) {
+
+        for (i = 0; i < n; i++) {
+
+            if (strcmp(tokens[i], "archive")        == 0 ||
+                strcmp(tokens[i], "string archive") == 0 ) {
+
+                tokp = (RtToken *)params[i];
+
+                parse_and_add_searchpath( ctxopt, (*tokp) );
+               
+            } 
+       } 
+
+	} else if (strcmp(token, "raytrace") == 0) {
+
 		for (i = 0; i < n; i++) {
 			if (strcmp(tokens[i], "finalgather_rays") == 0) {
 				valp = (RtFloat *)params[i];
@@ -347,7 +465,7 @@ ri_api_option(RtToken token, RtInt n, RtToken tokens[], RtPointer params[])
 	} else if (strcmp(token, "pathtrace") == 0) {
 		for (i = 0; i < n; i++) {
 			if (strcmp(tokens[i], "nsamples") == 0) {
-				ctxopt->pt_nsamples = toInt(params[i]);
+				ctxopt->pt_nsamples = to_int(params[i]);
 			}
 		}
 	} else if (strcmp(token, "camera") == 0) {
@@ -381,6 +499,12 @@ ri_api_option(RtToken token, RtInt n, RtToken tokens[], RtPointer params[])
 		}
 	}
 }
+
+/* --------------------------------------------------------------------------
+ *
+ * Private functions
+ *
+ * ----------------------------------------------------------------------- */
 
 #if defined(WITH_PTHREAD) || (!defined(NOTHREAD) && defined(WIN32))
 static int
@@ -428,6 +552,63 @@ get_numcpus()
 	return cpus;
 }
 #endif
+
+static void
+parse_and_add_searchpath(ri_option_t *option,    /* [inout] */
+                         const char  *path)
+{
+    if (path == NULL) return;
+
+    if (strlen(path) < 1) return;
+
+    const char *ptr;
+    char *p;
+    int   len;
+
+    char buf[1024];    /* working buffer */
+
+    ptr = path;
+
+    while (1) {
+
+        /* find ':' */
+
+        p = strchr(ptr, ':');
+
+        if (p == NULL) {
+
+            /* no ':' found */
+
+            if (strlen(ptr) > 0) {
+
+                ri_option_add_searchpath(option, ptr);
+            }
+
+            break;
+        }
+
+        /*
+         * split path string at p and p+1
+         */
+
+        len = p - ptr + 1;
+
+        assert( len < 1024 );
+
+        strncpy(buf, ptr, len);
+
+        /*
+         * last character of "buf" is ':', replace it with '\0'
+         */
+        buf[len-1] = '\0';
+
+        ri_option_add_searchpath(option, buf);
+            
+        ptr += len;
+    }    
+
+}
+
 
 static void
 free_func(void *data)
