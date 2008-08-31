@@ -1,10 +1,37 @@
 /*
- * texture mapping routine.
+ * texture data loader.
  *
- * texture.c contains texture filtering codes.
- * Loading texture data is coded in texture_loader.c.
+ * TODO:
+ * 
+ * To handle large texture maps,
+ * a imagemap(e.g. jpeg) is first converted into blocked,
+ * mipmapped and hierarchical manner, and saved it to disk.
+ * In rendering time, a portion(block) of texture map to be texture-mapped
+ * is load into memory from file.
  *
- * $Id$
+ *
+ *  +-----------------+         +-----+-----+-----+
+ *  |                 |         |     |     |     |
+ *  |                 |         |     |     |     |
+ *  |  input texture  |      -> +-----+-----+-----+ 
+ *  |                 |         |     |     |     |
+ *  |                 |         |     |     |     |
+ *  +-----------------+         +-----+-----+-----+
+ *                                          <----->
+ *                                           TEXBLOCKSIZE
+ *
+ *
+ * -> Generate mipmaps and store it to disk as a 1D array manner.
+ *
+ * +-----------------------+---------------+------------+--||--+ 
+ * | miplevel 0 blocks     | lv 1 blks     | lv 2 blks  |      |
+ * +-----------------------+---------------+------------+--||--+
+ *
+ *
+ *  o Use rip-map for anisotropic texturing.
+ *
+ *
+ * $Id: texture.c,v 1.9 2004/08/15 05:19:39 syoyo Exp $
  *
  */
 
@@ -17,6 +44,7 @@
 #include <string.h>
 #include <math.h>
 #include <ctype.h>
+#include <assert.h>
 
 
 #ifdef HAVE_ZLIB
@@ -28,9 +56,10 @@
 #include "texture.h"
 #include "hash.h"
 #include "render.h"
+#include "image_loader.h"       /* ../imageo                                */
 
-#define TEXBLOCKSIZE 64        /* block map size in miplevel 0. */
-#define MAXMIPLEVEL  16        /* 16 can represent a mipmap for 65536x65536. */
+#define TEXBLOCKSIZE 64         /* block map size in miplevel 0. */
+#define MAXMIPLEVEL  16         /* 16 can represent a mipmap for 65536x65536. */
 
 typedef struct _texblock_t
 {
@@ -61,7 +90,7 @@ typedef struct _blockedmipmap_t
 } blockedmipmap_t;
 
 //#define LOCAL_DEBUG
-#undef LOCAL_DEBUG
+#undef  LOCAL_DEBUG
 #define USE_ZORDER 0
 
 #define MAX_TEXTURE_PATH 1024
@@ -76,214 +105,125 @@ typedef struct _blockedmipmap_t
 static unsigned short g_z_table[256];
 
 static ri_hash_t    *texture_cache;
-static FILE         *open_file(const char *filename);
 
 /* store texel memory in scanline order -> z curve order. */ 
-static void remapping(ri_texture_t *src);
-static void build_z_table();
+static void          remapping(ri_texture_t *src);
+static void          build_z_table();
 
 
-void
-ri_texture_fetch(
-    ri_vector_t         color_out,      /* [out] */
-    const ri_texture_t *texture,
-    ri_float_t          u,
-    ri_float_t          v)
+#if 0 /* REMOVE */
+int
+check_file_exists(
+    const char  *filename)
 {
-    int         i;
-    int         idx;
-    int         x, y;
-    ri_float_t sx, sy;
-    ri_float_t w[4];
-    ri_float_t texel[4][4];
-    ri_float_t px, py;
-    ri_float_t dx, dy;
+    FILE *fp = NULL;
+    char newpath[MAX_TEXTURE_PATH * 2];
 
-    sx = floor(u); sy = floor(v);
+    fp = fopen(filename, "rb");
 
-    u = u - sx; v = v - sy;
-
-    if (u < 0.0) u = 0.0; if (u >= 1.0) u = 1.0;
-    if (v < 0.0) v = 0.0; if (v >= 1.0) v = 1.0;
-
-    px = u * (texture->width  - 1);
-    py = v * (texture->height  - 1);
-
-    x = (int)px; y = (int)py;
-
-    dx = px - x; dy = py - y;
-
-    w[0] = (1.0 - dx) * (1.0 - dy);
-    w[1] = (1.0 - dx) *        dy ;
-    w[2] =        dx  * (1.0 - dy);
-    w[3] =        dx  *        dy ;
-
-#if USE_ZORDER
-
-    idx = MAP_Z2D(x, y);
-    texel[0][0] = texture->data[4 * idx + 0];
-    texel[0][1] = texture->data[4 * idx + 1];
-    texel[0][2] = texture->data[4 * idx + 2];
-    texel[0][3] = texture->data[4 * idx + 3];
-
-    if (y < texture->height - 1 && x < texture->width - 1) {
-        idx = MAP_Z2D(x, y+1);
-        texel[1][0] = texture->data[4 * idx + 0];
-        texel[1][1] = texture->data[4 * idx + 1];
-        texel[1][2] = texture->data[4 * idx + 2];
-        texel[1][3] = texture->data[4 * idx + 3];
-
-        idx = MAP_Z2D(x+1, y);
-        texel[2][0] = texture->data[4 * idx + 0];
-        texel[2][1] = texture->data[4 * idx + 1];
-        texel[2][2] = texture->data[4 * idx + 2];
-        texel[2][3] = texture->data[4 * idx + 3];
-
-        idx = MAP_Z2D(x+1, y+1);
-        texel[3][0] = texture->data[4 * idx + 0];
-        texel[3][1] = texture->data[4 * idx + 1];
-        texel[3][2] = texture->data[4 * idx + 2];
-        texel[3][3] = texture->data[4 * idx + 3];
-    } else if (y < texture->height - 1) {
-        idx = MAP_Z2D(x, y+1);
-        texel[1][0] = texture->data[4 * idx + 0];
-        texel[1][1] = texture->data[4 * idx + 1];
-        texel[1][2] = texture->data[4 * idx + 2];
-        texel[1][3] = texture->data[4 * idx + 3];
-
-        for (i = 0; i < 4; i++) {
-            texel[2][i] = 0.0;
-            texel[3][i] = 0.0;
+    if (!fp) {
+        if (ri_render_get()->ribpath[0] != '\0') {
+            strcpy(newpath, ri_render_get()->ribpath);
+            strcat(newpath, filename);
+            fp = fopen(newpath, "rb");
+    
+            if (!fp) {
+                ri_log(LOG_WARN, "Can't open texture file \"%s\"", newpath);
+                exit(-1);
+            }
         }
-    } else if (x < texture->width - 1) {
-        idx = MAP_Z2D(x+1, y);
-        texel[2][0] = texture->data[4 * idx + 0];
-        texel[2][1] = texture->data[4 * idx + 1];
-        texel[2][2] = texture->data[4 * idx + 2];
-        texel[2][3] = texture->data[4 * idx + 3];
-
-        for (i = 0; i < 4; i++) {
-            texel[1][i] = 0.0;
-            texel[3][i] = 0.0;
-        }
-    } else {
-        for (i = 0; i < 4; i++) {
-            texel[1][i] = 0.0;
-            texel[2][i] = 0.0;
-            texel[3][i] = 0.0;
-        }
-    }    
-
-#else
-
-    idx = y * texture->width + x;
-    for (i = 0; i < 4; i++) {
-        texel[0][i] = texture->data[4 * idx + i];
     }
 
-    if (y < texture->height - 1 && x < texture->width - 1) {
-        idx = (y + 1) * texture->width + x;
-        for (i = 0; i < 4; i++) {
-            texel[1][i] = texture->data[4 * idx + i];
-        }
-
-        idx = y * texture->width + x + 1;
-        for (i = 0; i < 4; i++) {
-            texel[2][i] = texture->data[4 * idx + i];
-        }
-
-        idx = (y + 1) * texture->width + x + 1;
-        for (i = 0; i < 4; i++) {
-            texel[3][i] = texture->data[4 * idx + i];
-        }
-    } else if (y < texture->height - 1) {
-        idx = (y + 1) * texture->width + x;
-        for (i = 0; i < 4; i++) {
-            texel[1][i] = texture->data[4 * idx + i];
-        }
-
-        for (i = 0; i < 4; i++) {
-            texel[2][i] = 0.0;
-            texel[3][i] = 0.0;
-        }
-    } else if (x < texture->width - 1) {
-        idx = y * texture->width + x + 1;
-        for (i = 0; i < 4; i++) {
-            texel[2][i] = texture->data[4 * idx + i];
-        }
-
-        for (i = 0; i < 4; i++) {
-            texel[1][i] = 0.0;
-            texel[3][i] = 0.0;
-        }
-    } else {
-        for (i = 0; i < 4; i++) {
-            texel[1][i] = 0.0;
-            texel[2][i] = 0.0;
-            texel[3][i] = 0.0;
-        }
-    }    
-
+    return fp;
+}
 #endif
-   
-    for (i = 0; i < 4; i++) {
-        color_out[i] = (ri_float_t)(
-                  w[0] * texel[0][i] +
-                  w[1] * texel[1][i] +
-                  w[2] * texel[2][i] +
-                  w[3] * texel[3][i]);
-    }
+
+static void endconv(void *data)
+{
+#if defined(WORDS_BIGENDIAN) || defined(__APPLE__)
+    char tmp[4];
+    tmp[0] = ((char *)data)[0];
+    tmp[1] = ((char *)data)[1];
+    tmp[2] = ((char *)data)[2];
+    tmp[3] = ((char *)data)[3];
+
+    ((char *)data)[0] = tmp[3];
+    ((char *)data)[1] = tmp[2];
+    ((char *)data)[2] = tmp[1];
+    ((char *)data)[3] = tmp[0];
+#else
+    (void)data;
+#endif
 }
 
-void
-ri_texture_ibl_fetch(
-    ri_vector_t         color_out,
-    const ri_texture_t *texture,
-    const ri_vector_t   dir)
+ri_texture_t *
+ri_texture_load(const char *filename)
 {
-    const ri_float_t pi = 3.1415926535;
-    ri_float_t u, v;
-    ri_float_t r;
-    ri_float_t norm2;
-    ri_vector_t ndir;
+    static int initialized = 0;
+    ri_texture_t *p;
+    FILE         *fp;
+    char         *ext;
 
-    ri_vector_copy(ndir, dir);
-    ri_vector_normalize(ndir);
+    char          fullpath[4096];
 
-    if (ndir[2] >= -1.0 && ndir[2] < 1.0) {
-        /* Angular Map is defined in left-handed coordinate,
-         * RenderMan is defined in right-handed coordinate(default).
-         * +z in dir corresponds to -z in angular map coord.
-         * (actually, no sign flipping occur in this case)
-         * TODO: consider ribs which defined the coords in left-handed.
-         */
-        r = (1.0 / pi) * acos(ndir[2]);
-    } else {
-        r = 0.0;
+    if (!initialized) {
+        texture_cache = ri_hash_new();
+        build_z_table();
+        initialized = 1;
     }
 
-    norm2 = ndir[0] * ndir[0] + ndir[1] * ndir[1];
-    if (norm2 > 1.0e-6) {
-        r /= sqrt(norm2);
+    if (ri_hash_lookup(texture_cache, filename)) {
+        /* hit texture cache! */
+        p = (ri_texture_t *)ri_hash_lookup(texture_cache, filename);
+
+        return p;
+    }
+
+    if (!ri_option_find_file(fullpath,
+                             ri_render_get()->context->option,
+                             filename)) {
+        ri_log(LOG_WARN, "Can't find textue file \"%s\"", filename);
+        exit(-1);
     }
     
-    u = ndir[0] * r;
-    v = ndir[1] * r;
+    unsigned int  width;
+    unsigned int  height;
+    unsigned int  component;
+    float        *image = NULL;
 
-    u = 0.5 * u + 0.5;
-    v = 0.5 - 0.5 * v;
+    image = ri_image_load(filename, &width, &height, &component);
+    if (!image) {
+        ri_log(LOG_WARN, "Can't load textue file \"%s\"", fullpath);
+        exit(-1);
+    }    
 
-    ri_texture_fetch(color_out, texture, u, v);
+    p = ri_mem_alloc(sizeof(ri_texture_t));
+    assert(p != NULL);
+    memset(p, 0, sizeof(ri_texture_t));
+    
+    p->width  = width;
+    p->height = height;
+    p->data   = image;
+
+    ri_log(LOG_INFO, "Loaded texture [ %s ]", filename);
+
+
+#if USE_ZORDER
+    /* reorder texel memory with z curve order to exploit cache coherency. */
+    remapping(p);
+#endif
+
+    /* add to texture cache */
+    ri_hash_insert(texture_cache, filename, p);
+
+    return p;
 }
 
 void
-ri_texture_scale(ri_texture_t *texture, ri_float_t scale)
+ri_texture_free(ri_texture_t *texture)
 {
-    int i;
-
-    for (i = 0; i < texture->width * texture->height * 4; i++) {
-        texture->data[i] *= scale;
-    }
+    ri_mem_free(texture->data);
+    ri_mem_free(texture);
 }
 
 

@@ -18,21 +18,21 @@ extern "C" {
 
 typedef struct _ri_texture_t
 {
-    ri_float_t    *data;
+    float         *data;                /* texel is strictly fp32 value. */
     int            width, height; 
-    int            maxsize_pow2n;        /* nearest 2^n value of
-                                          * width or height.
-                                          */
-    int            mapping;              /* mapping method for IBL */
+    int            maxsize_pow2n;       /* nearest 2^n value of
+                                         * width or height.
+                                         */
+    int            mapping;             /* mapping method for IBL */
 } ri_texture_t;
 
 typedef struct _ri_rawtexture_t
 {
     ri_float_t    *data;
     int            width, height; 
-    int            maxsize_pow2n;         /* nearest 2^n value of
-                                           * width or height.
-                                           */
+    int            maxsize_pow2n;       /* nearest 2^n value of
+                                         * width or height.
+                                         */
 } ri_rawtexture_t;
 
 extern ri_texture_t *ri_texture_load (const char *filename);
