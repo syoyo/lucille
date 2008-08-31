@@ -150,11 +150,13 @@ ri_option_add_searchpath(ri_option_t *option, const char *path)
 
 /* Function: ri_option_find_file
  *
- *     Finds a file with search paths specified by Option command
+ *     Finds a file with search paths specified by Option command.
  *
  * Parameters:
  *
- *     fullpath - Full path to the found file.
+ *     fullpath - Pointer to buffer for storing full path to the found file.
+ *                fullpath must point to the memory buffer to store enough
+ *                path string.
  *     option   - The option which contains parsed search paths.
  *     file     - Name of file to find.
  *
