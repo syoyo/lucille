@@ -24,9 +24,16 @@ if sys.platform == 'linux2':
 if env['with_zlib']:
 	libs.append([env['ZLIB_LIB_NAME']]) 
 
+if env['with_jpeglib']:
+	libs.append([env['JPEGLIB_LIB_NAME']]) 
+
 libPath=['../base', '../display', '../transport', '../render', '../ri']
+
 if env['with_zlib']:
 	libPath.append([env['ZLIB_LIB_PATH']])
+
+if env['with_jpeglib']:
+	libPath.append([env['JPEGLIB_LIB_PATH']])
 
 
 p = env.CFile(target='parserib.c', source='parserib.y')
