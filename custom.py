@@ -62,4 +62,7 @@ ZLIB_INC_PATH = '/usr/include'
 ZLIB_LIB_PATH = '/usr/lib'
 ZLIB_LIB_NAME = 'z'
 
-
+with_jpeglib = 1
+JPEGLIB_INC_PATH = '/usr/local/include'
+JPEGLIB_LIB_PATH = '/usr/local/lib'
+JPEGLIB_LIB_NAME = 'jpeg'

@@ -15,16 +15,20 @@ opts.Add('custom_cflags', 'User defined CFLAGS')
 opts.Add('custom_cxxflags', 'User defined CXXFLAGS')
 opts.Add(EnumOption('build_target', 'Build target', 'release',
                     allowed_values=('debug', 'release', 'fast')))
-opts.Add('use_llvm', 'Use LLVM', 0)
-opts.Add('enable_sse', 'Enable SSE(valid for x86 processor)', 1)
-opts.Add('use_double', 'Use double precision', 0)
-opts.Add('enable_64bit', 'Compile for 64bit environment', 0)
-opts.Add('with_zlib', 'Use zlib for compression facility', 0)
-opts.Add('LLVM_CC',     'LLVM C frontend')
-opts.Add('LLVM_AR',     'LLVM ar')
-opts.Add('LLVM_LD',     'LLVM ld')
-opts.Add('LLVM_RANLIB', 'LLVM ranlib')
-opts.Add('LLVM_LINK',   'LLVM link')
+opts.Add('use_llvm'	, 'Use LLVM', 0)
+opts.Add('enable_sse'	, 'Enable SSE(valid for x86 processor)', 1)
+opts.Add('use_double'	, 'Use double precision', 0)
+opts.Add('enable_64bit'	, 'Compile for 64bit environment', 0)
+opts.Add('with_zlib'	, 'Use zlib for compression facility', 0)
+opts.Add('with_jpeglib'	, 'Use jpeglib to load/save jpeg image', 0)
+opts.Add('JPEGLIB_INC_PATH'	, 'Include path to libjpeg')
+opts.Add('JPEGLIB_LIB_PATH'	, 'Lib path to libjpeg')
+opts.Add('JPEGLIB_LIB_NAME'	, 'Library name of libjpeg')
+opts.Add('LLVM_CC'	, 'LLVM C frontend')
+opts.Add('LLVM_AR'	, 'LLVM ar')
+opts.Add('LLVM_LD'	, 'LLVM ld')
+opts.Add('LLVM_RANLIB'	, 'LLVM ranlib')
+opts.Add('LLVM_LINK'	, 'LLVM link')
 
 
 #
@@ -88,6 +92,12 @@ if env['with_zlib'] == 1:
 	env.Append(CPPDEFINES = ['WITH_ZLIB'])
 	env.Append(CPPPATH = [env['ZLIB_INC_PATH']])
 		
+#
+# JPEG support
+#
+if env['with_jpeglib'] == 1:
+	env.Append(CPPDEFINES = ['WITH_JPEGLIB'])
+	env.Append(CPPPATH = [env['JPEGLIB_INC_PATH']])
 
 #
 # Platform specific settings
@@ -126,3 +136,4 @@ if env['enable_sse'] == 1:
 		env['CFLAGS'].append('-msse2')
 
 SConscript(['src/SConscript'], exports='env')
+
