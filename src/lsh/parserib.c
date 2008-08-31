@@ -75,55 +75,57 @@
      ATTRIBUTE = 264,
      ATTRIBUTEBEGIN = 265,
      ATTRIBUTEEND = 266,
-     CLIPPING = 267,
-     CONCATTRANSFORM = 268,
-     COLOR = 269,
-     COORDINATESYSTEM = 270,
-     DECLARE = 271,
-     DEPTHOFFIELD = 272,
-     DISPLAY = 273,
-     EXPOSURE = 274,
-     FORMAT = 275,
-     FRAMEBEGIN = 276,
-     FRAMEEND = 277,
-     FRAMEASPECTRATIO = 278,
-     HIDER = 279,
-     IDENTITY = 280,
-     ILLUMINATE = 281,
-     IMAGER = 282,
-     LIGHTSOURCE = 283,
-     MOTIONBEGIN = 284,
-     MOTIONEND = 285,
-     OPACITY = 286,
-     OPTION = 287,
-     ORIENTATION = 288,
-     PERSPECTIVE = 289,
-     PIXELFILTER = 290,
-     PIXELSAMPLES = 291,
-     POINTSPOLYGONS = 292,
-     POINTSGENERALPOLYGONS = 293,
-     PROJECTION = 294,
-     POLYGON = 295,
-     QUANTIZE = 296,
-     ROTATE = 297,
-     RIBVERSION = 298,
-     SCALE = 299,
-     SCREENWINDOW = 300,
-     SHADINGRATE = 301,
-     SHADINGINTERPOLATION = 302,
-     SHUTTER = 303,
-     SIDES = 304,
-     SPHERE = 305,
-     SUBDIVISIONMESH = 306,
-     SURFACE = 307,
-     TRANSFORM = 308,
-     TRANSFORMBEGIN = 309,
-     TRANSFORMEND = 310,
-     TRANSLATE = 311,
-     WORLDBEGIN = 312,
-     WORLDEND = 313,
-     HIGH_PRECEDENCE = 314,
-     UNKNOWN = 315
+     ATMOSPHERE = 267,
+     CLIPPING = 268,
+     CONCATTRANSFORM = 269,
+     COLOR = 270,
+     COORDINATESYSTEM = 271,
+     DECLARE = 272,
+     DEPTHOFFIELD = 273,
+     DISPLACEMENT = 274,
+     DISPLAY = 275,
+     EXPOSURE = 276,
+     FORMAT = 277,
+     FRAMEBEGIN = 278,
+     FRAMEEND = 279,
+     FRAMEASPECTRATIO = 280,
+     HIDER = 281,
+     IDENTITY = 282,
+     ILLUMINATE = 283,
+     IMAGER = 284,
+     LIGHTSOURCE = 285,
+     MOTIONBEGIN = 286,
+     MOTIONEND = 287,
+     OPACITY = 288,
+     OPTION = 289,
+     ORIENTATION = 290,
+     PERSPECTIVE = 291,
+     PIXELFILTER = 292,
+     PIXELSAMPLES = 293,
+     POINTSPOLYGONS = 294,
+     POINTSGENERALPOLYGONS = 295,
+     PROJECTION = 296,
+     POLYGON = 297,
+     QUANTIZE = 298,
+     ROTATE = 299,
+     RIBVERSION = 300,
+     SCALE = 301,
+     SCREENWINDOW = 302,
+     SHADINGRATE = 303,
+     SHADINGINTERPOLATION = 304,
+     SHUTTER = 305,
+     SIDES = 306,
+     SPHERE = 307,
+     SUBDIVISIONMESH = 308,
+     SURFACE = 309,
+     TRANSFORM = 310,
+     TRANSFORMBEGIN = 311,
+     TRANSFORMEND = 312,
+     TRANSLATE = 313,
+     WORLDBEGIN = 314,
+     WORLDEND = 315,
+     HIGH_PRECEDENCE = 316,
+     UNKNOWN = 317
    };
 #endif
 /* Tokens.  */
@@ -136,55 +138,57 @@
 #define ATTRIBUTE 264
 #define ATTRIBUTEBEGIN 265
 #define ATTRIBUTEEND 266
-#define CLIPPING 267
-#define CONCATTRANSFORM 268
-#define COLOR 269
-#define COORDINATESYSTEM 270
-#define DECLARE 271
-#define DEPTHOFFIELD 272
-#define DISPLAY 273
-#define EXPOSURE 274
-#define FORMAT 275
-#define FRAMEBEGIN 276
-#define FRAMEEND 277
-#define FRAMEASPECTRATIO 278
-#define HIDER 279
-#define IDENTITY 280
-#define ILLUMINATE 281
-#define IMAGER 282
-#define LIGHTSOURCE 283
-#define MOTIONBEGIN 284
-#define MOTIONEND 285
-#define OPACITY 286
-#define OPTION 287
-#define ORIENTATION 288
-#define PERSPECTIVE 289
-#define PIXELFILTER 290
-#define PIXELSAMPLES 291
-#define POINTSPOLYGONS 292
-#define POINTSGENERALPOLYGONS 293
-#define PROJECTION 294
-#define POLYGON 295
-#define QUANTIZE 296
-#define ROTATE 297
-#define RIBVERSION 298
-#define SCALE 299
-#define SCREENWINDOW 300
-#define SHADINGRATE 301
-#define SHADINGINTERPOLATION 302
-#define SHUTTER 303
-#define SIDES 304
-#define SPHERE 305
-#define SUBDIVISIONMESH 306
-#define SURFACE 307
-#define TRANSFORM 308
-#define TRANSFORMBEGIN 309
-#define TRANSFORMEND 310
-#define TRANSLATE 311
-#define WORLDBEGIN 312
-#define WORLDEND 313
-#define HIGH_PRECEDENCE 314
-#define UNKNOWN 315
+#define ATMOSPHERE 267
+#define CLIPPING 268
+#define CONCATTRANSFORM 269
+#define COLOR 270
+#define COORDINATESYSTEM 271
+#define DECLARE 272
+#define DEPTHOFFIELD 273
+#define DISPLACEMENT 274
+#define DISPLAY 275
+#define EXPOSURE 276
+#define FORMAT 277
+#define FRAMEBEGIN 278
+#define FRAMEEND 279
+#define FRAMEASPECTRATIO 280
+#define HIDER 281
+#define IDENTITY 282
+#define ILLUMINATE 283
+#define IMAGER 284
+#define LIGHTSOURCE 285
+#define MOTIONBEGIN 286
+#define MOTIONEND 287
+#define OPACITY 288
+#define OPTION 289
+#define ORIENTATION 290
+#define PERSPECTIVE 291
+#define PIXELFILTER 292
+#define PIXELSAMPLES 293
+#define POINTSPOLYGONS 294
+#define POINTSGENERALPOLYGONS 295
+#define PROJECTION 296
+#define POLYGON 297
+#define QUANTIZE 298
+#define ROTATE 299
+#define RIBVERSION 300
+#define SCALE 301
+#define SCREENWINDOW 302
+#define SHADINGRATE 303
+#define SHADINGINTERPOLATION 304
+#define SHUTTER 305
+#define SIDES 306
+#define SPHERE 307
+#define SUBDIVISIONMESH 308
+#define SURFACE 309
+#define TRANSFORM 310
+#define TRANSFORMBEGIN 311
+#define TRANSFORMEND 312
+#define TRANSLATE 313
+#define WORLDBEGIN 314
+#define WORLDEND 315
+#define HIGH_PRECEDENCE 316
+#define UNKNOWN 317
 
 
 
@@ -231,78 +235,78 @@ RtToken   *rib_param_tokens      = NULL;
 RtPointer *rib_param_args        = NULL;
 RtInt     *rib_param_arg_size    = NULL;
 
-static const int	max_unknown_commands = 1000;
-static int		nunknown_commands = 0;
+static const int    max_unknown_commands = 1000;
+static int        nunknown_commands = 0;
 
 void yyerror( char *str ) {
-	printf( "parse error near line[%d]: %s\n", line_num, str );
+    printf( "parse error near line[%d]: %s\n", line_num, str );
 }
 
 static void numptrfree(void *data)
 {
-	RtFloat *p;
-	p = (RtFloat *)data;
+    RtFloat *p;
+    p = (RtFloat *)data;
 
-	ri_mem_free(p);
+    ri_mem_free(p);
 }
 
 static void strptrfree(void *data)
 {
-	char *p;
-	p = (char *)data;
+    char *p;
+    p = (char *)data;
 
-	ri_mem_free(p);
+    ri_mem_free(p);
 }
 
 static void enter_mode_param()
 {
-	lexrib_mode_param = 1;
+    lexrib_mode_param = 1;
 }
 
 static void enter_mode_skip()
 {
-	lexrib_mode_skip = 1;
+    lexrib_mode_skip = 1;
 }
 
 
 static void add_array(void *val)
 {
-	assert(curr_array);
+    assert(curr_array);
 
-	ri_ptr_array_insert(curr_array, curr_array_count,
-			val);
-	curr_array_count++;
+    ri_ptr_array_insert(curr_array, curr_array_count,
+            val);
+    curr_array_count++;
 }
 
 static void init_array()
 {
-	if (curr_array) {
-		if (array_type == STRING_ARRAY) {
-			ri_ptr_array_traverse(curr_array, strptrfree);
-		} else {
-			ri_ptr_array_traverse(curr_array, numptrfree);
-		}
-		ri_ptr_array_free(curr_array);
-	}
+    if (curr_array) {
+        if (array_type == STRING_ARRAY) {
+            ri_ptr_array_traverse(curr_array, strptrfree);
+        } else {
+            ri_ptr_array_traverse(curr_array, numptrfree);
+        }
+        ri_ptr_array_free(curr_array);
+    }
 
-	curr_array = ri_ptr_array_new();
-	curr_array_count = 0;
+    curr_array = ri_ptr_array_new();
+    curr_array_count = 0;
 }
 
 static ri_ptr_array_t *array_dup(ri_ptr_array_t *array)
 {
-	ri_ptr_array_t *dup = NULL;
+    ri_ptr_array_t *dup = NULL;
 
-	if (array == NULL) return NULL;
+    if (array == NULL) return NULL;
 
-	dup = ri_ptr_array_new();
-	dup->alloc   = array->alloc;
-	dup->nelems  = array->nelems;
-	dup->data    = (void **)ri_mem_alloc(sizeof(void *) * array->alloc);
+    dup = ri_ptr_array_new();
+    dup->alloc   = array->alloc;
+    dup->nelems  = array->nelems;
+    dup->data    = (void **)ri_mem_alloc(sizeof(void *) * array->alloc);
 
-	ri_mem_copy(dup->data, array->data, sizeof(void *) * array->alloc);
+    ri_mem_copy(dup->data, array->data, sizeof(void *) * array->alloc);
 
-	return dup;	
+    return dup;    
 }
 
 
@@ -333,8 +337,8 @@ char            string[1024];
 float           num;
 ri_ptr_array_t *paramarray;
 }
-/* Line 187 of yacc.c.  */
-#line 338 "src/lsh/parserib.c"
+/* Line 193 of yacc.c.  */
+#line 342 "src/lsh/parserib.c"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
@@ -347,7 +351,7 @@ ri_ptr_array_t *paramarray;
 
 
 /* Line 216 of yacc.c.  */
-#line 351 "src/lsh/parserib.c"
+#line 355 "src/lsh/parserib.c"
 
 #ifdef short
 # undef short
@@ -397,7 +401,7 @@ typedef short int yytype_int16;
 #define YYSIZE_MAXIMUM ((YYSIZE_T) -1)
 
 #ifndef YY_
-# if YYENABLE_NLS
+# if defined YYENABLE_NLS && YYENABLE_NLS
 #  if ENABLE_NLS
 #   include <libintl.h> /* INFRINGES ON USER NAME SPACE */
 #   define YY_(msgid) dgettext ("bison-runtime", msgid)
@@ -560,22 +564,22 @@ union yyalloc
 #endif
 
 /* YYFINAL -- State number of the termination state.  */
-#define YYFINAL  108
+#define YYFINAL  112
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   211
+#define YYLAST   217
 
 /* YYNTOKENS -- Number of terminals.  */
-#define YYNTOKENS  61
+#define YYNTOKENS  63
 /* YYNNTS -- Number of nonterminals.  */
-#define YYNNTS  70
+#define YYNNTS  72
 /* YYNRULES -- Number of rules.  */
-#define YYNRULES  129
+#define YYNRULES  133
 /* YYNRULES -- Number of states.  */
-#define YYNSTATES  252
+#define YYNSTATES  260
 
 /* YYTRANSLATE(YYLEX) -- Bison symbol number corresponding to YYLEX.  */
 #define YYUNDEFTOK  2
-#define YYMAXUTOK   315
+#define YYMAXUTOK   317
 
 #define YYTRANSLATE(YYX)						\
   ((unsigned int) (YYX) <= YYMAXUTOK ? yytranslate[YYX] : YYUNDEFTOK)
@@ -614,7 +618,7 @@ static const yytype_uint8 yytranslate[] =
       25,    26,    27,    28,    29,    30,    31,    32,    33,    34,
       35,    36,    37,    38,    39,    40,    41,    42,    43,    44,
       45,    46,    47,    48,    49,    50,    51,    52,    53,    54,
-      55,    56,    57,    58,    59,    60
+      55,    56,    57,    58,    59,    60,    61,    62
 };
 
 #if YYDEBUG
@@ -625,78 +629,81 @@ static const yytype_uint16 yyprhs[] =
        0,     0,     3,     5,     6,     7,     8,    10,    12,    14,
       19,    24,    27,    30,    32,    35,    37,    40,    43,    44,
       47,    48,    51,    52,    55,    58,    60,    62,    65,    69,
-      74,    76,    78,    82,    85,   105,   108,   112,   117,   123,
-     127,   132,   135,   137,   140,   144,   146,   150,   154,   159,
-     162,   164,   167,   171,   174,   177,   182,   186,   191,   197,
-     200,   204,   211,   217,   222,   228,   235,   238,   241,   244,
-     248,   258,   262,   265,   267,   269,   274,   276,   278,   280,
-     282,   284,   286,   288,   290,   292,   294,   296,   298,   300,
-     302,   304,   306,   308,   310,   312,   314,   316,   318,   320,
-     322,   324,   326,   328,   330,   332,   334,   336,   338,   340,
-     342,   344,   346,   348,   350,   352,   354,   356,   358,   360,
-     362,   364,   366,   368,   370,   372,   374,   376,   378,   380
+      74,    76,    78,    82,    86,    89,   109,   112,   116,   121,
+     125,   131,   135,   140,   143,   145,   148,   152,   154,   158,
+     162,   167,   170,   172,   175,   179,   182,   185,   190,   194,
+     199,   205,   208,   212,   219,   225,   230,   236,   243,   246,
+     249,   252,   256,   266,   270,   273,   275,   277,   282,   284,
+     286,   288,   290,   292,   294,   296,   298,   300,   302,   304,
+     306,   308,   310,   312,   314,   316,   318,   320,   322,   324,
+     326,   328,   330,   332,   334,   336,   338,   340,   342,   344,
+     346,   348,   350,   352,   354,   356,   358,   360,   362,   364,
+     366,   368,   370,   372,   374,   376,   378,   380,   382,   384,
+     386,   388,   390,   392
 };
 
 /* YYRHS -- A `-1'-separated list of the rules' RHS.  */
 static const yytype_int16 yyrhs[] =
 {
-      62,     0,    -1,    77,    -1,    -1,    -1,    -1,    67,    -1,
-      68,    -1,     5,    -1,    63,     6,    69,     7,    -1,    63,
-       6,    70,     7,    -1,    63,     3,    -1,    69,    72,    -1,
-      72,    -1,    70,    71,    -1,    71,    -1,    65,     3,    -1,
-      64,     5,    -1,    -1,    74,    75,    -1,    -1,    76,    75,
-      -1,    -1,     3,    66,    -1,    77,    78,    -1,    78,    -1,
-      79,    -1,    80,     5,    -1,    82,     3,    73,    -1,    81,
-       3,     5,    73,    -1,    83,    -1,    84,    -1,    85,     5,
-       5,    -1,    86,    67,    -1,    87,     6,     5,     5,     5,
-       5,     5,     5,     5,     5,     5,     5,     5,     5,     5,
-       5,     5,     5,     7,    -1,    88,     3,    -1,    89,     3,
-       3,    -1,    90,     5,     5,     5,    -1,    91,     3,     3,
-       3,    73,    -1,    92,     5,     5,    -1,    96,     5,     5,
-       5,    -1,    93,     5,    -1,    94,    -1,    95,     5,    -1,
-      97,     3,    73,    -1,    98,    -1,    99,     5,     5,    -1,
-     100,     3,    73,    -1,   101,     3,     5,    73,    -1,   102,
-      67,    -1,   103,    -1,   104,    67,    -1,   105,     3,    73,
-      -1,   106,     3,    -1,   107,     5,    -1,   108,     3,     5,
-       5,    -1,   109,     5,     5,    -1,   110,    67,    67,    73,
-      -1,   111,    67,    67,    67,    73,    -1,   112,    73,    -1,
-     113,     3,    73,    -1,   114,     3,     5,     5,     5,     5,
-      -1,   115,     5,     5,     5,     5,    -1,   116,     5,     5,
-       5,    -1,   117,     5,     5,     5,     5,    -1,   118,     5,
-       5,     5,     5,    73,    -1,   119,     5,    -1,   120,     3,
-      -1,   121,     5,    -1,   122,     5,     5,    -1,   123,     3,
-      67,    67,    68,    67,    67,    67,    73,    -1,   124,     3,
-      73,    -1,   125,    67,    -1,   126,    -1,   127,    -1,   128,
-       5,     5,     5,    -1,   129,    -1,   130,    -1,    60,    -1,
-      43,    -1,     8,    -1,     9,    -1,    10,    -1,    11,    -1,
-      12,    -1,    14,    -1,    13,    -1,    15,    -1,    16,    -1,
-      17,    -1,    18,    -1,    19,    -1,    21,    -1,    22,    -1,
-      23,    -1,    20,    -1,    24,    -1,    25,    -1,    26,    -1,
-      27,    -1,    28,    -1,    29,    -1,    30,    -1,    31,    -1,
-      32,    -1,    33,    -1,    34,    -1,    35,    -1,    36,    -1,
-      37,    -1,    38,    -1,    40,    -1,    39,    -1,    41,    -1,
-      42,    -1,    44,    -1,    45,    -1,    50,    -1,    49,    -1,
-      47,    -1,    46,    -1,    48,    -1,    51,    -1,    52,    -1,
-      53,    -1,    54,    -1,    55,    -1,    56,    -1,    57,    -1,
-      58,    -1
+      64,     0,    -1,    79,    -1,    -1,    -1,    -1,    69,    -1,
+      70,    -1,     5,    -1,    65,     6,    71,     7,    -1,    65,
+       6,    72,     7,    -1,    65,     3,    -1,    71,    74,    -1,
+      74,    -1,    72,    73,    -1,    73,    -1,    67,     3,    -1,
+      66,     5,    -1,    -1,    76,    77,    -1,    -1,    78,    77,
+      -1,    -1,     3,    68,    -1,    79,    80,    -1,    80,    -1,
+      81,    -1,    82,     5,    -1,    84,     3,    75,    -1,    83,
+       3,     5,    75,    -1,    85,    -1,    86,    -1,    87,     3,
+      75,    -1,    88,     5,     5,    -1,    89,    69,    -1,    90,
+       6,     5,     5,     5,     5,     5,     5,     5,     5,     5,
+       5,     5,     5,     5,     5,     5,     5,     7,    -1,    91,
+       3,    -1,    92,     3,     3,    -1,    93,     5,     5,     5,
+      -1,    94,     3,    75,    -1,    95,     3,     3,     3,    75,
+      -1,    96,     5,     5,    -1,   100,     5,     5,     5,    -1,
+      97,     5,    -1,    98,    -1,    99,     5,    -1,   101,     3,
+      75,    -1,   102,    -1,   103,     5,     5,    -1,   104,     3,
+      75,    -1,   105,     3,     5,    75,    -1,   106,    69,    -1,
+     107,    -1,   108,    69,    -1,   109,     3,    75,    -1,   110,
+       3,    -1,   111,     5,    -1,   112,     3,     5,     5,    -1,
+     113,     5,     5,    -1,   114,    69,    69,    75,    -1,   115,
+      69,    69,    69,    75,    -1,   116,    75,    -1,   117,     3,
+      75,    -1,   118,     3,     5,     5,     5,     5,    -1,   119,
+       5,     5,     5,     5,    -1,   120,     5,     5,     5,    -1,
+     121,     5,     5,     5,     5,    -1,   122,     5,     5,     5,
+       5,    75,    -1,   123,     5,    -1,   124,     3,    -1,   125,
+       5,    -1,   126,     5,     5,    -1,   127,     3,    69,    69,
+      70,    69,    69,    69,    75,    -1,   128,     3,    75,    -1,
+     129,    69,    -1,   130,    -1,   131,    -1,   132,     5,     5,
+       5,    -1,   133,    -1,   134,    -1,    62,    -1,    45,    -1,
+       8,    -1,     9,    -1,    10,    -1,    11,    -1,    12,    -1,
+      13,    -1,    15,    -1,    14,    -1,    16,    -1,    17,    -1,
+      18,    -1,    19,    -1,    20,    -1,    21,    -1,    23,    -1,
+      24,    -1,    25,    -1,    22,    -1,    26,    -1,    27,    -1,
+      28,    -1,    29,    -1,    30,    -1,    31,    -1,    32,    -1,
+      33,    -1,    34,    -1,    35,    -1,    36,    -1,    37,    -1,
+      38,    -1,    39,    -1,    40,    -1,    42,    -1,    41,    -1,
+      43,    -1,    44,    -1,    46,    -1,    47,    -1,    52,    -1,
+      51,    -1,    49,    -1,    48,    -1,    50,    -1,    53,    -1,
+      54,    -1,    55,    -1,    56,    -1,    57,    -1,    58,    -1,
+      59,    -1,    60,    -1
 };
 
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint16 yyrline[] =
 {
-       0,   182,   182,   185,   191,   197,   203,   207,   211,   229,
-     237,   243,   254,   255,   258,   259,   262,   269,   276,   281,
-     284,   291,   292,   295,   346,   347,   350,   356,   360,   364,
-     369,   373,   377,   381,   407,   422,   426,   430,   434,   439,
-     443,   447,   451,   456,   461,   465,   469,   477,   481,   485,
-     508,   512,   538,   542,   546,   550,   554,   558,   600,   656,
-     690,   695,   699,   703,   707,   711,   716,   720,   724,   728,
-     732,   786,   790,   816,   820,   824,   828,   832,   836,   848,
-     850,   852,   854,   856,   858,   860,   862,   864,   866,   868,
-     870,   872,   874,   876,   878,   880,   882,   884,   886,   888,
-     890,   892,   894,   896,   898,   900,   902,   904,   906,   908,
-     910,   912,   914,   916,   918,   920,   922,   924,   926,   928,
-     930,   932,   934,   936,   938,   940,   942,   944,   946,   948
+       0,   184,   184,   187,   193,   199,   205,   209,   213,   231,
+     239,   245,   256,   257,   260,   261,   264,   271,   278,   283,
+     286,   293,   294,   297,   348,   349,   352,   358,   362,   366,
+     371,   375,   379,   383,   387,   413,   428,   432,   436,   440,
+     444,   449,   453,   457,   461,   466,   471,   475,   479,   487,
+     491,   495,   518,   522,   548,   552,   556,   560,   564,   568,
+     610,   666,   700,   705,   709,   713,   717,   721,   726,   730,
+     734,   738,   742,   796,   800,   826,   830,   834,   838,   842,
+     846,   858,   860,   862,   864,   866,   868,   870,   872,   874,
+     876,   878,   880,   882,   884,   886,   888,   890,   892,   894,
+     896,   898,   900,   902,   904,   906,   908,   910,   912,   914,
+     916,   918,   920,   922,   924,   926,   928,   930,   932,   934,
+     936,   938,   940,   942,   944,   946,   948,   950,   952,   954,
+     956,   958,   960,   962
 };
 #endif
 
@@ -707,32 +714,33 @@ static const char *const yytname[] =
 {
   "$end", "error", "$undefined", "STRING", "ID", "NUM", "LBRACKET",
   "RBRACKET", "AREALIGHTSOURCE", "ATTRIBUTE", "ATTRIBUTEBEGIN",
-  "ATTRIBUTEEND", "CLIPPING", "CONCATTRANSFORM", "COLOR",
-  "COORDINATESYSTEM", "DECLARE", "DEPTHOFFIELD", "DISPLAY", "EXPOSURE",
-  "FORMAT", "FRAMEBEGIN", "FRAMEEND", "FRAMEASPECTRATIO", "HIDER",
-  "IDENTITY", "ILLUMINATE", "IMAGER", "LIGHTSOURCE", "MOTIONBEGIN",
-  "MOTIONEND", "OPACITY", "OPTION", "ORIENTATION", "PERSPECTIVE",
-  "PIXELFILTER", "PIXELSAMPLES", "POINTSPOLYGONS", "POINTSGENERALPOLYGONS",
-  "PROJECTION", "POLYGON", "QUANTIZE", "ROTATE", "RIBVERSION", "SCALE",
-  "SCREENWINDOW", "SHADINGRATE", "SHADINGINTERPOLATION", "SHUTTER",
-  "SIDES", "SPHERE", "SUBDIVISIONMESH", "SURFACE", "TRANSFORM",
-  "TRANSFORMBEGIN", "TRANSFORMEND", "TRANSLATE", "WORLDBEGIN", "WORLDEND",
-  "HIGH_PRECEDENCE", "UNKNOWN", "$accept", "start", "array_init",
-  "num_list_init", "str_list_init", "param_array", "param_num_array",
-  "param_str_array", "num_list", "str_list", "str_list_entry",
-  "num_list_entry", "param_list", "param_list_init", "param_lists",
-  "param_list_entry", "ri_command_list", "ri_command", "protocol",
-  "ribversion", "arealightsource", "attribute", "attributebegin",
-  "attributeend", "clipping", "color", "concattransform",
-  "coordinatesystem", "declare", "depthoffield", "display", "exposure",
-  "framebegin", "frameend", "frameaspectratio", "format", "hider",
-  "identity", "illuminate", "imager", "lightsource", "motionbegin",
-  "motionend", "opacity", "option", "orientation", "perspective",
-  "pixelfilter", "pixelsamples", "pointspolygons", "pointsgeneralpolygons",
-  "polygon", "projection", "quantize", "rotate", "scale", "screenwindow",
-  "sphere", "sides", "shadinginterpolation", "shadingrate", "shutter",
-  "subdivisionmesh", "surface", "transform", "transformbegin",
-  "transformend", "translate", "worldbegin", "worldend", 0
+  "ATTRIBUTEEND", "ATMOSPHERE", "CLIPPING", "CONCATTRANSFORM", "COLOR",
+  "COORDINATESYSTEM", "DECLARE", "DEPTHOFFIELD", "DISPLACEMENT", "DISPLAY",
+  "EXPOSURE", "FORMAT", "FRAMEBEGIN", "FRAMEEND", "FRAMEASPECTRATIO",
+  "HIDER", "IDENTITY", "ILLUMINATE", "IMAGER", "LIGHTSOURCE",
+  "MOTIONBEGIN", "MOTIONEND", "OPACITY", "OPTION", "ORIENTATION",
+  "PERSPECTIVE", "PIXELFILTER", "PIXELSAMPLES", "POINTSPOLYGONS",
+  "POINTSGENERALPOLYGONS", "PROJECTION", "POLYGON", "QUANTIZE", "ROTATE",
+  "RIBVERSION", "SCALE", "SCREENWINDOW", "SHADINGRATE",
+  "SHADINGINTERPOLATION", "SHUTTER", "SIDES", "SPHERE", "SUBDIVISIONMESH",
+  "SURFACE", "TRANSFORM", "TRANSFORMBEGIN", "TRANSFORMEND", "TRANSLATE",
+  "WORLDBEGIN", "WORLDEND", "HIGH_PRECEDENCE", "UNKNOWN", "$accept",
+  "start", "array_init", "num_list_init", "str_list_init", "param_array",
+  "param_num_array", "param_str_array", "num_list", "str_list",
+  "str_list_entry", "num_list_entry", "param_list", "param_list_init",
+  "param_lists", "param_list_entry", "ri_command_list", "ri_command",
+  "protocol", "ribversion", "arealightsource", "attribute",
+  "attributebegin", "attributeend", "atmosphere", "clipping", "color",
+  "concattransform", "coordinatesystem", "declare", "depthoffield",
+  "displacement", "display", "exposure", "framebegin", "frameend",
+  "frameaspectratio", "format", "hider", "identity", "illuminate",
+  "imager", "lightsource", "motionbegin", "motionend", "opacity", "option",
+  "orientation", "perspective", "pixelfilter", "pixelsamples",
+  "pointspolygons", "pointsgeneralpolygons", "polygon", "projection",
+  "quantize", "rotate", "scale", "screenwindow", "sphere", "sides",
+  "shadinginterpolation", "shadingrate", "shutter", "subdivisionmesh",
+  "surface", "transform", "transformbegin", "transformend", "translate",
+  "worldbegin", "worldend", 0
 };
 #endif
 
@@ -747,26 +755,27 @@ static const yytype_uint16 yytoknum[] =
      285,   286,   287,   288,   289,   290,   291,   292,   293,   294,
      295,   296,   297,   298,   299,   300,   301,   302,   303,   304,
      305,   306,   307,   308,   309,   310,   311,   312,   313,   314,
-     315
+     315,   316,   317
 };
 # endif
 
 /* YYR1[YYN] -- Symbol number of symbol that rule YYN derives.  */
 static const yytype_uint8 yyr1[] =
 {
-       0,    61,    62,    63,    64,    65,    66,    66,    66,    67,
-      68,    68,    69,    69,    70,    70,    71,    72,    72,    73,
-      74,    75,    75,    76,    77,    77,    78,    79,    79,    79,
-      79,    79,    79,    79,    79,    79,    79,    79,    79,    79,
-      79,    79,    79,    79,    79,    79,    79,    79,    79,    79,
-      79,    79,    79,    79,    79,    79,    79,    79,    79,    79,
-      79,    79,    79,    79,    79,    79,    79,    79,    79,    79,
-      79,    79,    79,    79,    79,    79,    79,    79,    79,    80,
+       0,    63,    64,    65,    66,    67,    68,    68,    68,    69,
+      70,    70,    71,    71,    72,    72,    73,    74,    74,    75,
+      76,    77,    77,    78,    79,    79,    80,    81,    81,    81,
+      81,    81,    81,    81,    81,    81,    81,    81,    81,    81,
+      81,    81,    81,    81,    81,    81,    81,    81,    81,    81,
+      81,    81,    81,    81,    81,    81,    81,    81,    81,    81,
+      81,    81,    81,    81,    81,    81,    81,    81,    81,    81,
+      81,    81,    81,    81,    81,    81,    81,    81,    81,    81,
       81,    82,    83,    84,    85,    86,    87,    88,    89,    90,
       91,    92,    93,    94,    95,    96,    97,    98,    99,   100,
      101,   102,   103,   104,   105,   106,   107,   108,   109,   110,
      111,   112,   113,   114,   115,   116,   117,   118,   119,   120,
-     121,   122,   123,   124,   125,   126,   127,   128,   129,   130
+     121,   122,   123,   124,   125,   126,   127,   128,   129,   130,
+     131,   132,   133,   134
 };
 
 /* YYR2[YYN] -- Number of symbols composing right hand side of rule YYN.  */
@@ -775,16 +784,17 @@ static const yytype_uint8 yyr2[] =
        0,     2,     1,     0,     0,     0,     1,     1,     1,     4,
        4,     2,     2,     1,     2,     1,     2,     2,     0,     2,
        0,     2,     0,     2,     2,     1,     1,     2,     3,     4,
-       1,     1,     3,     2,    19,     2,     3,     4,     5,     3,
-       4,     2,     1,     2,     3,     1,     3,     3,     4,     2,
-       1,     2,     3,     2,     2,     4,     3,     4,     5,     2,
-       3,     6,     5,     4,     5,     6,     2,     2,     2,     3,
-       9,     3,     2,     1,     1,     4,     1,     1,     1,     1,
+       1,     1,     3,     3,     2,    19,     2,     3,     4,     3,
+       5,     3,     4,     2,     1,     2,     3,     1,     3,     3,
+       4,     2,     1,     2,     3,     2,     2,     4,     3,     4,
+       5,     2,     3,     6,     5,     4,     5,     6,     2,     2,
+       2,     3,     9,     3,     2,     1,     1,     4,     1,     1,
        1,     1,     1,     1,     1,     1,     1,     1,     1,     1,
        1,     1,     1,     1,     1,     1,     1,     1,     1,     1,
        1,     1,     1,     1,     1,     1,     1,     1,     1,     1,
        1,     1,     1,     1,     1,     1,     1,     1,     1,     1,
-       1,     1,     1,     1,     1,     1,     1,     1,     1,     1
+       1,     1,     1,     1,     1,     1,     1,     1,     1,     1,
+       1,     1,     1,     1
 };
 
 /* YYDEFACT[STATE-NAME] -- Default rule to reduce with in state
@@ -792,89 +802,91 @@ static const yytype_uint8 yyr2[] =
    means the default is an error.  */
 static const yytype_uint8 yydefact[] =
 {
-       0,    80,    81,    82,    83,    84,    86,    85,    87,    88,
-      89,    90,    91,    95,    92,    93,    94,    96,    97,    98,
-      99,   100,   101,   102,   103,   104,   105,   106,   107,   108,
-     109,   110,   112,   111,   113,   114,    79,   115,   116,   120,
-     119,   121,   118,   117,   122,   123,   124,   125,   126,   127,
-     128,   129,    78,     0,     2,    25,    26,     0,     0,     0,
-      30,    31,     0,     3,     0,     0,     0,     0,     0,     0,
-       0,    42,     0,     0,     0,    45,     0,     0,     0,     3,
-      50,     3,     0,     0,     0,     0,     0,     3,     3,    20,
-       0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
-       0,     0,     3,    73,    74,     0,    76,    77,     1,    24,
-      27,     0,    20,     0,     0,    33,     0,    35,     0,     0,
-       0,     0,    41,    43,     0,    20,     0,    20,     0,    49,
-      51,    20,    53,    54,     0,     0,     3,     3,    59,    22,
-      20,     0,     0,     0,     0,     0,    66,    67,    68,     0,
-       3,    20,    72,     0,    20,    28,    32,     4,     0,    36,
-       0,     0,    39,     0,    44,    46,    47,    20,    52,     0,
-      56,    20,     3,     3,    19,    22,    60,     0,     0,     0,
-       0,     0,    69,     3,    71,     0,    29,     0,     4,    13,
-       0,    37,    20,    40,    48,    55,    57,    20,     8,     0,
-      23,     6,     7,    21,     0,     0,    63,     0,     0,     3,
-      75,    17,     9,    12,     0,    38,    58,    11,     4,     0,
-      62,    64,    20,     0,     3,     0,     0,     5,    15,    61,
-      65,     5,     3,     0,    16,    10,    14,     3,     0,    20,
-       0,    70,     0,     0,     0,     0,     0,     0,     0,     0,
-       0,    34
+       0,    82,    83,    84,    85,    86,    87,    89,    88,    90,
+      91,    92,    93,    94,    95,    99,    96,    97,    98,   100,
+     101,   102,   103,   104,   105,   106,   107,   108,   109,   110,
+     111,   112,   113,   114,   116,   115,   117,   118,    81,   119,
+     120,   124,   123,   125,   122,   121,   126,   127,   128,   129,
+     130,   131,   132,   133,    80,     0,     2,    25,    26,     0,
+       0,     0,    30,    31,     0,     0,     3,     0,     0,     0,
+       0,     0,     0,     0,     0,    44,     0,     0,     0,    47,
+       0,     0,     0,     3,    52,     3,     0,     0,     0,     0,
+       0,     3,     3,    20,     0,     0,     0,     0,     0,     0,
+       0,     0,     0,     0,     0,     0,     3,    75,    76,     0,
+      78,    79,     1,    24,    27,     0,    20,    20,     0,     0,
+      34,     0,    36,     0,     0,    20,     0,     0,    43,    45,
+       0,    20,     0,    20,     0,    51,    53,    20,    55,    56,
+       0,     0,     3,     3,    61,    22,    20,     0,     0,     0,
+       0,     0,    68,    69,    70,     0,     3,    20,    74,     0,
+      20,    28,    32,    33,     4,     0,    37,     0,    39,     0,
+      41,     0,    46,    48,    49,    20,    54,     0,    58,    20,
+       3,     3,    19,    22,    62,     0,     0,     0,     0,     0,
+      71,     3,    73,     0,    29,     0,     4,    13,     0,    38,
+      20,    42,    50,    57,    59,    20,     8,     0,    23,     6,
+       7,    21,     0,     0,    65,     0,     0,     3,    77,    17,
+       9,    12,     0,    40,    60,    11,     4,     0,    64,    66,
+      20,     0,     3,     0,     0,     5,    15,    63,    67,     5,
+       3,     0,    16,    10,    14,     3,     0,    20,     0,    72,
+       0,     0,     0,     0,     0,     0,     0,     0,     0,    35
 };
 
 /* YYDEFGOTO[NTERM-NUM].  */
 static const yytype_int16 yydefgoto[] =
 {
-      -1,    53,   114,   187,   226,   200,   115,   202,   188,   227,
-     228,   189,   138,   139,   174,   175,    54,    55,    56,    57,
-      58,    59,    60,    61,    62,    63,    64,    65,    66,    67,
-      68,    69,    70,    71,    72,    73,    74,    75,    76,    77,
-      78,    79,    80,    81,    82,    83,    84,    85,    86,    87,
-      88,    89,    90,    91,    92,    93,    94,    95,    96,    97,
-      98,    99,   100,   101,   102,   103,   104,   105,   106,   107
+      -1,    55,   119,   195,   234,   208,   120,   210,   196,   235,
+     236,   197,   144,   145,   182,   183,    56,    57,    58,    59,
+      60,    61,    62,    63,    64,    65,    66,    67,    68,    69,
+      70,    71,    72,    73,    74,    75,    76,    77,    78,    79,
+      80,    81,    82,    83,    84,    85,    86,    87,    88,    89,
+      90,    91,    92,    93,    94,    95,    96,    97,    98,    99,
+     100,   101,   102,   103,   104,   105,   106,   107,   108,   109,
+     110,   111
 };
 
 /* YYPACT[STATE-NUM] -- Index in YYTABLE of the portion describing
    STATE-NUM.  */
-#define YYPACT_NINF -184
+#define YYPACT_NINF -186
 static const yytype_int16 yypact[] =
 {
-     151,  -184,  -184,  -184,  -184,  -184,  -184,  -184,  -184,  -184,
-    -184,  -184,  -184,  -184,  -184,  -184,  -184,  -184,  -184,  -184,
-    -184,  -184,  -184,  -184,  -184,  -184,  -184,  -184,  -184,  -184,
-    -184,  -184,  -184,  -184,  -184,  -184,  -184,  -184,  -184,  -184,
-    -184,  -184,  -184,  -184,  -184,  -184,  -184,  -184,  -184,  -184,
-    -184,  -184,  -184,     5,   151,  -184,  -184,     6,    10,    14,
-    -184,  -184,    13,  -184,    15,    16,    19,    20,    21,    22,
-      23,  -184,    25,    26,    29,  -184,    28,    31,    32,  -184,
-    -184,  -184,    33,    34,    36,    35,    37,  -184,  -184,  -184,
-      41,    42,    43,    44,    45,    46,    47,    50,    49,    54,
-      52,    58,  -184,  -184,  -184,    57,  -184,  -184,  -184,  -184,
-    -184,    59,  -184,    60,    40,  -184,    61,  -184,    64,    63,
-      66,    65,  -184,  -184,    67,  -184,    68,  -184,    69,  -184,
-    -184,  -184,  -184,  -184,    70,    71,  -184,  -184,  -184,    74,
-    -184,    73,    75,    77,    78,    79,  -184,  -184,  -184,    80,
-    -184,  -184,  -184,    82,  -184,  -184,  -184,    56,    83,  -184,
-      84,    76,  -184,    85,  -184,  -184,  -184,  -184,  -184,    86,
-    -184,  -184,  -184,    87,  -184,    74,  -184,    90,    91,    92,
-      93,    94,  -184,  -184,  -184,    95,  -184,    96,    98,  -184,
-      97,  -184,  -184,  -184,  -184,  -184,  -184,  -184,  -184,     1,
-    -184,  -184,  -184,  -184,   101,   102,  -184,   103,   104,  -184,
-    -184,  -184,  -184,  -184,   105,  -184,  -184,  -184,     3,   107,
-    -184,  -184,  -184,     9,  -184,   108,   100,   109,  -184,  -184,
-    -184,  -184,  -184,   110,  -184,  -184,  -184,  -184,   112,  -184,
-     113,  -184,   114,   115,   116,   117,   118,   119,   120,   121,
-     122,  -184
+     155,  -186,  -186,  -186,  -186,  -186,  -186,  -186,  -186,  -186,
+    -186,  -186,  -186,  -186,  -186,  -186,  -186,  -186,  -186,  -186,
+    -186,  -186,  -186,  -186,  -186,  -186,  -186,  -186,  -186,  -186,
+    -186,  -186,  -186,  -186,  -186,  -186,  -186,  -186,  -186,  -186,
+    -186,  -186,  -186,  -186,  -186,  -186,  -186,  -186,  -186,  -186,
+    -186,  -186,  -186,  -186,  -186,     5,   155,  -186,  -186,     2,
+      12,    14,  -186,  -186,    16,    17,  -186,    15,    22,    23,
+      24,    25,    27,    26,    29,  -186,    30,    31,    35,  -186,
+      34,    37,    38,  -186,  -186,  -186,    39,    40,    41,    42,
+      43,  -186,  -186,  -186,    46,    47,    48,    49,    50,    51,
+      52,    55,    56,    58,    61,    62,  -186,  -186,  -186,    63,
+    -186,  -186,  -186,  -186,  -186,    64,  -186,  -186,    65,    21,
+    -186,    66,  -186,    69,    70,  -186,    71,    72,  -186,  -186,
+      73,  -186,    74,  -186,    75,  -186,  -186,  -186,  -186,  -186,
+      76,    77,  -186,  -186,  -186,    80,  -186,    79,    81,    83,
+      84,    85,  -186,  -186,  -186,    86,  -186,  -186,  -186,    88,
+    -186,  -186,  -186,  -186,    44,    89,  -186,    90,  -186,    82,
+    -186,    91,  -186,  -186,  -186,  -186,  -186,    94,  -186,  -186,
+    -186,    95,  -186,    80,  -186,    96,    97,    98,    99,   100,
+    -186,  -186,  -186,   101,  -186,   102,    45,  -186,   104,  -186,
+    -186,  -186,  -186,  -186,  -186,  -186,  -186,     8,  -186,  -186,
+    -186,  -186,   105,   106,  -186,   107,   108,  -186,  -186,  -186,
+    -186,  -186,   109,  -186,  -186,  -186,     3,   110,  -186,  -186,
+    -186,    10,  -186,   111,   115,    60,  -186,  -186,  -186,  -186,
+    -186,   114,  -186,  -186,  -186,  -186,   116,  -186,   117,  -186,
+     118,   119,   120,   121,   122,   123,   124,   125,   113,  -186
 };
 
 /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int16 yypgoto[] =
 {
-    -184,  -184,  -170,  -184,  -184,  -184,   -79,  -183,  -184,  -184,
-    -180,   -74,  -111,  -184,   -48,  -184,  -184,    81,  -184,  -184,
-    -184,  -184,  -184,  -184,  -184,  -184,  -184,  -184,  -184,  -184,
-    -184,  -184,  -184,  -184,  -184,  -184,  -184,  -184,  -184,  -184,
-    -184,  -184,  -184,  -184,  -184,  -184,  -184,  -184,  -184,  -184,
-    -184,  -184,  -184,  -184,  -184,  -184,  -184,  -184,  -184,  -184,
-    -184,  -184,  -184,  -184,  -184,  -184,  -184,  -184,  -184,  -184
+    -186,  -186,  -180,  -186,  -186,  -186,   -83,  -185,  -186,  -186,
+    -159,   -65,  -113,  -186,   -51,  -186,  -186,    87,  -186,  -186,
+    -186,  -186,  -186,  -186,  -186,  -186,  -186,  -186,  -186,  -186,
+    -186,  -186,  -186,  -186,  -186,  -186,  -186,  -186,  -186,  -186,
+    -186,  -186,  -186,  -186,  -186,  -186,  -186,  -186,  -186,  -186,
+    -186,  -186,  -186,  -186,  -186,  -186,  -186,  -186,  -186,  -186,
+    -186,  -186,  -186,  -186,  -186,  -186,  -186,  -186,  -186,  -186,
+    -186,  -186
 };
 
 /* YYTABLE[YYPACT[STATE-NUM]].  What to do in state STATE-NUM.  If
@@ -884,54 +896,54 @@ static const yytype_int16 yypgoto[] =
 #define YYTABLE_NINF -19
 static const yytype_int16 yytable[] =
 {
-     129,   155,   130,   199,   217,   108,    -5,   218,   136,   137,
-     -18,   110,   217,   111,   164,   231,   166,   112,   113,   117,
-     168,   116,   118,   152,   120,   119,   224,   121,   122,   176,
-     123,   124,   125,   126,   127,   128,   131,   132,   134,   223,
-     184,   133,   135,   186,   140,   141,   157,   236,   142,   143,
-     144,   145,   146,   147,   148,   150,   194,   171,   172,   149,
-     196,   151,   153,   -18,   154,   156,   158,   159,   160,   161,
-     162,   183,   163,   165,   167,   169,   170,   173,   177,   192,
-     178,   215,   179,   180,   181,   182,   216,   185,   190,   191,
-     193,   195,   198,   197,   201,   204,   205,   206,   207,   208,
-     210,   211,   214,   234,   209,   212,   219,   220,   221,   222,
-     225,   230,   229,   233,   213,   238,   235,   240,   242,   243,
-     244,   245,   246,   247,   248,   249,   250,   203,   241,   251,
-       0,     0,     0,     0,     0,   109,     0,     0,     0,     0,
-       0,     0,     0,     0,     0,   232,     0,     0,     0,     0,
-       0,     0,     0,   237,     0,     0,     0,     0,   239,     1,
-       2,     3,     4,     5,     6,     7,     8,     9,    10,    11,
-      12,    13,    14,    15,    16,    17,    18,    19,    20,    21,
-      22,    23,    24,    25,    26,    27,    28,    29,    30,    31,
-      32,    33,    34,    35,    36,    37,    38,    39,    40,    41,
-      42,    43,    44,    45,    46,    47,    48,    49,    50,    51,
-       0,    52
+     135,   207,   136,   161,   162,   112,    -5,   114,   142,   143,
+     -18,   225,   168,   225,   226,   115,   239,   116,   172,   117,
+     174,   121,   118,   158,   176,   122,   123,   164,   125,   124,
+     126,   127,   232,   184,   128,   129,   130,   231,   131,   132,
+     133,   134,   137,   138,   192,   140,   139,   194,   141,   146,
+     147,   -18,   220,   148,   149,   150,   151,   152,   153,   179,
+     180,   154,   202,   155,   156,   157,   204,   243,   159,   160,
+     163,   165,   166,   191,   169,   167,   244,   170,   171,   173,
+     175,   177,   178,   181,   185,   200,   186,   223,   187,   188,
+     189,   190,   224,   193,   198,   199,   201,   205,   209,   203,
+     206,   212,   213,   214,   215,   216,   218,   219,   217,   222,
+     227,   228,   229,   230,   233,   237,   241,   238,   242,   246,
+     259,   248,   250,   251,   252,   253,   254,   255,   256,   257,
+     258,   221,   211,     0,   249,     0,     0,     0,     0,     0,
+       0,     0,     0,   113,     0,     0,     0,     0,     0,   240,
+       0,     0,     0,     0,     0,     0,     0,   245,     0,     0,
+       0,     0,   247,     1,     2,     3,     4,     5,     6,     7,
+       8,     9,    10,    11,    12,    13,    14,    15,    16,    17,
+      18,    19,    20,    21,    22,    23,    24,    25,    26,    27,
+      28,    29,    30,    31,    32,    33,    34,    35,    36,    37,
+      38,    39,    40,    41,    42,    43,    44,    45,    46,    47,
+      48,    49,    50,    51,    52,    53,     0,    54
 };
 
 static const yytype_int16 yycheck[] =
 {
-      79,   112,    81,   173,     3,     0,     3,     6,    87,    88,
-       7,     5,     3,     3,   125,     6,   127,     3,     5,     3,
-     131,     6,     3,   102,     3,     5,   209,     5,     5,   140,
-       5,     5,     3,     5,     3,     3,     3,     3,     3,   209,
-     151,     5,     5,   154,     3,     3,     6,   227,     5,     5,
-       5,     5,     5,     3,     5,     3,   167,   136,   137,     5,
-     171,     3,     5,     7,     5,     5,     5,     3,     5,     3,
-       5,   150,     5,     5,     5,     5,     5,     3,     5,     3,
-       5,   192,     5,     5,     5,     5,   197,     5,     5,     5,
-       5,     5,     5,   172,   173,     5,     5,     5,     5,     5,
-       5,     5,     5,     3,   183,     7,     5,     5,     5,     5,
-       5,   222,     5,     5,   188,     5,     7,     5,     5,     5,
-       5,     5,     5,     5,     5,     5,     5,   175,   239,     7,
-      -1,    -1,    -1,    -1,    -1,    54,    -1,    -1,    -1,    -1,
-      -1,    -1,    -1,    -1,    -1,   224,    -1,    -1,    -1,    -1,
-      -1,    -1,    -1,   232,    -1,    -1,    -1,    -1,   237,     8,
-       9,    10,    11,    12,    13,    14,    15,    16,    17,    18,
-      19,    20,    21,    22,    23,    24,    25,    26,    27,    28,
-      29,    30,    31,    32,    33,    34,    35,    36,    37,    38,
-      39,    40,    41,    42,    43,    44,    45,    46,    47,    48,
-      49,    50,    51,    52,    53,    54,    55,    56,    57,    58,
-      -1,    60
+      83,   181,    85,   116,   117,     0,     3,     5,    91,    92,
+       7,     3,   125,     3,     6,     3,     6,     3,   131,     3,
+     133,     6,     5,   106,   137,     3,     3,     6,     3,     5,
+       3,     5,   217,   146,     5,     5,     5,   217,     3,     5,
+       3,     3,     3,     3,   157,     3,     5,   160,     5,     3,
+       3,     7,     7,     5,     5,     5,     5,     5,     3,   142,
+     143,     5,   175,     5,     3,     3,   179,     7,     5,     5,
+       5,     5,     3,   156,     3,     5,   235,     5,     5,     5,
+       5,     5,     5,     3,     5,     3,     5,   200,     5,     5,
+       5,     5,   205,     5,     5,     5,     5,   180,   181,     5,
+       5,     5,     5,     5,     5,     5,     5,     5,   191,     5,
+       5,     5,     5,     5,     5,     5,     5,   230,     3,     5,
+       7,     5,     5,     5,     5,     5,     5,     5,     5,     5,
+       5,   196,   183,    -1,   247,    -1,    -1,    -1,    -1,    -1,
+      -1,    -1,    -1,    56,    -1,    -1,    -1,    -1,    -1,   232,
+      -1,    -1,    -1,    -1,    -1,    -1,    -1,   240,    -1,    -1,
+      -1,    -1,   245,     8,     9,    10,    11,    12,    13,    14,
+      15,    16,    17,    18,    19,    20,    21,    22,    23,    24,
+      25,    26,    27,    28,    29,    30,    31,    32,    33,    34,
+      35,    36,    37,    38,    39,    40,    41,    42,    43,    44,
+      45,    46,    47,    48,    49,    50,    51,    52,    53,    54,
+      55,    56,    57,    58,    59,    60,    -1,    62
 };
 
 /* YYSTOS[STATE-NUM] -- The (internal number of the) accessing
@@ -943,27 +955,27 @@ static const yytype_uint8 yystos[] =
       27,    28,    29,    30,    31,    32,    33,    34,    35,    36,
       37,    38,    39,    40,    41,    42,    43,    44,    45,    46,
       47,    48,    49,    50,    51,    52,    53,    54,    55,    56,
-      57,    58,    60,    62,    77,    78,    79,    80,    81,    82,
+      57,    58,    59,    60,    62,    64,    79,    80,    81,    82,
       83,    84,    85,    86,    87,    88,    89,    90,    91,    92,
       93,    94,    95,    96,    97,    98,    99,   100,   101,   102,
      103,   104,   105,   106,   107,   108,   109,   110,   111,   112,
      113,   114,   115,   116,   117,   118,   119,   120,   121,   122,
-     123,   124,   125,   126,   127,   128,   129,   130,     0,    78,
-       5,     3,     3,     5,    63,    67,     6,     3,     3,     5,
-       3,     5,     5,     5,     5,     3,     5,     3,     3,    67,
-      67,     3,     3,     5,     3,     5,    67,    67,    73,    74,
-       3,     3,     5,     5,     5,     5,     5,     3,     5,     5,
-       3,     3,    67,     5,     5,    73,     5,     6,     5,     3,
-       5,     3,     5,     5,    73,     5,    73,     5,    73,     5,
-       5,    67,    67,     3,    75,    76,    73,     5,     5,     5,
-       5,     5,     5,    67,    73,     5,    73,    64,    69,    72,
-       5,     5,     3,     5,    73,     5,    73,    67,     5,    63,
-      66,    67,    68,    75,     5,     5,     5,     5,     5,    67,
-       5,     5,     7,    72,     5,    73,    73,     3,     6,     5,
-       5,     5,     5,    63,    68,     5,    65,    70,    71,     5,
-      73,     6,    67,     5,     3,     7,    71,    67,     5,    67,
-       5,    73,     5,     5,     5,     5,     5,     5,     5,     5,
-       5,     7
+     123,   124,   125,   126,   127,   128,   129,   130,   131,   132,
+     133,   134,     0,    80,     5,     3,     3,     3,     5,    65,
+      69,     6,     3,     3,     5,     3,     3,     5,     5,     5,
+       5,     3,     5,     3,     3,    69,    69,     3,     3,     5,
+       3,     5,    69,    69,    75,    76,     3,     3,     5,     5,
+       5,     5,     5,     3,     5,     5,     3,     3,    69,     5,
+       5,    75,    75,     5,     6,     5,     3,     5,    75,     3,
+       5,     5,    75,     5,    75,     5,    75,     5,     5,    69,
+      69,     3,    77,    78,    75,     5,     5,     5,     5,     5,
+       5,    69,    75,     5,    75,    66,    71,    74,     5,     5,
+       3,     5,    75,     5,    75,    69,     5,    65,    68,    69,
+      70,    77,     5,     5,     5,     5,     5,    69,     5,     5,
+       7,    74,     5,    75,    75,     3,     6,     5,     5,     5,
+       5,    65,    70,     5,    67,    72,    73,     5,    75,     6,
+      69,     5,     3,     7,    73,    69,     5,    69,     5,    75,
+       5,     5,     5,     5,     5,     5,     5,     5,     5,     7
 };
 
 #define yyerrok		(yyerrstatus = 0)
@@ -1037,7 +1049,7 @@ while (YYID (0))
    we won't break user code: when these are the locations we know.  */
 
 #ifndef YY_LOCATION_PRINT
-# if YYLTYPE_IS_TRIVIAL
+# if defined YYLTYPE_IS_TRIVIAL && YYLTYPE_IS_TRIVIAL
 #  define YY_LOCATION_PRINT(File, Loc)			\
      fprintf (File, "%d.%d-%d.%d",			\
 	      (Loc).first_line, (Loc).first_column,	\
@@ -1778,576 +1790,590 @@ yyreduce:
   switch (yyn)
     {
         case 3:
-#line 186 "src/lsh/parserib.y"
+#line 188 "src/lsh/parserib.y"
     {
-	init_array();
+    init_array();
 ;}
     break;
 
   case 4:
-#line 192 "src/lsh/parserib.y"
+#line 194 "src/lsh/parserib.y"
     {
-	array_type = NUM_ARRAY;
+    array_type = NUM_ARRAY;
 ;}
     break;
 
   case 5:
-#line 198 "src/lsh/parserib.y"
+#line 200 "src/lsh/parserib.y"
     {
-	array_type = STRING_ARRAY;
+    array_type = STRING_ARRAY;
 ;}
     break;
 
   case 6:
-#line 204 "src/lsh/parserib.y"
+#line 206 "src/lsh/parserib.y"
     {
-	(yyval.paramarray) = (yyvsp[(1) - (1)].paramarray);
+    (yyval.paramarray) = (yyvsp[(1) - (1)].paramarray);
 ;}
     break;
 
   case 7:
-#line 208 "src/lsh/parserib.y"
+#line 210 "src/lsh/parserib.y"
     {
-	(yyval.paramarray) = (yyvsp[(1) - (1)].paramarray);
+    (yyval.paramarray) = (yyvsp[(1) - (1)].paramarray);
 ;}
     break;
 
   case 8:
-#line 212 "src/lsh/parserib.y"
+#line 214 "src/lsh/parserib.y"
     {
-	RtFloat *num;
+    RtFloat *num;
 
-	init_array();
-	array_type = NUM_ARRAY;
+    init_array();
+    array_type = NUM_ARRAY;
 
-	num = (RtFloat *)ri_mem_alloc(sizeof(RtFloat));
-	*num = (RtFloat)((yyvsp[(1) - (1)].num));
-	add_array(num);
+    num = (RtFloat *)ri_mem_alloc(sizeof(RtFloat));
+    *num = (RtFloat)((yyvsp[(1) - (1)].num));
+    add_array(num);
 
-	(yyval.paramarray) = array_dup(curr_array);
-	ri_ptr_array_free(curr_array);
-	curr_array = NULL;
+    (yyval.paramarray) = array_dup(curr_array);
+    ri_ptr_array_free(curr_array);
+    curr_array = NULL;
 ;}
     break;
 
   case 9:
-#line 230 "src/lsh/parserib.y"
+#line 232 "src/lsh/parserib.y"
     {
-	(yyval.paramarray) = array_dup(curr_array);
-	ri_ptr_array_free(curr_array);
-	curr_array = NULL;
+    (yyval.paramarray) = array_dup(curr_array);
+    ri_ptr_array_free(curr_array);
+    curr_array = NULL;
 ;}
     break;
 
   case 10:
-#line 238 "src/lsh/parserib.y"
+#line 240 "src/lsh/parserib.y"
     {
-	(yyval.paramarray) = array_dup(curr_array);
-	ri_ptr_array_free(curr_array);
-	curr_array = NULL;
+    (yyval.paramarray) = array_dup(curr_array);
+    ri_ptr_array_free(curr_array);
+    curr_array = NULL;
 ;}
     break;
 
   case 11:
-#line 244 "src/lsh/parserib.y"
+#line 246 "src/lsh/parserib.y"
     {
-	RtToken str = (RtToken)strdup((char *)((yyvsp[(2) - (2)].string)));
-	add_array(str);
+    RtToken str = (RtToken)strdup((char *)((yyvsp[(2) - (2)].string)));
+    add_array(str);
 
-	(yyval.paramarray) = array_dup(curr_array);
-	ri_ptr_array_free(curr_array);
-	curr_array = NULL;
+    (yyval.paramarray) = array_dup(curr_array);
+    ri_ptr_array_free(curr_array);
+    curr_array = NULL;
 ;}
     break;
 
   case 16:
-#line 263 "src/lsh/parserib.y"
+#line 265 "src/lsh/parserib.y"
     {
-	RtToken str = (RtToken)strdup((char *)((yyvsp[(2) - (2)].string)));
-	add_array(str);
+    RtToken str = (RtToken)strdup((char *)((yyvsp[(2) - (2)].string)));
+    add_array(str);
 ;}
     break;
 
   case 17:
-#line 270 "src/lsh/parserib.y"
+#line 272 "src/lsh/parserib.y"
     {
-	RtFloat *num = (RtFloat *)ri_mem_alloc(sizeof(RtFloat));
-	*num = (RtFloat)((yyvsp[(2) - (2)].num));
-	add_array(num);
+    RtFloat *num = (RtFloat *)ri_mem_alloc(sizeof(RtFloat));
+    *num = (RtFloat)((yyvsp[(2) - (2)].num));
+    add_array(num);
 ;}
     break;
 
   case 18:
-#line 276 "src/lsh/parserib.y"
+#line 278 "src/lsh/parserib.y"
     {
-	//printf("no elem\n");
+    //printf("no elem\n");
 ;}
     break;
 
   case 20:
-#line 285 "src/lsh/parserib.y"
+#line 287 "src/lsh/parserib.y"
     {
-	rib_param_num = 0;
-	curr_array_count = 0;
+    rib_param_num = 0;
+    curr_array_count = 0;
 ;}
     break;
 
   case 23:
-#line 296 "src/lsh/parserib.y"
+#line 298 "src/lsh/parserib.y"
     {
-	unsigned long i;
-	unsigned long n;
-	RtPointer arg;
-	RtToken   tag;
+    unsigned long i;
+    unsigned long n;
+    RtPointer arg;
+    RtToken   tag;
 
-	ri_ptr_array_t *t;
+    ri_ptr_array_t *t;
 
-	tag = (yyvsp[(1) - (2)].string);
-	t = (yyvsp[(2) - (2)].paramarray);
+    tag = (yyvsp[(1) - (2)].string);
+    t = (yyvsp[(2) - (2)].paramarray);
 
-	n = (yyvsp[(2) - (2)].paramarray)->nelems;
-	if (array_type == NUM_ARRAY) {
-		arg = ri_mem_alloc(n * sizeof(RtFloat));
-	} else { /* STRING_ARRAY */
-		arg = ri_mem_alloc(n * sizeof(RtToken));
-	}
+    n = (yyvsp[(2) - (2)].paramarray)->nelems;
+    if (array_type == NUM_ARRAY) {
+        arg = ri_mem_alloc(n * sizeof(RtFloat));
+    } else { /* STRING_ARRAY */
+        arg = ri_mem_alloc(n * sizeof(RtToken));
+    }
 
-	for (i = 0; i < n; i++) {
-		if (array_type == NUM_ARRAY) {
-			((RtFloat *)arg)[i] = *((RtFloat *)ri_ptr_array_at(t, i));
-		} else { /* STRING_ARRAY */
-			((RtToken *)arg)[i] = strdup((RtToken)ri_ptr_array_at(t, i));
-		}
-	}
+    for (i = 0; i < n; i++) {
+        if (array_type == NUM_ARRAY) {
+            ((RtFloat *)arg)[i] = *((RtFloat *)ri_ptr_array_at(t, i));
+        } else { /* STRING_ARRAY */
+            ((RtToken *)arg)[i] = strdup((RtToken)ri_ptr_array_at(t, i));
+        }
+    }
 
-	if (rib_param_num >= rib_param_num_alloced) {
-		rib_param_num_alloced = 2 * rib_param_num_alloced + 1;
+    if (rib_param_num >= rib_param_num_alloced) {
+        rib_param_num_alloced = 2 * rib_param_num_alloced + 1;
 
-		rib_param_tokens = (RtToken *)realloc(rib_param_tokens, rib_param_num_alloced * sizeof(RtToken));
-		rib_param_args = (RtPointer *)realloc(rib_param_args, rib_param_num_alloced * sizeof(RtPointer));
-		rib_param_arg_size = (RtInt *)realloc(rib_param_arg_size, rib_param_num_alloced * sizeof(RtInt));
-	}
+        rib_param_tokens = (RtToken *)realloc(rib_param_tokens, rib_param_num_alloced * sizeof(RtToken));
+        rib_param_args = (RtPointer *)realloc(rib_param_args, rib_param_num_alloced * sizeof(RtPointer));
+        rib_param_arg_size = (RtInt *)realloc(rib_param_arg_size, rib_param_num_alloced * sizeof(RtInt));
+    }
 
-	rib_param_tokens[rib_param_num]   = tag;
-	rib_param_arg_size[rib_param_num] = n;
-	rib_param_args[rib_param_num]     = arg;
+    rib_param_tokens[rib_param_num]   = tag;
+    rib_param_arg_size[rib_param_num] = n;
+    rib_param_args[rib_param_num]     = arg;
 
-	rib_param_num++;
+    rib_param_num++;
 
-	if (array_type == NUM_ARRAY) {
-		ri_ptr_array_traverse((yyvsp[(2) - (2)].paramarray), numptrfree);
-	} else {
-		ri_ptr_array_traverse((yyvsp[(2) - (2)].paramarray), strptrfree);
-	}
-	ri_ptr_array_free((yyvsp[(2) - (2)].paramarray));
+    if (array_type == NUM_ARRAY) {
+        ri_ptr_array_traverse((yyvsp[(2) - (2)].paramarray), numptrfree);
+    } else {
+        ri_ptr_array_traverse((yyvsp[(2) - (2)].paramarray), strptrfree);
+    }
+    ri_ptr_array_free((yyvsp[(2) - (2)].paramarray));
 ;}
     break;
 
   case 26:
-#line 351 "src/lsh/parserib.y"
+#line 353 "src/lsh/parserib.y"
     {
-	enter_mode_skip();
+    enter_mode_skip();
 ;}
     break;
 
   case 27:
-#line 357 "src/lsh/parserib.y"
+#line 359 "src/lsh/parserib.y"
     {
-	//printf("RIB Version: %f\n", $2 );
+    //printf("RIB Version: %f\n", $2 );
 ;}
     break;
 
   case 28:
-#line 361 "src/lsh/parserib.y"
+#line 363 "src/lsh/parserib.y"
     {
-	RiAttributeV((yyvsp[(2) - (3)].string), rib_param_num, rib_param_tokens, rib_param_args);
+    RiAttributeV((yyvsp[(2) - (3)].string), rib_param_num, rib_param_tokens, rib_param_args);
 ;}
     break;
 
   case 29:
-#line 365 "src/lsh/parserib.y"
+#line 367 "src/lsh/parserib.y"
     {
-	RiAreaLightSourceV((RtToken)(yyvsp[(2) - (4)].string),
-			   rib_param_num, rib_param_tokens, rib_param_args);
+    RiAreaLightSourceV((RtToken)(yyvsp[(2) - (4)].string),
+               rib_param_num, rib_param_tokens, rib_param_args);
 ;}
     break;
 
   case 30:
-#line 370 "src/lsh/parserib.y"
+#line 372 "src/lsh/parserib.y"
     {
-	RiAttributeBegin();
+    RiAttributeBegin();
 ;}
     break;
 
   case 31:
-#line 374 "src/lsh/parserib.y"
+#line 376 "src/lsh/parserib.y"
     {
-	RiAttributeEnd();
+    RiAttributeEnd();
 ;}
     break;
 
   case 32:
-#line 378 "src/lsh/parserib.y"
+#line 380 "src/lsh/parserib.y"
     {
-	RiClipping((yyvsp[(2) - (3)].num), (yyvsp[(3) - (3)].num));
+    RiAtmosphereV((yyvsp[(2) - (3)].string), rib_param_num, rib_param_tokens, rib_param_args);
 ;}
     break;
 
   case 33:
-#line 382 "src/lsh/parserib.y"
+#line 384 "src/lsh/parserib.y"
     {
-	int     i;
-	RtColor col;
-	ri_ptr_array_t *p;
-
-	p = (yyvsp[(2) - (2)].paramarray);
-
-	/* currently, only consider 3 component color */
-	if (p->nelems < 3) {
-		ri_log(LOG_WARN, "RiColor() with compnent < 3");
-	} else {
-		for (i = 0; i < 3; i++) {
-			col[i] = *((RtFloat *)ri_ptr_array_at(p, i));
-		}
-
-		RiColor(col);
-	}
-
-	if (array_type == NUM_ARRAY) {
-		ri_ptr_array_traverse((yyvsp[(2) - (2)].paramarray), numptrfree);
-	} else {
-		ri_ptr_array_traverse((yyvsp[(2) - (2)].paramarray), strptrfree);
-	}
-	ri_ptr_array_free(p);
+    RiClipping((yyvsp[(2) - (3)].num), (yyvsp[(3) - (3)].num));
 ;}
     break;
 
   case 34:
-#line 411 "src/lsh/parserib.y"
+#line 388 "src/lsh/parserib.y"
     {
-	RtMatrix mat;
+    int     i;
+    RtColor col;
+    ri_ptr_array_t *p;
 
-	mat[0][0] = (yyvsp[(3) - (19)].num) ; mat[0][1] = (yyvsp[(4) - (19)].num) ; mat[0][2] = (yyvsp[(5) - (19)].num) ; mat[0][3] = (yyvsp[(6) - (19)].num) ;
-	mat[1][0] = (yyvsp[(7) - (19)].num) ; mat[1][1] = (yyvsp[(8) - (19)].num) ; mat[1][2] = (yyvsp[(9) - (19)].num) ; mat[1][3] = (yyvsp[(10) - (19)].num);
-	mat[2][0] = (yyvsp[(11) - (19)].num); mat[2][1] = (yyvsp[(12) - (19)].num); mat[2][2] = (yyvsp[(13) - (19)].num); mat[2][3] = (yyvsp[(14) - (19)].num);
-	mat[3][0] = (yyvsp[(15) - (19)].num); mat[3][1] = (yyvsp[(16) - (19)].num); mat[3][2] = (yyvsp[(17) - (19)].num); mat[3][3] = (yyvsp[(18) - (19)].num);
+    p = (yyvsp[(2) - (2)].paramarray);
 
-	RiConcatTransform(mat);
+    /* currently, only consider 3 component color */
+    if (p->nelems < 3) {
+        ri_log(LOG_WARN, "RiColor() with compnent < 3");
+    } else {
+        for (i = 0; i < 3; i++) {
+            col[i] = *((RtFloat *)ri_ptr_array_at(p, i));
+        }
 
+        RiColor(col);
+    }
+
+    if (array_type == NUM_ARRAY) {
+        ri_ptr_array_traverse((yyvsp[(2) - (2)].paramarray), numptrfree);
+    } else {
+        ri_ptr_array_traverse((yyvsp[(2) - (2)].paramarray), strptrfree);
+    }
+    ri_ptr_array_free(p);
 ;}
     break;
 
   case 35:
-#line 423 "src/lsh/parserib.y"
+#line 417 "src/lsh/parserib.y"
     {
-	RiCoordinateSystem((RtToken)(yyvsp[(2) - (2)].string));
+    RtMatrix mat;
+
+    mat[0][0] = (yyvsp[(3) - (19)].num) ; mat[0][1] = (yyvsp[(4) - (19)].num) ; mat[0][2] = (yyvsp[(5) - (19)].num) ; mat[0][3] = (yyvsp[(6) - (19)].num) ;
+    mat[1][0] = (yyvsp[(7) - (19)].num) ; mat[1][1] = (yyvsp[(8) - (19)].num) ; mat[1][2] = (yyvsp[(9) - (19)].num) ; mat[1][3] = (yyvsp[(10) - (19)].num);
+    mat[2][0] = (yyvsp[(11) - (19)].num); mat[2][1] = (yyvsp[(12) - (19)].num); mat[2][2] = (yyvsp[(13) - (19)].num); mat[2][3] = (yyvsp[(14) - (19)].num);
+    mat[3][0] = (yyvsp[(15) - (19)].num); mat[3][1] = (yyvsp[(16) - (19)].num); mat[3][2] = (yyvsp[(17) - (19)].num); mat[3][3] = (yyvsp[(18) - (19)].num);
+
+    RiConcatTransform(mat);
+
 ;}
     break;
 
   case 36:
-#line 427 "src/lsh/parserib.y"
+#line 429 "src/lsh/parserib.y"
     {
-	RiDeclare((yyvsp[(2) - (3)].string), (yyvsp[(3) - (3)].string));
+    RiCoordinateSystem((RtToken)(yyvsp[(2) - (2)].string));
 ;}
     break;
 
   case 37:
-#line 431 "src/lsh/parserib.y"
+#line 433 "src/lsh/parserib.y"
     {
-	RiDepthOfField((RtFloat)(yyvsp[(2) - (4)].num), (RtFloat)(yyvsp[(3) - (4)].num), (RtFloat)(yyvsp[(4) - (4)].num));
+    RiDeclare((yyvsp[(2) - (3)].string), (yyvsp[(3) - (3)].string));
 ;}
     break;
 
   case 38:
-#line 435 "src/lsh/parserib.y"
+#line 437 "src/lsh/parserib.y"
     {
-	RiDisplayV((yyvsp[(2) - (5)].string), (yyvsp[(3) - (5)].string), (yyvsp[(4) - (5)].string),
-		   rib_param_num, rib_param_tokens, rib_param_args);
+    RiDepthOfField((RtFloat)(yyvsp[(2) - (4)].num), (RtFloat)(yyvsp[(3) - (4)].num), (RtFloat)(yyvsp[(4) - (4)].num));
 ;}
     break;
 
   case 39:
-#line 440 "src/lsh/parserib.y"
+#line 441 "src/lsh/parserib.y"
     {
-	RiExposure((yyvsp[(2) - (3)].num), (yyvsp[(3) - (3)].num));
+    RiDisplacementV((yyvsp[(2) - (3)].string), rib_param_num, rib_param_tokens, rib_param_args);
 ;}
     break;
 
   case 40:
-#line 444 "src/lsh/parserib.y"
+#line 445 "src/lsh/parserib.y"
     {
-	RiFormat((yyvsp[(2) - (4)].num), (yyvsp[(3) - (4)].num), (yyvsp[(4) - (4)].num));
+    RiDisplayV((yyvsp[(2) - (5)].string), (yyvsp[(3) - (5)].string), (yyvsp[(4) - (5)].string),
+           rib_param_num, rib_param_tokens, rib_param_args);
 ;}
     break;
 
   case 41:
-#line 448 "src/lsh/parserib.y"
+#line 450 "src/lsh/parserib.y"
     {
-	RiFrameBegin((yyvsp[(2) - (2)].num));
+    RiExposure((yyvsp[(2) - (3)].num), (yyvsp[(3) - (3)].num));
 ;}
     break;
 
   case 42:
-#line 452 "src/lsh/parserib.y"
+#line 454 "src/lsh/parserib.y"
     {
-	RiFrameEnd();
-
+    RiFormat((yyvsp[(2) - (4)].num), (yyvsp[(3) - (4)].num), (yyvsp[(4) - (4)].num));
 ;}
     break;
 
   case 43:
-#line 457 "src/lsh/parserib.y"
+#line 458 "src/lsh/parserib.y"
     {
-	RiFrameAspectRatio((yyvsp[(2) - (2)].num));
-
+    RiFrameBegin((yyvsp[(2) - (2)].num));
 ;}
     break;
 
   case 44:
 #line 462 "src/lsh/parserib.y"
     {
-	RiHiderV((yyvsp[(2) - (3)].string), rib_param_num, rib_param_tokens, rib_param_args);
+    RiFrameEnd();
+
 ;}
     break;
 
   case 45:
-#line 466 "src/lsh/parserib.y"
+#line 467 "src/lsh/parserib.y"
     {
-	RiIdentity();
+    RiFrameAspectRatio((yyvsp[(2) - (2)].num));
+
 ;}
     break;
 
   case 46:
-#line 470 "src/lsh/parserib.y"
+#line 472 "src/lsh/parserib.y"
     {
-	RtInt lightid;
-
-	lightid = (RtInt)(yyvsp[(2) - (3)].num);
-
-	RiIlluminate((RtLightHandle)&(lightid), (yyvsp[(3) - (3)].num));
+    RiHiderV((yyvsp[(2) - (3)].string), rib_param_num, rib_param_tokens, rib_param_args);
 ;}
     break;
 
   case 47:
-#line 478 "src/lsh/parserib.y"
+#line 476 "src/lsh/parserib.y"
     {
-	RiImagerV((yyvsp[(2) - (3)].string), rib_param_num, rib_param_tokens, rib_param_args);
+    RiIdentity();
 ;}
     break;
 
   case 48:
-#line 482 "src/lsh/parserib.y"
+#line 480 "src/lsh/parserib.y"
     {
-	RiLightSourceV((yyvsp[(2) - (4)].string), rib_param_num, rib_param_tokens, rib_param_args);
+    RtInt lightid;
+
+    lightid = (RtInt)(yyvsp[(2) - (3)].num);
+
+    RiIlluminate((RtLightHandle)&(lightid), (yyvsp[(3) - (3)].num));
 ;}
     break;
 
   case 49:
-#line 486 "src/lsh/parserib.y"
-    { 
-	unsigned int    i;
-	RtFloat        *times;
-	ri_ptr_array_t *p;
-
-	if (array_type != NUM_ARRAY) {
-		ri_log(LOG_WARN, "MotionBegin: not a float array argument.\n");
-	} else {
-		p = (yyvsp[(2) - (2)].paramarray);
-
-		times = (RtFloat *)ri_mem_alloc(sizeof(RtFloat) * p->nelems);
-
-		for (i = 0; i < p->nelems; i++) {
-			times[i] = *((RtFloat *)ri_ptr_array_at(p, i));
-		}
-
-		RiMotionBeginV(p->nelems, times);
-
-		ri_ptr_array_traverse(p, numptrfree);
-		ri_ptr_array_free(p);
-	}
+#line 488 "src/lsh/parserib.y"
+    {
+    RiImagerV((yyvsp[(2) - (3)].string), rib_param_num, rib_param_tokens, rib_param_args);
 ;}
     break;
 
   case 50:
-#line 509 "src/lsh/parserib.y"
+#line 492 "src/lsh/parserib.y"
     {
-	RiMotionEnd();
+    RiLightSourceV((yyvsp[(2) - (4)].string), rib_param_num, rib_param_tokens, rib_param_args);
 ;}
     break;
 
   case 51:
-#line 513 "src/lsh/parserib.y"
-    {
-	int     i;
-	RtColor opa;
-	ri_ptr_array_t *p;
+#line 496 "src/lsh/parserib.y"
+    { 
+    unsigned int    i;
+    RtFloat        *times;
+    ri_ptr_array_t *p;
 
-	p = (yyvsp[(2) - (2)].paramarray);
+    if (array_type != NUM_ARRAY) {
+        ri_log(LOG_WARN, "MotionBegin: not a float array argument.\n");
+    } else {
+        p = (yyvsp[(2) - (2)].paramarray);
 
-	/* currently, only consider 3 component color */
-	if (p->nelems < 3) {
-		ri_log(LOG_WARN, "RiOpacity() with compnent < 3");
-	} else {
-		for (i = 0; i < 3; i++) {
-			opa[i] = *((RtFloat *)ri_ptr_array_at(p, i));
-		}
+        times = (RtFloat *)ri_mem_alloc(sizeof(RtFloat) * p->nelems);
 
-		RiOpacity(opa);
-	}
+        for (i = 0; i < p->nelems; i++) {
+            times[i] = *((RtFloat *)ri_ptr_array_at(p, i));
+        }
 
-	if (array_type == NUM_ARRAY) {
-		ri_ptr_array_traverse((yyvsp[(2) - (2)].paramarray), numptrfree);
-	} else {
-		ri_ptr_array_traverse((yyvsp[(2) - (2)].paramarray), strptrfree);
-	}
-	ri_ptr_array_free(p);
+        RiMotionBeginV(p->nelems, times);
+
+        ri_ptr_array_traverse(p, numptrfree);
+        ri_ptr_array_free(p);
+    }
 ;}
     break;
 
   case 52:
-#line 539 "src/lsh/parserib.y"
+#line 519 "src/lsh/parserib.y"
     {
-	RiOptionV((yyvsp[(2) - (3)].string), rib_param_num, rib_param_tokens, rib_param_args);
+    RiMotionEnd();
 ;}
     break;
 
   case 53:
-#line 543 "src/lsh/parserib.y"
+#line 523 "src/lsh/parserib.y"
     {
-	RiOrientation((RtToken)(yyvsp[(2) - (2)].string));
+    int     i;
+    RtColor opa;
+    ri_ptr_array_t *p;
+
+    p = (yyvsp[(2) - (2)].paramarray);
+
+    /* currently, only consider 3 component color */
+    if (p->nelems < 3) {
+        ri_log(LOG_WARN, "RiOpacity() with compnent < 3");
+    } else {
+        for (i = 0; i < 3; i++) {
+            opa[i] = *((RtFloat *)ri_ptr_array_at(p, i));
+        }
+
+        RiOpacity(opa);
+    }
+
+    if (array_type == NUM_ARRAY) {
+        ri_ptr_array_traverse((yyvsp[(2) - (2)].paramarray), numptrfree);
+    } else {
+        ri_ptr_array_traverse((yyvsp[(2) - (2)].paramarray), strptrfree);
+    }
+    ri_ptr_array_free(p);
 ;}
     break;
 
   case 54:
-#line 547 "src/lsh/parserib.y"
+#line 549 "src/lsh/parserib.y"
     {
-	RiPerspective((yyvsp[(2) - (2)].num));
+    RiOptionV((yyvsp[(2) - (3)].string), rib_param_num, rib_param_tokens, rib_param_args);
 ;}
     break;
 
   case 55:
-#line 551 "src/lsh/parserib.y"
+#line 553 "src/lsh/parserib.y"
     {
-	RiPixelFilter(RiBoxFilter, (yyvsp[(3) - (4)].num), (yyvsp[(4) - (4)].num));
+    RiOrientation((RtToken)(yyvsp[(2) - (2)].string));
 ;}
     break;
 
   case 56:
-#line 555 "src/lsh/parserib.y"
+#line 557 "src/lsh/parserib.y"
     {
-	RiPixelSamples((yyvsp[(2) - (3)].num), (yyvsp[(3) - (3)].num));
+    RiPerspective((yyvsp[(2) - (2)].num));
 ;}
     break;
 
   case 57:
-#line 559 "src/lsh/parserib.y"
+#line 561 "src/lsh/parserib.y"
     {
-	int             i;
-	int             have_p = 0;
-	RtInt           npolys, *nverts, *verts;
-	ri_ptr_array_t *p;
-
-	p = (yyvsp[(2) - (4)].paramarray);
-	npolys = p->nelems;
-	
-	nverts = (RtInt *)ri_mem_alloc(sizeof(RtInt) * (p->nelems));
-	for (i = 0; i < (int)p->nelems; i++) {
-		nverts[i] = (RtInt)(*((RtFloat *)ri_ptr_array_at(p, i)));
-	}
-
-	p = (yyvsp[(3) - (4)].paramarray);
-	verts  = (RtInt *)ri_mem_alloc(sizeof(RtInt) * (p->nelems));
-	for (i = 0; i < (int)p->nelems; i++) {
-		verts[i] = (RtInt)(*((RtFloat *)ri_ptr_array_at(p, i)));
-	}
-
-	for (i = 0; i < rib_param_num; i++) {
-		if (strcmp(rib_param_tokens[i], RI_P) == 0) {
-			have_p = 1;
-		}
-	} 
-
-	if (!have_p) {
-		printf("PointsPolygons without RI_P parameter.\n");
-	}
-
-	if (array_type == NUM_ARRAY) {
-		ri_ptr_array_traverse((yyvsp[(2) - (4)].paramarray), numptrfree);
-	} else {
-		ri_ptr_array_traverse((yyvsp[(2) - (4)].paramarray), strptrfree);
-	}
-	ri_ptr_array_free(p);
-
-	RiPointsPolygonsV(npolys, nverts, verts,
-			  rib_param_num, rib_param_tokens, rib_param_args);
-
+    RiPixelFilter(RiBoxFilter, (yyvsp[(3) - (4)].num), (yyvsp[(4) - (4)].num));
 ;}
     break;
 
   case 58:
-#line 601 "src/lsh/parserib.y"
+#line 565 "src/lsh/parserib.y"
     {
-	int             i;
-	int             docall = 1;
-	int             have_p = 0;
-	int             loop_warn = 0;
-	RtInt           loopsize;
-	RtInt           npolys, *nloops, *nverts, *verts;
-	ri_ptr_array_t *p;
-
-	p = (yyvsp[(2) - (5)].paramarray);
-	npolys = p->nelems;
-	
-	nloops = (RtInt *)ri_mem_alloc(sizeof(RtInt) * (p->nelems));
-	for (i = 0; i < (int)p->nelems; i++) {
-		nloops[i] = (RtInt)(*((RtFloat *)ri_ptr_array_at(p, i)));
-	}
-	loopsize = p->nelems;
-
-	p = (yyvsp[(3) - (5)].paramarray);
-	nverts = (RtInt *)ri_mem_alloc(sizeof(RtInt) * (p->nelems));
-	for (i = 0; i < (int)p->nelems; i++) {
-		nverts[i] = (RtInt)(*((RtFloat *)ri_ptr_array_at(p, i)));
-	}
-
-	p = (yyvsp[(4) - (5)].paramarray);
-	verts  = (RtInt *)ri_mem_alloc(sizeof(RtInt) * (p->nelems));
-	for (i = 0; i < (int)p->nelems; i++) {
-		verts[i] = (RtInt)(*((RtFloat *)ri_ptr_array_at(p, i)));
-	}
-
-	for (i = 0; i < rib_param_num; i++) {
-		if (strcmp(rib_param_tokens[i], RI_P) == 0) {
-			have_p = 1;
-		}
-	} 
-
-	if (!have_p) {
-		printf("PointsGeneralPolygons without RI_P parameter.\n");
-		docall = 0;
-	}
-
-	for (i = 0; i < loopsize; i++) {
-		if (nloops[i] != 1 && !loop_warn) {
-			printf("Currently, nloops[%d] must be 1.\n", i);
-			docall = 0;
-			loop_warn = 1;	/* prevent multiple warning. */
-		}
-	}
-
-	if (docall) {
-		RiPointsGeneralPolygonsV(npolys, nloops, nverts, verts,
-					 rib_param_num,
-					 rib_param_tokens, rib_param_args);
-	}
+    RiPixelSamples((yyvsp[(2) - (3)].num), (yyvsp[(3) - (3)].num));
 ;}
     break;
 
   case 59:
-#line 657 "src/lsh/parserib.y"
+#line 569 "src/lsh/parserib.y"
     {
-	int   i;
-	RtInt nvertices = 0;
+    int             i;
+    int             have_p = 0;
+    RtInt           npolys, *nverts, *verts;
+    ri_ptr_array_t *p;
+
+    p = (yyvsp[(2) - (4)].paramarray);
+    npolys = p->nelems;
+    
+    nverts = (RtInt *)ri_mem_alloc(sizeof(RtInt) * (p->nelems));
+    for (i = 0; i < (int)p->nelems; i++) {
+        nverts[i] = (RtInt)(*((RtFloat *)ri_ptr_array_at(p, i)));
+    }
+
+    p = (yyvsp[(3) - (4)].paramarray);
+    verts  = (RtInt *)ri_mem_alloc(sizeof(RtInt) * (p->nelems));
+    for (i = 0; i < (int)p->nelems; i++) {
+        verts[i] = (RtInt)(*((RtFloat *)ri_ptr_array_at(p, i)));
+    }
+
+    for (i = 0; i < rib_param_num; i++) {
+        if (strcmp(rib_param_tokens[i], RI_P) == 0) {
+            have_p = 1;
+        }
+    } 
+
+    if (!have_p) {
+        printf("PointsPolygons without RI_P parameter.\n");
+    }
+
+    if (array_type == NUM_ARRAY) {
+        ri_ptr_array_traverse((yyvsp[(2) - (4)].paramarray), numptrfree);
+    } else {
+        ri_ptr_array_traverse((yyvsp[(2) - (4)].paramarray), strptrfree);
+    }
+    ri_ptr_array_free(p);
+
+    RiPointsPolygonsV(npolys, nverts, verts,
+              rib_param_num, rib_param_tokens, rib_param_args);
+
+;}
+    break;
+
+  case 60:
+#line 611 "src/lsh/parserib.y"
+    {
+    int             i;
+    int             docall = 1;
+    int             have_p = 0;
+    int             loop_warn = 0;
+    RtInt           loopsize;
+    RtInt           npolys, *nloops, *nverts, *verts;
+    ri_ptr_array_t *p;
+
+    p = (yyvsp[(2) - (5)].paramarray);
+    npolys = p->nelems;
+    
+    nloops = (RtInt *)ri_mem_alloc(sizeof(RtInt) * (p->nelems));
+    for (i = 0; i < (int)p->nelems; i++) {
+        nloops[i] = (RtInt)(*((RtFloat *)ri_ptr_array_at(p, i)));
+    }
+    loopsize = p->nelems;
+
+    p = (yyvsp[(3) - (5)].paramarray);
+    nverts = (RtInt *)ri_mem_alloc(sizeof(RtInt) * (p->nelems));
+    for (i = 0; i < (int)p->nelems; i++) {
+        nverts[i] = (RtInt)(*((RtFloat *)ri_ptr_array_at(p, i)));
+    }
+
+    p = (yyvsp[(4) - (5)].paramarray);
+    verts  = (RtInt *)ri_mem_alloc(sizeof(RtInt) * (p->nelems));
+    for (i = 0; i < (int)p->nelems; i++) {
+        verts[i] = (RtInt)(*((RtFloat *)ri_ptr_array_at(p, i)));
+    }
+
+    for (i = 0; i < rib_param_num; i++) {
+        if (strcmp(rib_param_tokens[i], RI_P) == 0) {
+            have_p = 1;
+        }
+    } 
+
+    if (!have_p) {
+        printf("PointsGeneralPolygons without RI_P parameter.\n");
+        docall = 0;
+    }
+
+    for (i = 0; i < loopsize; i++) {
+        if (nloops[i] != 1 && !loop_warn) {
+            printf("Currently, nloops[%d] must be 1.\n", i);
+            docall = 0;
+            loop_warn = 1;    /* prevent multiple warning. */
+        }
+    }
+
+    if (docall) {
+        RiPointsGeneralPolygonsV(npolys, nloops, nverts, verts,
+                     rib_param_num,
+                     rib_param_tokens, rib_param_args);
+    }
+;}
+    break;
+
+  case 61:
+#line 667 "src/lsh/parserib.y"
+    {
+    int   i;
+    RtInt nvertices = 0;
 
         for (i = 0; i < rib_param_num; i++) {
                 if (strcmp(rib_param_tokens[i], RI_P) == 0) {
@@ -2371,486 +2397,496 @@ yyreduce:
                 }
         } 
 
-	if (nvertices) {
-		RiPolygonV(nvertices,
-			   rib_param_num, rib_param_tokens, rib_param_args);
-	} else {
-		ri_log(LOG_WARN, "Polygon call with invalid parameter");
-	}
-;}
-    break;
-
-  case 60:
-#line 691 "src/lsh/parserib.y"
-    {
-	RiProjectionV((RtToken)(yyvsp[(2) - (3)].string),
-		      rib_param_num, rib_param_tokens, rib_param_args);
-;}
-    break;
-
-  case 61:
-#line 696 "src/lsh/parserib.y"
-    {
-	RiQuantize((RtToken)(yyvsp[(2) - (6)].string), (yyvsp[(3) - (6)].num), (yyvsp[(4) - (6)].num), (yyvsp[(5) - (6)].num), (yyvsp[(6) - (6)].num));
+    if (nvertices) {
+        RiPolygonV(nvertices,
+               rib_param_num, rib_param_tokens, rib_param_args);
+    } else {
+        ri_log(LOG_WARN, "Polygon call with invalid parameter");
+    }
 ;}
     break;
 
   case 62:
-#line 700 "src/lsh/parserib.y"
+#line 701 "src/lsh/parserib.y"
     {
-	RiRotate((RtFloat)(yyvsp[(2) - (5)].num), (RtFloat)(yyvsp[(3) - (5)].num), (RtFloat)(yyvsp[(4) - (5)].num), (RtFloat)(yyvsp[(5) - (5)].num));
+    RiProjectionV((RtToken)(yyvsp[(2) - (3)].string),
+              rib_param_num, rib_param_tokens, rib_param_args);
 ;}
     break;
 
   case 63:
-#line 704 "src/lsh/parserib.y"
+#line 706 "src/lsh/parserib.y"
     {
-	RiScale((RtFloat)(yyvsp[(2) - (4)].num), (RtFloat)(yyvsp[(3) - (4)].num), (RtFloat)(yyvsp[(4) - (4)].num));
+    RiQuantize((RtToken)(yyvsp[(2) - (6)].string), (yyvsp[(3) - (6)].num), (yyvsp[(4) - (6)].num), (yyvsp[(5) - (6)].num), (yyvsp[(6) - (6)].num));
 ;}
     break;
 
   case 64:
-#line 708 "src/lsh/parserib.y"
+#line 710 "src/lsh/parserib.y"
     {
-	RiScreenWindow((RtFloat)(yyvsp[(2) - (5)].num), (RtFloat)(yyvsp[(3) - (5)].num), (RtFloat)(yyvsp[(4) - (5)].num), (RtFloat)(yyvsp[(5) - (5)].num));
+    RiRotate((RtFloat)(yyvsp[(2) - (5)].num), (RtFloat)(yyvsp[(3) - (5)].num), (RtFloat)(yyvsp[(4) - (5)].num), (RtFloat)(yyvsp[(5) - (5)].num));
 ;}
     break;
 
   case 65:
-#line 712 "src/lsh/parserib.y"
+#line 714 "src/lsh/parserib.y"
     {
-	RiSphereV((RtFloat)(yyvsp[(2) - (6)].num), (RtFloat)(yyvsp[(3) - (6)].num), (RtFloat)(yyvsp[(4) - (6)].num), (RtFloat)(yyvsp[(5) - (6)].num),
-		  rib_param_num, rib_param_tokens, rib_param_args);
+    RiScale((RtFloat)(yyvsp[(2) - (4)].num), (RtFloat)(yyvsp[(3) - (4)].num), (RtFloat)(yyvsp[(4) - (4)].num));
 ;}
     break;
 
   case 66:
-#line 717 "src/lsh/parserib.y"
+#line 718 "src/lsh/parserib.y"
     {
-	RiSides((RtFloat)(yyvsp[(2) - (2)].num));
+    RiScreenWindow((RtFloat)(yyvsp[(2) - (5)].num), (RtFloat)(yyvsp[(3) - (5)].num), (RtFloat)(yyvsp[(4) - (5)].num), (RtFloat)(yyvsp[(5) - (5)].num));
 ;}
     break;
 
   case 67:
-#line 721 "src/lsh/parserib.y"
+#line 722 "src/lsh/parserib.y"
     {
-	RiShadingInterpolation((RtToken)(yyvsp[(2) - (2)].string));
+    RiSphereV((RtFloat)(yyvsp[(2) - (6)].num), (RtFloat)(yyvsp[(3) - (6)].num), (RtFloat)(yyvsp[(4) - (6)].num), (RtFloat)(yyvsp[(5) - (6)].num),
+          rib_param_num, rib_param_tokens, rib_param_args);
 ;}
     break;
 
   case 68:
-#line 725 "src/lsh/parserib.y"
+#line 727 "src/lsh/parserib.y"
     {
-	RiShadingRate((yyvsp[(2) - (2)].num));
+    RiSides((RtFloat)(yyvsp[(2) - (2)].num));
 ;}
     break;
 
   case 69:
-#line 729 "src/lsh/parserib.y"
+#line 731 "src/lsh/parserib.y"
     {
-	RiShutter((yyvsp[(2) - (3)].num), (yyvsp[(3) - (3)].num));
+    RiShadingInterpolation((RtToken)(yyvsp[(2) - (2)].string));
 ;}
     break;
 
   case 70:
-#line 733 "src/lsh/parserib.y"
+#line 735 "src/lsh/parserib.y"
     {
-	int             i;
-	int             docall = 1;
-	int             have_p = 0;
-	int             face_warn = 0;
-	RtInt           nfaces, *nverts, *verts;
-	ri_ptr_array_t *p;
-
-	p = (yyvsp[(3) - (9)].paramarray);
-	nfaces = p->nelems;
-	
-	nverts = (RtInt *)ri_mem_alloc(sizeof(RtInt) * nfaces);
-	for (i = 0; i < (int)p->nelems; i++) {
-		nverts[i] = (RtInt)(*((RtFloat *)ri_ptr_array_at(p, i)));
-	}
-
-	p = (yyvsp[(4) - (9)].paramarray);
-	verts  = (RtInt *)ri_mem_alloc(sizeof(RtInt) * (p->nelems));
-	for (i = 0; i < (int)p->nelems; i++) {
-		verts[i] = (RtInt)(*((RtFloat *)ri_ptr_array_at(p, i)));
-	}
-
-	for (i = 0; i < rib_param_num; i++) {
-		if (strcmp(rib_param_tokens[i], RI_P) == 0) {
-			have_p = 1;
-		}
-	} 
-
-	if (!have_p) {
-		printf("PointsPolygons without RI_P parameter.\n");
-		docall = 0;
-	}
-
-	for (i = 0; i < nfaces; i++) {
-		if (nverts[i] != 4 && !face_warn) {
-			printf("Currently, only quad face are supported\n");
-			docall = 0;
-			face_warn = 1;	/* prevent multiple warning. */
-		}
-	}
-
-	if (docall) {
-		RiSubdivisionMeshV((yyvsp[(2) - (9)].string), nfaces, nverts, verts,
-				   0,			/* ntags	*/
-				   NULL,		/* tags		*/
-				   NULL,		/* nargs	*/
-				   NULL,		/* intargs	*/
-				   NULL,		/* floatargs	*/
-				   rib_param_num,
-				   rib_param_tokens, rib_param_args);
-	}
-	
+    RiShadingRate((yyvsp[(2) - (2)].num));
 ;}
     break;
 
   case 71:
-#line 787 "src/lsh/parserib.y"
+#line 739 "src/lsh/parserib.y"
     {
-	RiSurfaceV((yyvsp[(2) - (3)].string), rib_param_num, rib_param_tokens, rib_param_args);
+    RiShutter((yyvsp[(2) - (3)].num), (yyvsp[(3) - (3)].num));
 ;}
     break;
 
   case 72:
-#line 791 "src/lsh/parserib.y"
+#line 743 "src/lsh/parserib.y"
     {
-	int     i, j;
-	RtMatrix matrix;
-	ri_ptr_array_t *p;
-	
-	p = (yyvsp[(2) - (2)].paramarray);
-	if (p->nelems == 16) {
-		for (i = 0; i < 4; i++) {
-			for (j = 0; j < 4; j++) {
-				matrix[i][j] = (*((RtFloat *)ri_ptr_array_at(p, i * 4 + j)));
-			}
-		}
+    int             i;
+    int             docall = 1;
+    int             have_p = 0;
+    int             face_warn = 0;
+    RtInt           nfaces, *nverts, *verts;
+    ri_ptr_array_t *p;
 
-		RiTransform(matrix);
-	} else {	
-		ri_log(LOG_WARN, "nelems != 16");
-	}
+    p = (yyvsp[(3) - (9)].paramarray);
+    nfaces = p->nelems;
+    
+    nverts = (RtInt *)ri_mem_alloc(sizeof(RtInt) * nfaces);
+    for (i = 0; i < (int)p->nelems; i++) {
+        nverts[i] = (RtInt)(*((RtFloat *)ri_ptr_array_at(p, i)));
+    }
 
-	if (array_type == NUM_ARRAY) {
-		ri_ptr_array_traverse((yyvsp[(2) - (2)].paramarray), numptrfree);
-	} else {
-		ri_ptr_array_traverse((yyvsp[(2) - (2)].paramarray), strptrfree);
-	}
-	ri_ptr_array_free(p);
+    p = (yyvsp[(4) - (9)].paramarray);
+    verts  = (RtInt *)ri_mem_alloc(sizeof(RtInt) * (p->nelems));
+    for (i = 0; i < (int)p->nelems; i++) {
+        verts[i] = (RtInt)(*((RtFloat *)ri_ptr_array_at(p, i)));
+    }
+
+    for (i = 0; i < rib_param_num; i++) {
+        if (strcmp(rib_param_tokens[i], RI_P) == 0) {
+            have_p = 1;
+        }
+    } 
+
+    if (!have_p) {
+        printf("PointsPolygons without RI_P parameter.\n");
+        docall = 0;
+    }
+
+    for (i = 0; i < nfaces; i++) {
+        if (nverts[i] != 4 && !face_warn) {
+            printf("Currently, only quad face are supported\n");
+            docall = 0;
+            face_warn = 1;    /* prevent multiple warning. */
+        }
+    }
+
+    if (docall) {
+        RiSubdivisionMeshV((yyvsp[(2) - (9)].string), nfaces, nverts, verts,
+                   0,            /* ntags    */
+                   NULL,        /* tags        */
+                   NULL,        /* nargs    */
+                   NULL,        /* intargs    */
+                   NULL,        /* floatargs    */
+                   rib_param_num,
+                   rib_param_tokens, rib_param_args);
+    }
+    
 ;}
     break;
 
   case 73:
-#line 817 "src/lsh/parserib.y"
+#line 797 "src/lsh/parserib.y"
     {
-	RiTransformBegin();
+    RiSurfaceV((yyvsp[(2) - (3)].string), rib_param_num, rib_param_tokens, rib_param_args);
 ;}
     break;
 
   case 74:
-#line 821 "src/lsh/parserib.y"
+#line 801 "src/lsh/parserib.y"
     {
-	RiTransformEnd();
+    int     i, j;
+    RtMatrix matrix;
+    ri_ptr_array_t *p;
+    
+    p = (yyvsp[(2) - (2)].paramarray);
+    if (p->nelems == 16) {
+        for (i = 0; i < 4; i++) {
+            for (j = 0; j < 4; j++) {
+                matrix[i][j] = (*((RtFloat *)ri_ptr_array_at(p, i * 4 + j)));
+            }
+        }
+
+        RiTransform(matrix);
+    } else {    
+        ri_log(LOG_WARN, "nelems != 16");
+    }
+
+    if (array_type == NUM_ARRAY) {
+        ri_ptr_array_traverse((yyvsp[(2) - (2)].paramarray), numptrfree);
+    } else {
+        ri_ptr_array_traverse((yyvsp[(2) - (2)].paramarray), strptrfree);
+    }
+    ri_ptr_array_free(p);
 ;}
     break;
 
   case 75:
-#line 825 "src/lsh/parserib.y"
+#line 827 "src/lsh/parserib.y"
     {
-	RiTranslate((RtFloat)(yyvsp[(2) - (4)].num), (RtFloat)(yyvsp[(3) - (4)].num), (RtFloat)(yyvsp[(4) - (4)].num));
+    RiTransformBegin();
 ;}
     break;
 
   case 76:
-#line 829 "src/lsh/parserib.y"
+#line 831 "src/lsh/parserib.y"
     {
-	RiWorldBegin();
+    RiTransformEnd();
 ;}
     break;
 
   case 77:
-#line 833 "src/lsh/parserib.y"
+#line 835 "src/lsh/parserib.y"
     {
-	RiWorldEnd();
+    RiTranslate((RtFloat)(yyvsp[(2) - (4)].num), (RtFloat)(yyvsp[(3) - (4)].num), (RtFloat)(yyvsp[(4) - (4)].num));
 ;}
     break;
 
   case 78:
-#line 837 "src/lsh/parserib.y"
+#line 839 "src/lsh/parserib.y"
     {
-	enter_mode_skip();
-	printf("[RIB parse] Unknown command: %s at line %d\n", yylval.string, line_num);
-	nunknown_commands++;
-	if (nunknown_commands > max_unknown_commands) {
-		printf("[RIB parse] Too many unknown commands. Give up parsing.\n");
-		exit(-1);
-	}
+    RiWorldBegin();
 ;}
     break;
 
   case 79:
-#line 848 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 843 "src/lsh/parserib.y"
+    {
+    RiWorldEnd();
+;}
     break;
 
   case 80:
-#line 850 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 847 "src/lsh/parserib.y"
+    {
+    enter_mode_skip();
+    printf("[RIB parse] Unknown command: %s at line %d\n", yylval.string, line_num);
+    nunknown_commands++;
+    if (nunknown_commands > max_unknown_commands) {
+        printf("[RIB parse] Too many unknown commands. Give up parsing.\n");
+        exit(-1);
+    }
+;}
     break;
 
   case 81:
-#line 852 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 858 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 82:
-#line 854 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 860 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 83:
-#line 856 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 862 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 84:
-#line 858 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 864 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 85:
-#line 860 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 866 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 86:
-#line 862 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 868 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 87:
-#line 864 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 870 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 88:
-#line 866 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 872 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 89:
-#line 868 "src/lsh/parserib.y"
-    { enter_mode_param(); 	;}
+#line 874 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 90:
-#line 870 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 876 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 91:
-#line 872 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 878 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 92:
-#line 874 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 880 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 93:
-#line 876 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 882 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 94:
-#line 878 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 884 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 95:
-#line 880 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 886 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 96:
-#line 882 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 888 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 97:
-#line 884 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 890 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 98:
-#line 886 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 892 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 99:
-#line 888 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 894 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 100:
-#line 890 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 896 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 101:
-#line 892 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 898 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 102:
-#line 894 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 900 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 103:
-#line 896 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 902 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 104:
-#line 898 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 904 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 105:
-#line 900 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 906 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 106:
-#line 902 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 908 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 107:
-#line 904 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 910 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 108:
-#line 906 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 912 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 109:
-#line 908 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 914 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 110:
-#line 910 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 916 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 111:
-#line 912 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 918 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 112:
-#line 914 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 920 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 113:
-#line 916 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 922 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 114:
-#line 918 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 924 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 115:
-#line 920 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 926 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 116:
-#line 922 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 928 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 117:
-#line 924 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 930 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 118:
-#line 926 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 932 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 119:
-#line 928 "src/lsh/parserib.y"
-    { enter_mode_param(); ;}
+#line 934 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 120:
-#line 930 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 936 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 121:
-#line 932 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 938 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 122:
-#line 934 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 940 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 123:
-#line 936 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 942 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 124:
-#line 938 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 944 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 125:
-#line 940 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 946 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 126:
-#line 942 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 948 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 127:
-#line 944 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 950 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 128:
-#line 946 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 952 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
   case 129:
-#line 948 "src/lsh/parserib.y"
-    { enter_mode_param();	;}
+#line 954 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
+    break;
+
+  case 130:
+#line 956 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
+    break;
+
+  case 131:
+#line 958 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
+    break;
+
+  case 132:
+#line 960 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
+    break;
+
+  case 133:
+#line 962 "src/lsh/parserib.y"
+    { enter_mode_param();    ;}
     break;
 
 
 /* Line 1267 of yacc.c.  */
-#line 2854 "src/lsh/parserib.c"
+#line 2890 "src/lsh/parserib.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -3064,6 +3100,6 @@ yyreturn:
 }
 
 
-#line 951 "src/lsh/parserib.y"
+#line 965 "src/lsh/parserib.y"
 
 
