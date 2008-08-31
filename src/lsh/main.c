@@ -1,7 +1,7 @@
 /*
  * main routine for lsh
  *
- * $Id: main.c 280 2007-05-12 15:54:23Z lucille $
+ * $Id$
  */
 #ifdef HAVE_CONFIG_H
 #include "config.h"
