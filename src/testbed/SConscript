@@ -108,11 +108,11 @@ target = "testbed"
 fltk_post_cmd = "fltk-config --post " + target
 env['LINKCOM'] += " ; " + fltk_post_cmd
 
-incPath=['../base', '../transport', '../render', '../ri', '../../include']
-libs=['rirender', 'ritransport', 'riri', 'ridisplay',  'ribase', 'm']
+incPath=['../base', '../imageio', '../transport', '../render', '../ri', '../../include']
+libs=['rirender', 'ritransport', 'riimageio', 'riri', 'ridisplay',  'ribase', 'm']
 if sys.platform == 'linux2':
 	libs.append(['dl'])
-libPath=['../base', '../display', '../transport', '../render', '../ri']
+libPath=['../base', '../display', '../transport', '../imageio', '../render', '../ri']
 
 env['CPPPATH'].append(incPath)
 env['LIBPATH'].append(libPath)
