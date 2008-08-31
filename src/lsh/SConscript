@@ -16,7 +16,7 @@ incPath=['../base', '../transport', '../render', '../ri', '../../include']
 #
 # Lib
 #
-libs=['riri', 'rirender', 'ritransport', 'ridisplay',  'ribase', 'm']
+libs=['riri', 'riimageio', 'rirender', 'ritransport', 'ridisplay',  'ribase', 'm']
 
 if sys.platform == 'linux2':
 	libs.append(['dl'])
@@ -27,7 +27,7 @@ if env['with_zlib']:
 if env['with_jpeglib']:
 	libs.append([env['JPEGLIB_LIB_NAME']]) 
 
-libPath=['../base', '../display', '../transport', '../render', '../ri']
+libPath=['../base', '../imageio', '../display', '../transport', '../render', '../ri']
 
 if env['with_zlib']:
 	libPath.append([env['ZLIB_LIB_PATH']])

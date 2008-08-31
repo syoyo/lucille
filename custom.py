@@ -62,6 +62,10 @@ ZLIB_INC_PATH = '/usr/include'
 ZLIB_LIB_PATH = '/usr/lib'
 ZLIB_LIB_NAME = 'z'
 
+
+#
+# If you want to support jpeg image as a texture, enable this.
+#
 with_jpeglib = 1
 JPEGLIB_INC_PATH = '/usr/local/include'
 JPEGLIB_LIB_PATH = '/usr/local/lib'
