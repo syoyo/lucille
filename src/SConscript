@@ -1,7 +1,8 @@
 Import('env')
 
-SConscript(['base/SConscript'
+SConscript([ 'base/SConscript'
            , 'ri/SConscript'
+           , 'imageio/SConscript'
            , 'display/SConscript'
            , 'transport/SConscript'
            , 'render/SConscript'
