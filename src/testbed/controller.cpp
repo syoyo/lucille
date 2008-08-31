@@ -259,7 +259,7 @@ render(
 
     int beam_size = 128;
 
-    //simple_render( (ri_bvh_t *)gscene->accel->data, image, width, height, eye, lookat, up );
-    simple_render_beam( (ri_bvh_t *)gscene->accel->data, image, width, height, beam_size, eye, lookat, up );
+    simple_render( (ri_bvh_t *)gscene->accel->data, image, width, height, eye, lookat, up );
+    // simple_render_beam( (ri_bvh_t *)gscene->accel->data, image, width, height, beam_size, eye, lookat, up );
 
 }
