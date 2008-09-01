@@ -51,6 +51,9 @@ static void       parse_and_add_searchpath(
                          ri_option_t *option,    /* [inout] */
                          const char  *path);
 
+static void       add_default_searchpath(
+                         ri_option_t *option);   /* [inout] */
+
 /* detect the number of cpus in the system. */
 #if defined(WITH_PTHREAD) || (!defined(NOTHREAD) && defined(WIN32))
 static int        get_numcpus();
@@ -160,7 +163,6 @@ ri_option_add_searchpath(ri_option_t *option, const char *path)
     char        filtered_path[2048], buf[2048];
     char       *bufp;
     const char *ptr;
-    int         len;
 
 #if defined(WIN32) && !defined(__CYGWIN__)
     char *sep = "\\";
@@ -237,8 +239,8 @@ ri_option_add_searchpath(ri_option_t *option, const char *path)
 void
 ri_option_show_searchpath(ri_option_t *option)
 {
-    int   i;
-	char *path;
+    unsigned int     i;
+	char            *path;
 
 	for (i = 0; i < option->searchpath->nelems; i++) {
 		path = (char *)ri_ptr_array_at(option->searchpath, i);
@@ -565,7 +567,7 @@ parse_and_add_searchpath(ri_option_t *option,    /* [inout] */
     char *p;
     int   len;
 
-    char buf[1024];    /* working buffer */
+    char buf[4096];    /* working buffer */
 
     ptr = path;
 
@@ -602,12 +604,69 @@ parse_and_add_searchpath(ri_option_t *option,    /* [inout] */
          */
         buf[len-1] = '\0';
 
-        ri_option_add_searchpath(option, buf);
+        if (buf[0] == '@') {            /* 3Delight */
+
+            /*
+             * '@' in searchpath string stands for adding default search paths
+             * to the search path.
+             */
+            add_default_searchpath(option);
+
+        } else if (buf[0] == '&') {     /* 3Delight */
+ 
+            /*
+             * '&' in searchpath string stands for adding previous path list.
+             */
+            
+            /* TODO */
+        
+        } else if (buf[0] == '$') {
+
+            /*
+             * String begins with '$' stands for adding environment variable.
+             * For example, '$HOME' is expanded and added to the search path.
+             */
+
+            /* TODO */
+
+        } else if ((buf[0] == '~') && (buf[1] == '\0')) {
+
+            /* 
+             * '~' is an alias to $HOME.
+             * Add $HOME variable to searchpath.    
+             */
+ 
+            /* TODO */
+
+        } else {
+
+            ri_log(LOG_DEBUG, "Add serach path : %s", buf);
+            ri_option_add_searchpath(option, buf);
+
+        }
             
         ptr += len;
     }    
 
 }
+
+/*
+ * Add default path to searchpath.
+ * See 3Delight's manula for details.
+ */
+static void
+add_default_searchpath(ri_option_t *option) /* [inout] */
+{
+    assert(option != NULL);
+
+    /*
+     * TODO:
+     */
+
+    return;
+
+}
+
 
 
 static void
