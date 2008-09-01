@@ -107,9 +107,9 @@ extern void ri_queue_free(
         ri_queue_t       *queue);           /* [in]  */
 
 
-//
-// MT queue
-//
+/*
+ * MT queue. Use thread(e.g. pthread) for potability.
+ */
 
 extern ri_mt_queue_t *ri_mt_queue_new();
 
