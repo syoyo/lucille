@@ -114,6 +114,10 @@ if sys.platform == 'linux2':
 	libs.append(['dl'])
 libPath=['../base', '../display', '../transport', '../imageio', '../render', '../ri']
 
+if env['with_jpeglib']:
+	libs.append([env['JPEGLIB_LIB_NAME']]) 
+
+
 env['CPPPATH'].append(incPath)
 env['LIBPATH'].append(libPath)
 env['LIBS'].append(libs)
