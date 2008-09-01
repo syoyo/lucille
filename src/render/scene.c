@@ -39,6 +39,8 @@ ri_scene_new()
     p->geom_list  = ri_list_new();
     p->light_list = ri_list_new();
 
+    p->env_light  = NULL;
+
     p->accel      = ri_accel_new();
 
     return p;
@@ -50,8 +52,10 @@ ri_scene_free( ri_scene_t * scene )
     
     ri_log_and_return_if(scene == NULL);
 
-    ri_list_free( scene->geom_list );
-    ri_list_free( scene->light_list );
+    ri_list_free(scene->geom_list);
+    ri_list_free(scene->light_list);
+
+    ri_light_free(scene->env_light);
 
     //assert(scene->accel);
     //assert(scene->accel->free);
@@ -118,7 +122,37 @@ ri_scene_add_geom( ri_scene_t *scene, const ri_geom_t * geom )
 void
 ri_scene_add_light( ri_scene_t *scene, const ri_light_t * light )
 {
-    ri_list_append( scene->light_list, ( void * ) light );
+    if (light->type == LIGHTTYPE_SUNSKY ||
+        light->type == LIGHTTYPE_IBL ||
+        light->type == LIGHTTYPE_DOME) {
+
+        if (scene->env_light != NULL) {
+        
+            ri_log(LOG_WARN, "There already exists environmental light.");
+            return;
+
+        } else {
+
+            scene->env_light = light;
+            return;
+
+        }
+            
+    } else {
+
+        /* geometric, directional or point light */
+    
+        ri_list_append( scene->light_list, ( void * ) light );
+
+    }
+
+}
+
+ri_light_t *
+ri_scene_get_environmental_light(
+    ri_scene_t *scene)
+{
+    return scene->env_light;
 }
 
 int
