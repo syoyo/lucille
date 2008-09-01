@@ -23,9 +23,13 @@
 #include "transport.h"
 #include "shading.h"
 
-static void trace_path(ri_render_t *render, ri_ray_t *ray, ri_transport_info_t *result);
+static void          trace_path(
+    ri_render_t         *render,
+    ri_ray_t            *ray, 
+    ri_transport_info_t *result);
 
-static ri_light_t *get_light(ri_render_t *render);
+static ri_light_t   *get_light(
+    ri_render_t         *render);
 
 
 /*
@@ -51,12 +55,18 @@ ri_transport_sample(
 {
     ri_ray_t newray;
 
-    memcpy(&newray, ray, sizeof(ri_ray_t));
+    memcpy(&newray, ray, sizeof(ri_ray_t));     /* copy */
 
-    ri_vector_setzero(result->radiance);
-    result->nbound_diffuse = 0;
-    result->nbound_specular = 0;
-    result->state.inside = 0;
+    /*
+     * Initialize
+     */
+    {
+        ri_vector_setzero(result->radiance);
+        result->nbound_diffuse  = 0;
+        result->nbound_specular = 0;
+        result->state.inside    = 0;
+    }    
+
 
     trace_path(render, &newray, result);
 
@@ -64,7 +74,11 @@ ri_transport_sample(
 }
 
 
-/* --- private functions --- */
+/* ---------------------------------------------------------------------------
+ *
+ * Private functions 
+ *
+ * ------------------------------------------------------------------------ */
 
 /*
  * Function: get_light
@@ -114,6 +128,13 @@ get_light(ri_render_t *render)
 static void
 trace_path(ri_render_t *render, ri_ray_t *ray, ri_transport_info_t *result)
 {
+    int max_nbound_specular = 10;
+
+    if (result->nbound_specular > max_nbound_specular) {
+        /* Too much reflection, terminate.  */
+        return;
+    }
+
 #if 0 // TODO
     int hit, lighthit;
     int hasfresnel;
