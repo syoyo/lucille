@@ -39,7 +39,7 @@ ri_scene_new()
     p->geom_list  = ri_list_new();
     p->light_list = ri_list_new();
 
-    p->accel      = NULL;
+    p->accel      = ri_accel_new();
 
     return p;
 }
