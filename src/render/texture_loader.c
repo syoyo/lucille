@@ -95,49 +95,25 @@ typedef struct _blockedmipmap_t
 
 #define MAX_TEXTURE_PATH 1024
 
+static ri_hash_t    *texture_cache;
+
 /* input x and y must be up to 2^16 */
 #define MAP_Z2D(x, y) ((unsigned int)(g_z_table[(x) & 0xFF] | \
                (g_z_table[(y) & 0xFF] << 1)) | \
                ((unsigned int)((g_z_table[((x) >> 8) & 0xFF]) | \
                 (g_z_table[((y) >> 8) & 0xFF] << 1)) << 16))
 
+#if USE_ZORDER
 /* table for z curve order */
 static unsigned short g_z_table[256];
-
-static ri_hash_t    *texture_cache;
 
 /* store texel memory in scanline order -> z curve order. */ 
 static void          remapping(ri_texture_t *src);
 static void          build_z_table();
+#endif  /* USE_ZORDER */
 
 
 #if 0 /* REMOVE */
-int
-check_file_exists(
-    const char  *filename)
-{
-    FILE *fp = NULL;
-    char newpath[MAX_TEXTURE_PATH * 2];
-
-    fp = fopen(filename, "rb");
-
-    if (!fp) {
-        if (ri_render_get()->ribpath[0] != '\0') {
-            strcpy(newpath, ri_render_get()->ribpath);
-            strcat(newpath, filename);
-            fp = fopen(newpath, "rb");
-    
-            if (!fp) {
-                ri_log(LOG_WARN, "Can't open texture file \"%s\"", newpath);
-                exit(-1);
-            }
-        }
-    }
-
-    return fp;
-}
-#endif
-
 static void endconv(void *data)
 {
 #if defined(WORDS_BIGENDIAN) || defined(__APPLE__)
@@ -155,20 +131,20 @@ static void endconv(void *data)
     (void)data;
 #endif
 }
+#endif
 
 ri_texture_t *
 ri_texture_load(const char *filename)
 {
-    static int initialized = 0;
-    ri_texture_t *p;
-    FILE         *fp;
-    char         *ext;
-
-    char          fullpath[4096];
+    static int      initialized = 0;
+    ri_texture_t   *p;
+    char            fullpath[4096];
 
     if (!initialized) {
         texture_cache = ri_hash_new();
+#if USE_ZORDER
         build_z_table();
+#endif
         initialized = 1;
     }
 
@@ -182,30 +158,34 @@ ri_texture_load(const char *filename)
     if (!ri_option_find_file(fullpath,
                              ri_render_get()->context->option,
                              filename)) {
-        ri_log(LOG_WARN, "Can't find textue file \"%s\"", filename);
+        ri_log(LOG_FATAL, "Can't find textue file \"%s\"", filename);
+        ri_log(LOG_FATAL, "Searched following pathes.");
+        ri_option_show_searchpath(ri_render_get()->context->option);
         exit(-1);
     }
     
-    unsigned int  width;
-    unsigned int  height;
-    unsigned int  component;
-    float        *image = NULL;
+    {
+        unsigned int  width;
+        unsigned int  height;
+        unsigned int  component;
+        float        *image = NULL;
 
-    image = ri_image_load(filename, &width, &height, &component);
-    if (!image) {
-        ri_log(LOG_WARN, "Can't load textue file \"%s\"", fullpath);
-        exit(-1);
-    }    
+        image = ri_image_load(fullpath, &width, &height, &component);
+        if (!image) {
+            ri_log(LOG_WARN, "Can't load textue file \"%s\"", fullpath);
+            exit(-1);
+        }    
 
-    p = ri_mem_alloc(sizeof(ri_texture_t));
-    assert(p != NULL);
-    memset(p, 0, sizeof(ri_texture_t));
-    
-    p->width  = width;
-    p->height = height;
-    p->data   = image;
+        p = ri_mem_alloc(sizeof(ri_texture_t));
+        assert(p != NULL);
+        memset(p, 0, sizeof(ri_texture_t));
+        
+        p->width  = width;
+        p->height = height;
+        p->data   = image;
 
-    ri_log(LOG_INFO, "Loaded texture [ %s ]", filename);
+        ri_log(LOG_INFO, "Loaded texture [ %s ] size = %d x %d", fullpath, width, height);
+    }
 
 
 #if USE_ZORDER
@@ -226,6 +206,8 @@ ri_texture_free(ri_texture_t *texture)
     ri_mem_free(texture);
 }
 
+
+#if USE_ZORDER
 
 static void
 build_z_table()
@@ -256,12 +238,12 @@ build_z_table()
 static void
 remapping(ri_texture_t *src)
 {
-    unsigned int x, y;
-    unsigned int i;
-    unsigned int pow2n;
-    unsigned int maxpixlen;
-    unsigned int idx;
-    ri_float_t        *newdata;
+    unsigned int    x, y;
+    unsigned int    i;
+    unsigned int    pow2n;
+    unsigned int    maxpixlen;
+    unsigned int    idx;
+    float          *newdata;
 
     if (src->width > src->height) {
         maxpixlen = src->width;
@@ -285,7 +267,7 @@ remapping(ri_texture_t *src)
     fprintf(stderr, "maxsize_pow2n = %d\n", src->maxsize_pow2n);
 #endif
 
-    newdata = (ri_float_t *)ri_mem_alloc(4 * sizeof(ri_float_t) *
+    newdata = (float *)ri_mem_alloc(4 * sizeof(float) *
                     src->maxsize_pow2n *
                     src->maxsize_pow2n);
 
@@ -325,6 +307,7 @@ remapping(ri_texture_t *src)
 
     src->data = newdata;
 }
+#endif  /* USE_ZORDER */
 
 void
 make_texture(ri_rawtexture_t *rawtex)
@@ -359,6 +342,7 @@ make_texture(ri_rawtexture_t *rawtex)
     
 }
 
+#if 0   // TODO
 // Generate blocked mipmap from raw texture map.
 // TODO: implement.
 static blockedmipmap_t *
@@ -396,8 +380,6 @@ gen_blockedmipmap(const char *filename, ri_rawtexture_t *texture)
     
     return NULL;    // not yet implemented.
 }
-
-#if 0 // TODO
 
 // Write mipmap to disk with zlib compression.
 static void
