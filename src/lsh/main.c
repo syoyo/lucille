@@ -145,7 +145,7 @@ main(int argc, char **argv)
 		yydebug = 0;
 		if (debug_mode) {
 			/* turn on parser debug mode */
-			yydebug = 1;
+			// yydebug = 1;
 		} 
 
 		RiBegin(RI_NULL);
@@ -310,6 +310,7 @@ parse_arg(int argc, char **argv)
 			/* Turn on debug mode */
 			debug_mode = 1;
 			printf("[lucille] Debug mode on.\n");
+			ri_log_set_debug(1);
 
 			break;
 
