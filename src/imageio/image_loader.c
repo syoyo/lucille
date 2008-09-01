@@ -44,7 +44,7 @@ static float      *load_hdr(FILE            *fp,
                             unsigned int    *height_out,
                             unsigned int    *component_out);
 
-#ifdef HAVE_LIBJPEG
+#ifdef WITH_JPEGLIB
 static float      *load_jpeg(FILE           *fp,
                             unsigned int    *width_out,
                             unsigned int    *height_out,
@@ -86,10 +86,10 @@ ri_image_load(
         image = load_hdr(fp, width_out, height_out, component_out);
     } else if (casecmp(ext, ".tex") == 0) { /* native .tex */
         image = load_tex(fp, width_out, height_out, component_out);
-#ifdef WITH_LIBJPEG
+#ifdef WITH_JPEGLIB
     } else if (casecmp(ext, ".jpg")  == 0 ||
            casecmp(ext, ".jpeg") == 0) {
-        p = load_jpeg(fp, width_out, height_out, component_out);
+        image = load_jpeg(fp, width_out, height_out, component_out);
 #endif
     } else {
         ri_log(LOG_WARN, "Can't understand format of image \"%s\". extension = \"%s\"", filename, ext);
