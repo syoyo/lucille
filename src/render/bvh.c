@@ -1161,8 +1161,6 @@ bvh_construct(
 
         root->is_leaf = 1;
 
-        printf("make a leaf\n");
-
         return 0;
     }
 
