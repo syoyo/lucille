@@ -28,20 +28,20 @@
 ri_accel_t *
 ri_accel_new()
 {
-	ri_accel_t *p;
+    ri_accel_t *p;
 
-	p = ri_mem_alloc(sizeof(ri_accel_t));
+    p = ri_mem_alloc(sizeof(ri_accel_t));
 
-	memset(p, 0, sizeof(ri_accel_t));
-	
-	return p;
+    memset(p, 0, sizeof(ri_accel_t));
+    
+    return p;
 }
 
 void
 ri_accel_free(
-	ri_accel_t *accel)
+    ri_accel_t *accel)
 {
-	if (accel) {
+    if (accel) {
 
         if (accel->free) {
             
@@ -71,37 +71,39 @@ ri_accel_free(
  */
 int
 ri_accel_bind(
-	ri_accel_t *accel,
-	int         method)
+    ri_accel_t *accel,
+    int         method)
 {
 
-	switch( method ) {
+    assert(accel != NULL);
 
-		case RI_ACCEL_UGRID:
+    switch( method ) {
 
-			ri_log(LOG_DEBUG, "Use ugrid");
+        case RI_ACCEL_UGRID:
 
-			accel->build     = ri_ugrid_build;
-			accel->free      = ri_ugrid_free;
-			accel->intersect = ri_ugrid_intersect;
+            ri_log(LOG_DEBUG, "Use ugrid");
 
-			break;
+            accel->build     = ri_ugrid_build;
+            accel->free      = ri_ugrid_free;
+            accel->intersect = ri_ugrid_intersect;
 
-		case RI_ACCEL_BVH:
+            break;
 
-			ri_log(LOG_DEBUG, "Use BVH");
+        case RI_ACCEL_BVH:
 
-			accel->build     = ri_bvh_build;
-			accel->free      = ri_bvh_free;
-			accel->intersect = ri_bvh_intersect;
+            ri_log(LOG_DEBUG, "Use BVH");
 
-			break;
+            accel->build     = ri_bvh_build;
+            accel->free      = ri_bvh_free;
+            accel->intersect = ri_bvh_intersect;
 
-		default:
+            break;
 
-			ri_log(LOG_ERROR, "Unknown accel method");
-			return -1;
-	}
+        default:
 
-	return 0;
+            ri_log(LOG_ERROR, "Unknown accel method");
+            return -1;
+    }
+
+    return 0;
 }
