@@ -75,13 +75,12 @@ typedef struct _sample_t {
     ri_float_t      x, y;          /* sample positon with subpixel accuracy */
 } sample_t;
 
-/* for multithreading */
 typedef struct _pixelinfo_t {
-    ri_vector_t    *radiance_p;      /* ptr to RGB                      */
-    //ri_float_t       depth;   /* Z                            */
-    //ri_float_t       alpha;   /* A                            */
+    ri_vector_t     radiance;       /* Accumulated radiance                  */
+    //ri_float_t       depth;       /* Z                            */
+    //ri_float_t       alpha;       /* A                            */
 
-    /* list of smaples in this pixel */
+    /* list of subsmaples in this pixel */
     sample_t        samples[MAX_SAMPLES_IN_PIXEL];
     int             nsamples;
     int             x, y;          /* pixel position */
@@ -107,32 +106,30 @@ static void     sample_subpixel( unsigned int *i,
                                  ri_float_t jitter[2],
                                  int xs, int ys, int xsamples,
                                  int ysamples );
-static void     bucket_scheduling( bucket_t * bucketlist, int *currbucket,
-                                   int *assignedbucketlist,
-                                   ri_parallel_request_t * requestlist,
-                                   int nbuckets, int np,
-                                   ri_display_drv_t * drv,
-                                   ri_display_t * disp );
-static void     bucket_rendering( ri_display_drv_t * drv,
-                                  ri_display_t * disp );
-static void     bucket_write( bucket_t * bucket,
-                              ri_display_drv_t * drv,
-                              ri_display_t * disp );
 
-#if 0    // TO BE REMOVED
-static void     subsample_threaded( ri_vector_t * pixels,
-                                    int sx, int sy,
-                                    int width, int height );
-static void    *subsample_threadfunc( void *arg, int threadid );
-#endif
-static void     progress_bar( int progress, ri_float_t eta, ri_float_t elapsed );
+static void     bucket_write(
+    const bucket_t      *bucket,
+    ri_display_drv_t    *drv,
+    ri_display_t        *disp );
 
-static void     create_bucket_list(const ri_render_t *render,
-                                   ri_mt_queue_t     *q);   /* [in] */
+static void     progress_bar(
+    int                  progress,
+    ri_float_t           eta,
+    ri_float_t           elapsed );
 
-static void     render_frame_controller(ri_render_t *render);
+static void     create_bucket_list(
+    const ri_render_t   *render,                            /* [in]     */
+    ri_mt_queue_t       *q);                                /* [out]    */
 
-static void     render_frame_cleanup(ri_render_t *render);
+static int      render_bucket(
+    bucket_t            *bucket,                            /* [inout]  */
+    int                 thread_id);
+
+static void     render_frame_controller(
+    ri_render_t         *render);
+
+static void     render_frame_cleanup(
+    ri_render_t         *render);
 
 
 void
@@ -180,7 +177,8 @@ ri_render_init()
 
     grender->background_map   = NULL;
 
-    /* generate permutation sequences up to 100 dimension.
+    /* 
+     * Generate permutation sequences up to 100 dimension.
      * I think 100 is far enough for rendering integration
      */
     grender->perm_table = faure_permutation( 100 );
@@ -288,13 +286,13 @@ ri_render_frame(  )
     scene = ri_render_get()->scene;
 
     /*
-     * Setup renderer.
+     * 1) Setup renderer.
      */
     ri_render_setup(ri_render_get());
 
 
     /*
-     * Setup scene. calculate scene bounding box, etc.
+     * 2) Setup scene. calculate scene bounding box, create work queue, etc.
      */
     ri_scene_setup( scene );
 
@@ -311,9 +309,8 @@ ri_render_frame(  )
         ri_log( LOG_INFO, "Start rendering on %s", message );
     }
 
-    /* ------------------------------------------------------------------
-     *
-     * Render pass. render the scene.
+    /*
+     * 3) Render pass. render the scene.
      */
     ri_timer_start( ri_render_get()->context->timer, "Render frame" );
 
@@ -321,10 +318,10 @@ ri_render_frame(  )
 
     ri_timer_end( ri_render_get()->context->timer, "Render frame" );
     
-    /*
-     *
-     * ---------------------------------------------------------------- */
 
+    /*
+     * 4) Finish rendering. cleanup memories.
+     */
     render_frame_cleanup(ri_render_get());
 
     ri_parallel_barrier();
@@ -558,9 +555,6 @@ create_bucket_list(
     bucket_t        *bucket_list;
     uint32_t         bucket_id;
 
-    int              tmp_ver;
-    ri_queue_node_t *tmp_node;
-
     uint32_t         xp, yp;
 
     ri_camera_t     *camera;
@@ -709,6 +703,14 @@ subsample( pixelinfo_t * pixinfo, int x, int y, int threadid )
         //pixinfo->alpha = 0.0f;
     }
 
+    /*
+     * Clear data
+     */
+    {
+        ri_vector_setzero(pixinfo->radiance); 
+    }    
+
+
     currsample = 0;
     ri_vector_setzero( accumrad );
     for ( ys = 0; ys < ysamples; ys++ ) {
@@ -739,6 +741,7 @@ subsample( pixelinfo_t * pixinfo, int x, int y, int threadid )
              * Hammersley point set.
              * This is used in subsequent QMC sampling.
              */
+
             //ray.i = gqmc_instance * (xsamples * ysamples)
             //      + subinstance;
             ray.i = subinstance;
@@ -766,7 +769,7 @@ subsample( pixelinfo_t * pixinfo, int x, int y, int threadid )
 
     ri_vector_scale( accumrad, accumrad, ( (ri_float_t)1.0 / ( xsamples * ysamples ) ) );
 
-    ri_vector_copy( *pixinfo->radiance_p, accumrad );
+    ri_vector_copy( pixinfo->radiance, accumrad );
 }
 
 /* two-dimensional Hammersley points for anti-aliasing.
@@ -864,8 +867,10 @@ init_sigma( int xsamples, int ysamples )
 }
 
 static void
-bucket_write( bucket_t * bucket,
-              ri_display_drv_t * drv, ri_display_t * disp )
+bucket_write(
+    const bucket_t      *bucket,
+    ri_display_drv_t    *drv,
+    ri_display_t        *disp )
 {
     int             n;
     int             width, height;
@@ -989,8 +994,6 @@ render_bucket_thread_func(void *arg)
 
     while (1) {
 
-        printf("queueu pop\n");
-
         ret = ri_mt_queue_pop(
             ri_render_get()->bucket_queue,
             (void **)&bucket,
@@ -1000,10 +1003,63 @@ render_bucket_thread_func(void *arg)
             /* no items in the queue. */
             break;
         }
+
+        /* 
+         * Trace rays in this bucker region and render the image.
+         */
+        ret = render_bucket(bucket, info->thread_id);
+
     }
     
 
     return NULL;
+}
+
+static int
+render_bucket(
+    bucket_t *bucket,
+    int       thread_id)
+{
+    unsigned int u, v;
+    unsigned int x, y;
+    unsigned int w, h;
+
+    pixelinfo_t  pixinfo;
+
+    x = bucket->x;
+    y = bucket->y;
+    w = bucket->w;
+    h = bucket->h;
+
+    /*
+     * Allocate bucket's pixel buffers here to save memory.
+     */
+
+    bucket->pixels = (ri_vector_t *)ri_mem_alloc_aligned(sizeof(ri_vector_t) * w * h, 32);
+    bucket->depths = (ri_float_t *)ri_mem_alloc_aligned(sizeof(ri_float_t) * w * h, 32);
+
+    ri_log(LOG_INFO, "Rendering bucket region [%dx%d]", x, y);
+
+    for (v = y; v < y + h; v++) { 
+        for (u = x; u < x + w; u++) {
+
+            subsample(&pixinfo, u, v, thread_id);
+
+            /*
+             * Recored result
+             */
+            vcpy(bucket->pixels[(v - y) * w + (u - x)], pixinfo.radiance);
+
+            /* TODO: Z, Alpha, etc. */
+
+        }
+    }
+
+    ri_mem_free_aligned(bucket->pixels);
+    ri_mem_free_aligned(bucket->depths);
+
+    return 0;   /* OK */
+
 }
 
 void
@@ -1051,10 +1107,11 @@ void
 render_frame_cleanup(ri_render_t *render)
 {
     char              message[1024];
-    ri_option_t      *opt = render->context->option;
 
     int               my_id;
     time_t            tm;
+
+    assert(render != NULL);
 
     my_id = ri_parallel_taskid();
         
@@ -1064,6 +1121,9 @@ render_frame_cleanup(ri_render_t *render)
 
         ri_shade_statistics(  );
     }
+
+    assert(render->context);
+    assert(render->context->timer);
 
     ri_timer_start( render->context->timer, "Clean up" );
 
@@ -1075,6 +1135,7 @@ render_frame_cleanup(ri_render_t *render)
               "TOTAL rendering time" );
 
     if ( my_id == 0 ) {
+        assert(render->curr_display_drv);
         render->curr_display_drv->close();
         ri_timer_dump( ri_render_get()->context->timer );
     }
