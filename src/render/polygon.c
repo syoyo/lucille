@@ -610,7 +610,6 @@ ri_pointspolygons_parse(RtInt npolys, RtInt nverts[], RtInt verts[],
 
     }
 
-
     if (attr->sides == 2) {
         nvertices *= 2;
     }
@@ -696,9 +695,15 @@ ri_api_polygon(RtInt nverts, RtInt n, RtToken tokens[], RtPointer params[])
         arealight = (ri_light_t *)
                 ri_list_last(ri_render_get()->scene->light_list)->data;
         arealight->geom = geom;
-    } else {
-        ri_scene_add_geom(ri_render_get()->scene, geom);
+        geom->light = arealight;
     }
+
+    /*
+     * Arealight geometry is also added to the scene geometry.
+     * Spatial data structure is constructed for mix of light geometries and
+     * surface geometries. 
+     */
+    ri_scene_add_geom(ri_render_get()->scene, geom);
 }
 
 void
@@ -750,7 +755,11 @@ ri_api_pointsgeneralpolygons(RtInt npolys, RtInt nloops[],
     }
 }
 
-/* --- private functions --- */
+/* ---------------------------------------------------------------------------
+ *
+ * Private functions
+ *
+ * ------------------------------------------------------------------------ */
 
 /*
  * generate tangent vector(dPdu) and binormal vector(dPdv).

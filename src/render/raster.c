@@ -139,6 +139,9 @@ ri_raster_plane_setup(
         p[1] /= -w[2];
 
         printf("[raster] lowerleft = %f, %f\n", p[0], p[1]);
+
+        plane_inout->offset[0] = p[0];
+        plane_inout->offset[1] = p[1];
     }
 
 
@@ -184,19 +187,26 @@ ri_rasterize_triangle(
     ri_vector_t dir;
 
     /*
-     * p  = M F E v
+     * p  = S P M F E v
      *
-     *      | w     1                        w      |
-     * M  = | - ----------        0        - -   0  |
-     *      | 2 tan(fov/2)                   2      |
-     *      |                                       |
-     *      |                h     1         h      |
-     *      |      0         - ----------  - -   0  |
-     *      |                2 tan(fov/2)    2      |
-     *      |                                       |
-     *      |      0              0          1   0  |
-     *      |                                       |
-     *      |      0              0         -1   0  |
+     * S  = |  1/2 w    0    0    0  |
+     *      |    0    1/2 h  0    0  |
+     *      |    0      0    0    0  |
+     *      |    0      0    0    0  |
+     *
+     * P  = Projection
+     *
+     *      |      1                                      |
+     * M  = |   ----------        0          0   -offt[0] |
+     *      |   tan(fov/2)                                |
+     *      |                                             |
+     *      |                      1                      |
+     *      |      0           ----------    0   -offt[1] |
+     *      |                  tan(fov/2)                 |
+     *      |                                             |
+     *      |      0              0          0     0      |
+     *      |                                             |
+     *      |      0              0          0     0      |
      *
      *  F = |  du_x  du_y  du_z     0 |
      *      |  dv_x  dv_y  dv_z     0 |
@@ -241,10 +251,8 @@ ri_rasterize_triangle(
              -  plane->frame[2][2] * vo[2];
 
         /* p = M F E v */
-        p[i][0] = 0.5 * width  * (1.0 / tan(0.5 * fov_rad)) * w[0]
-                - 0.5 * width  * w[2];
-        p[i][1] = 0.5 * height * (1.0 / tan(0.5 * fov_rad)) * w[1]
-                - 0.5 * height * w[2];
+        p[i][0] = (1.0 / tan(0.5 * fov_rad)) * w[0];
+        p[i][1] = (1.0 / tan(0.5 * fov_rad)) * w[1];
         p[i][2] = w[2];
 
         printf("[raster] proj p = %f, %f, %f\n", p[i][0], p[i][1], p[i][2]);
@@ -253,6 +261,15 @@ ri_rasterize_triangle(
         p[i][1] /= -w[2];
 
         printf("[raster] proj p/w = %f, %f\n", p[i][0], p[i][1]);
+
+        p[i][0] -= plane->offset[0];
+        p[i][1] -= plane->offset[1];
+
+        printf("[raster] offsetted = %f, %f\n", p[i][0], p[i][1]);
+
+        p[i][0] *= 0.5 * width;
+        p[i][1] *= 0.5 * height;
+        printf("[raster] scaled    = %f, %f\n", p[i][0], p[i][1]);
 
     }
 

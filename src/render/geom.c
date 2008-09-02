@@ -48,6 +48,8 @@ ri_geom_new()
     p->shader     = NULL;
     p->material   = NULL;
 
+    p->light      = NULL;
+
 
     return p;
 }
