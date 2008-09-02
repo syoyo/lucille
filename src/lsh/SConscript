@@ -16,7 +16,7 @@ incPath=['../base', '../transport', '../render', '../ri', '../../include']
 #
 # Lib
 #
-libs=['riri', 'riimageio', 'rirender', 'ritransport', 'ridisplay',  'ribase', 'm']
+libs=['riri', 'rirender', 'riimageio', 'ritransport', 'ridisplay',  'ribase', 'm']
 
 if sys.platform == 'linux2':
 	libs.append(['dl'])
