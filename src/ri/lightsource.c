@@ -238,6 +238,7 @@ ri_api_area_light_source(RtToken name,
 
     /*
      * Begin arealight block.
+     * Arealight's geometry is handled at render/polygon.c:ri_api_polygon().
      */
 	ri_render_get()->context->arealight_block = 1;
 
