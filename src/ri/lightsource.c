@@ -15,6 +15,7 @@
 #include "light.h"
 #include "apitable.h"
 #include "render.h"
+#include "scene.h"
 #include "random.h"
 #include "reflection.h"
 #include "qmc.h"
@@ -96,7 +97,7 @@ ri_api_light_source(RtToken name, RtInt n,
 		}
 	}
 
-	ri_list_append(ri_render_get()->scene->light_list, light);
+    ri_scene_add_light(ri_render_get()->scene, light);
 
 	return NULL; 
 }
@@ -148,25 +149,27 @@ ri_api_area_light_source(RtToken name,
 		/*
 		 * Create sunlight(as directional light)
 		 */
-		sunlight = ri_light_new();
-		sunlight->type = LIGHTTYPE_DIRECTIONAL;
-		sunlight->direction[0] = sunsky->sun_dir[0];
-		sunlight->direction[1] = sunsky->sun_dir[2];	/* swap y and z */
-		sunlight->direction[2] = sunsky->sun_dir[1];
+        {
+            sunlight = ri_light_new();
+            sunlight->type = LIGHTTYPE_DIRECTIONAL;
+            sunlight->direction[0] = sunsky->sun_dir[0];
+            sunlight->direction[1] = sunsky->sun_dir[2];	/* swap y and z */
+            sunlight->direction[2] = sunsky->sun_dir[1];
 
-		printf("sundir = %f, %f, %f\n",
-			sunsky->sun_dir[0],
-			sunsky->sun_dir[1],
-			sunsky->sun_dir[2]);
-		
-		ri_sunsky_get_sunlight_rgb(rgb, sunsky);
-		sunlight->col[0] = rgb[0];
-		sunlight->col[1] = rgb[1];
-		sunlight->col[2] = rgb[2];
+            ri_log(LOG_INFO, "sundir = %f, %f, %f\n",
+                sunsky->sun_dir[0],
+                sunsky->sun_dir[1],
+                sunsky->sun_dir[2]);
+            
+            ri_sunsky_get_sunlight_rgb(rgb, sunsky);
+            sunlight->col[0] = rgb[0];
+            sunlight->col[1] = rgb[1];
+            sunlight->col[2] = rgb[2];
 
-		ri_list_append(ri_render_get()->scene->light_list, sunlight);
+            ri_scene_add_light(ri_render_get()->scene, sunlight);
 
-		ri_log(LOG_INFO, "Added sunsky");
+		    ri_log(LOG_INFO, "Added sunsky");
+        }
 
 	} else {
 
@@ -179,7 +182,8 @@ ri_api_area_light_source(RtToken name,
 				light->direction[3] = 1.0;
 
 				ri_vector_normalize(light->direction);
-				printf("dir = (%f, %f, %f)\n", light->direction[0],
+				ri_log(LOG_DEBUG, "dir = (%f, %f, %f)\n",
+                                   light->direction[0],
 							       light->direction[1],
 							       light->direction[2]);
 		
@@ -230,14 +234,21 @@ ri_api_area_light_source(RtToken name,
 		}
 	}
 
-	ri_list_append(ri_render_get()->scene->light_list, light);
+	ri_scene_add_light(ri_render_get()->scene, light);
 
+    /*
+     * Begin arealight block.
+     */
 	ri_render_get()->context->arealight_block = 1;
 
 	return NULL; 
 }
 
-/* --- private functions --- */
+/* ---------------------------------------------------------------------------
+ *
+ * Private functions 
+ * 
+ * ------------------------------------------------------------------------ */
 
 /*
  * Create the sunsky object from parameters.
@@ -266,7 +277,9 @@ setup_sunsky(RtInt n, RtToken tokens[], RtPointer params[])
 	float    latitude  = 35.39; // in degree
 	float    longitude = 139.44; //  in degree
 	int      julian_day = 20;
-	float    standard_meridian = 135.0 / 15;        // in degree. sm = timezone * 15. sm may be computed by rint(longitude/15) ?
+
+    // in degree. sm = timezone * 15. sm may be computed by rint(longitude/15) ?
+	float    standard_meridian = 135.0 / 15;        
 
 	sunsky = ri_sunsky_new();
 
