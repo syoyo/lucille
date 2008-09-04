@@ -33,62 +33,72 @@ extern "C" {
 
 typedef struct _ri_light_t
 {
-    int          type;                  /* light type               */
-    ri_vector_t  pos;                   /* light position           */
-    double       intensity;             /* light intensity          */
-    ri_vector_t  col;                   /* light color              */
-    ri_geom_t   *geom;                  /* for area light           */
-    //int          directional;         /* directional light?       */
-    ri_vector_t  direction;             /* light direction          */
+    /*
+     * Common attributes.
+     */
+    int             type;               /* light type                       */
+    ri_vector_t     pos;                /* light position                   */
+    double          intensity;          /* light intensity                  */
+    ri_vector_t     col;                /* light color                      */
+    ri_geom_t      *geom;               /* for area light                   */
+    ri_vector_t     direction;          /* light direction                  */
 
-    ri_texture_t *texture;              /* for IBL                  */
-    //int           ibl;                /* Is light IBL?            */
+    /*
+     * For IBL
+     */
+    ri_texture_t   *texture;            /* IBL texture                      */
 
-    char         *sisfile;              /* for structured importance
-                                         * sampling.                */
-    char         *eihdrifile;           /* for EIHDRI smpling.      */
-    int           iblsampler;           /* IBL sampling method      */
-    //int           domelight;          /* domelight?               */
-    //int           sunskylight;        /* sunsky light?            */
+    char           *sisfile;            /* for structured importance
+                                         * sampling.                        */
 
-    ri_sunsky_t  *sunsky;               /* for sunsky               */
+    char           *eihdrifile;         /* for EIHDRI smpling.              */
+    int             iblsampler;         /* IBL sampling method              */
+
+    /*
+     * For sunsky
+     */
+    ri_sunsky_t    *sunsky;             /* for sunsky                       */
+
 } ri_light_t;
 
 extern ri_light_t *ri_light_new ();
-extern void        ri_light_free(   ri_light_t   *light);
+
+extern void        ri_light_free(
+    ri_light_t   *light);
+
 extern void        ri_light_attach_geom(
-                                    ri_light_t   *light,
-                                    ri_geom_t    *geom);
+    ri_light_t   *light,
+    ri_geom_t    *geom);
 
 /* randomly sample position onto light geometry */
 extern void        ri_light_sample_pos_and_normal(
-                                    ri_vector_t   pos,          /* [out] */
-                                    ri_vector_t   normal,       /* [out] */
-                                    ri_light_t   *light);
+    ri_vector_t   pos,          /* [out] */
+    ri_vector_t   normal,       /* [out] */
+    ri_light_t   *light);
 
 /* quasi-randomly sample position onto light geometry */
 extern void        ri_light_sample_pos_and_normal_qmc(
-                                    ri_vector_t   pos,          /* [out] */
-                                    ri_vector_t   normal,       /* [out] */
-                                    ri_light_t   *light,
-                                    int           d,
-                                    int           i,
-                                    int         **perm);
+    ri_vector_t   pos,          /* [out] */
+    ri_vector_t   normal,       /* [out] */
+    ri_light_t   *light,
+    int           d,
+    int           i,
+    int         **perm);
 
 /* randomly sample position and direction onto light geometry */
 extern void        ri_light_sample_pos_and_dir(
-                                    ri_vector_t   pos,          /* [out] */
-                                    ri_vector_t   dir,          /* [out] */
-                                    ri_light_t   *light);
+    ri_vector_t   pos,          /* [out] */
+    ri_vector_t   dir,          /* [out] */
+    ri_light_t   *light);
 
 /* quasi-randomly sample position and direction onto light geometry */
 extern void        ri_light_sample_pos_and_dir_qmc(
-                                    ri_vector_t   pos,          /* [out] */
-                                    ri_vector_t   dir,          /* [out] */
-                                    ri_light_t   *light,
-                                    int           d,
-                                    int           i,
-                                    int         **perm);
+    ri_vector_t   pos,          /* [out] */
+    ri_vector_t   dir,          /* [out] */
+    ri_light_t   *light,
+    int           d,
+    int           i,
+    int         **perm);
 
 #ifdef __cplusplus
 }    /* extern "C" */
