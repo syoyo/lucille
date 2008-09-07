@@ -62,9 +62,11 @@ typedef struct _ri_intersection_state_t {
 extern ri_intersection_state_t *ri_intersection_state_new();
 
 extern void                     ri_intersection_state_free();
+extern void                     ri_intersection_state_clear(
+    ri_intersection_state_t *state_inout);  /* [inout] */
 
 extern void                     ri_intersection_state_build(
-    ri_intersection_state_t *state_inout,    /* [inout] */
+    ri_intersection_state_t *state_inout,   /* [inout] */
     const ri_vector_t        eye,
     const ri_vector_t        dir);
 

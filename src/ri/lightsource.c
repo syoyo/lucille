@@ -144,7 +144,7 @@ ri_api_area_light_source(RtToken name,
 		}
 
 		/* Set sunsky map to background map */
-		ri_render_get()->background_map = light->texture;
+		ri_render_get()->scene->background_map = light->texture;
 
 		/*
 		 * Create sunlight(as directional light)

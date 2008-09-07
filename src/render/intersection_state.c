@@ -223,6 +223,15 @@ ri_intersection_state_build(
     //state->ks    = geom->ks;
 }
 
+void
+ri_intersection_state_clear(
+    ri_intersection_state_t *state_inout)
+{
+
+    memset(state_inout, 0, sizeof(ri_intersection_state_t));
+
+}
+
 
 /* ----------------------------------------------------------------------------
  *

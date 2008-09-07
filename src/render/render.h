@@ -50,29 +50,21 @@ typedef struct _ri_render_t
 {
     /* TODO: Support for multiple context */
 
-    ri_context_t   *context;                /* rendering context        */
+    ri_context_t       *context;            /* rendering context            */
 
-    ri_hash_t      *geom_drvs;              /* geometry driver list     */
-    ri_hash_t      *display_drvs;           /* display driver list      */
+    ri_hash_t          *geom_drvs;          /* geometry driver list         */
+    ri_hash_t          *display_drvs;       /* display driver list          */
 
-    ri_display_drv_t *curr_display_drv;     /* currently selected
-                                             * display driver           */
+    ri_display_drv_t   *display_drv;        /* currently selected
+                                             * display driver               */
 
-    ri_statistic_t  stat;                   /* statistics for rendering */
+    ri_statistic_t      stat;               /* statistics for rendering     */
 
 
     void           (*progress_handler)(void);
 
-#if 0    // to be removed.
-    ri_vector_t     bmin;            /* bounding box of scene */
-    ri_vector_t     bmax;            /* bounding box of scene */
 
-    ri_float_t      bmaxwidth;        /* maximum width of bounding
-                         * box.                  */
-#endif
-
-    int             dd_use_callback;    /* use callback display
-                           driver?         */
+    int             dd_use_callback;        /* use callback display driver? */
 
     char            ribpath[MAX_RIBPATH];    /* RIB file path     */
 
@@ -80,13 +72,16 @@ typedef struct _ri_render_t
 
     int             is_debug_mode;    
 
-    /* QMC related stuff */
+    /*
+     * QMC related stuff 
+     */
     int             **perm_table;        /* permutation sequences */
 
 
-    /* background map(environment map) */
-    ri_texture_t   *background_map;
-
+    
+    /*
+     * Scene
+     */
     ri_scene_t     *scene;
 
     int             bucket_size;

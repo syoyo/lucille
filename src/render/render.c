@@ -161,7 +161,7 @@ ri_render_init()
     grender->geom_drvs        = ri_hash_new();
     grender->display_drvs     = ri_hash_new();
 
-    grender->curr_display_drv = NULL;
+    grender->display_drv      = NULL;
 
     grender->scene            = ri_scene_new();
 
@@ -174,8 +174,6 @@ ri_render_init()
     grender->ribpath[0]       = '\0';
 
     grender->is_debug_mode    = 0;
-
-    grender->background_map   = NULL;
 
     /* 
      * Generate permutation sequences up to 100 dimension.
@@ -408,7 +406,7 @@ ri_render_setup(ri_render_t *render)
 
     ri_log_and_return_if( drv == NULL );
 
-    ri_render_get()->curr_display_drv = drv;
+    ri_render_get()->display_drv = drv;
 
     opt = ri_render_get(  )->context->option;
     disp = ri_render_get(  )->context->option->display;
@@ -1055,6 +1053,13 @@ render_bucket(
         }
     }
 
+#if 0  // TODO
+    bucket_write(bucket, 
+    const bucket_t      *bucket,
+    ri_display_drv_t    *drv,
+    ri_display_t        *disp )
+#endif
+
     ri_mem_free_aligned(bucket->pixels);
     ri_mem_free_aligned(bucket->depths);
 
@@ -1135,8 +1140,8 @@ render_frame_cleanup(ri_render_t *render)
               "TOTAL rendering time" );
 
     if ( my_id == 0 ) {
-        assert(render->curr_display_drv);
-        render->curr_display_drv->close();
+        assert(render->display_drv);
+        render->display_drv->close();
         ri_timer_dump( ri_render_get()->context->timer );
     }
 

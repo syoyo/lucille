@@ -85,9 +85,11 @@ ri_mem_alloc_aligned(size_t sz, uint32_t align)
     }
 
     diff = (uintptr_t)(aligned - p);
+    /*
     printf("malloc  point : %p\n", p);
     printf("aligned point : %p\n", aligned);
     printf("diff          : %llu\n", diff);
+    */
 
 
     /*

@@ -1,7 +1,7 @@
 /*
  * $Id: transport.c,v 1.8 2004/08/15 05:19:39 syoyo Exp $
  *
- * Light transport routine.
+ * Default light transport routine.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -64,8 +64,9 @@ ri_transport_sample(
         ri_vector_setzero(result->radiance);
         result->nbound_diffuse  = 0;
         result->nbound_specular = 0;
-        result->state.inside    = 0;
+        ri_intersection_state_clear( &result->state );
     }    
+
 
 
     trace_path(render, &newray, result);
@@ -134,6 +135,41 @@ trace_path(ri_render_t *render, ri_ray_t *ray, ri_transport_info_t *result)
         /* Too much reflection, terminate.  */
         return;
     }
+
+    ri_light_t *light = NULL;
+
+    int hit;
+
+    /* hack */
+    vec white;
+    vec black;
+
+    ri_vector_set1(white,  1.0);
+    ri_vector_set1(black,  0.0);
+
+    hit = ri_raytrace(render, ray, &(result->state));
+
+    if (hit) {
+
+        if (result->state.geom->light) {
+
+            light = result->state.geom->light;
+
+            /* Hit light geometry. */
+            vcpy(result->radiance, light->col);
+            return;
+
+        }
+
+        vcpy(result->radiance, white);
+
+    } else {
+
+        vcpy(result->radiance, black);
+
+    }
+
+    return;
 
 #if 0 // TODO
     int hit, lighthit;

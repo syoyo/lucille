@@ -157,7 +157,7 @@ auto_detect_format()
 				len = ext - disp->display_name;
 
 				strncpy(buf, disp->display_name, len);
-				strncpy(&buf[0] + len, ".hdr", strlen(".hdr"));
+				strncpy(&buf[0] + len, ".hdr\0", strlen(".hdr") + 1);
 
 				free(disp->display_name);
 				disp->display_name = strdup(buf);
@@ -188,7 +188,7 @@ auto_detect_format()
 				len = ext - disp->display_name;
 
 				strncpy(buf, disp->display_name, len);
-				strncpy(&buf[0] + len, ".tif", strlen(".tif"));
+				strncpy(&buf[0] + len, ".tif\0", strlen(".tif") + 1);
 				free(disp->display_name);
 				disp->display_name = strdup(buf);
 			}
