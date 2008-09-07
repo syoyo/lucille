@@ -16,7 +16,6 @@ Contents:
    source
    programmers
    scene
-   cmd_refman
 
 はじめに
 ========

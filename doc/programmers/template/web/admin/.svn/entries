@@ -1,0 +1,88 @@
+8
+
+dir
+271
+https://lucille.svn.sourceforge.net/svnroot/lucille/angelina/pybackend/tut/doc/_templates/web/admin
+https://lucille.svn.sourceforge.net/svnroot/lucille
+
+
+
+2008-09-01T17:09:57.408978Z
+271
+syoyo
+
+
+svn:special svn:externals svn:needs-lock
+
+layout.html
+file
+
+
+
+
+2008-08-31T09:38:20.000000Z
+e8e47f4a98e1adc112118f742bca48ce
+2008-09-01T17:09:57.408978Z
+271
+syoyo
+
+moderate_comments.html
+file
+
+
+
+
+2008-08-31T09:38:20.000000Z
+949d3304561261ecb09b96f30d108a30
+2008-09-01T17:09:57.408978Z
+271
+syoyo
+
+change_password.html
+file
+
+
+
+
+2008-08-31T09:38:20.000000Z
+ff6eda4b38353506e901d00ef3714f48
+2008-09-01T17:09:57.408978Z
+271
+syoyo
+
+index.html
+file
+
+
+
+
+2008-08-31T09:38:20.000000Z
+3ebce6a2238ea8fb362f4c1d136a8781
+2008-09-01T17:09:57.408978Z
+271
+syoyo
+
+login.html
+file
+
+
+
+
+2008-08-31T09:38:20.000000Z
+5557c4f9364a4e04ebeb37fddf515615
+2008-09-01T17:09:57.408978Z
+271
+syoyo
+
+manage_users.html
+file
+
+
+
+
+2008-08-31T09:38:20.000000Z
+480257869d38f029db34549765f55eea
+2008-09-01T17:09:57.408978Z
+271
+syoyo
+

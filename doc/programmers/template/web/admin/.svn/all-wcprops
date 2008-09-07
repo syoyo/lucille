@@ -1,0 +1,41 @@
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svnroot/lucille/!svn/ver/271/angelina/pybackend/tut/doc/_templates/web/admin
+END
+layout.html
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svnroot/lucille/!svn/ver/271/angelina/pybackend/tut/doc/_templates/web/admin/layout.html
+END
+moderate_comments.html
+K 25
+svn:wc:ra_dav:version-url
+V 100
+/svnroot/lucille/!svn/ver/271/angelina/pybackend/tut/doc/_templates/web/admin/moderate_comments.html
+END
+change_password.html
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svnroot/lucille/!svn/ver/271/angelina/pybackend/tut/doc/_templates/web/admin/change_password.html
+END
+index.html
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svnroot/lucille/!svn/ver/271/angelina/pybackend/tut/doc/_templates/web/admin/index.html
+END
+login.html
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svnroot/lucille/!svn/ver/271/angelina/pybackend/tut/doc/_templates/web/admin/login.html
+END
+manage_users.html
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svnroot/lucille/!svn/ver/271/angelina/pybackend/tut/doc/_templates/web/admin/manage_users.html
+END

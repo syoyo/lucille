@@ -16,6 +16,7 @@ lucille レンダラのコアを構成するソースコードはすべて ``src
     base/               ベクトル型、可変長配列などの基本データ構造などの実装.
     display/            各種ディスプレイドライバの実装
     gui/                レンダラを呼び出す GUI プログラム(予定)
+    imageio/            各種画像ファイル読み書き
     lsh/                コマンドラインレンダラプログラム(lucille shell)
     render/             レンダラコアの実装
     ri/                 RenderMan Interface の実装

@@ -9,6 +9,7 @@ lucille は RIB インターフェイスを実装したレンダラとして、�
 
 * libribase
 * libridisplay
+* libriimageio
 * librirender
 * libritransport
 * libriri
@@ -23,7 +24,19 @@ Usage
 
 ::
 
-  $ lsh <input.rib>
+  $ lsh [options] <input.rib>
+
+オプションは以下の通りである.
+
+::
+
+  --debug             デバッグを有効にする(開発者向け)
+  --output            出力ファイル名を指定する(Display の指定を上書き)     
+  --info              利用可能なディスプレイドライバを表示
+  --version           バージョン表示　
+  --verbose           各種情報を表示するようにする
+  
+  
 
 
 rockenfield
