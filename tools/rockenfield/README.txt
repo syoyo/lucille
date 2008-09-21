@@ -1,16 +1,33 @@
+===========
+rockenfield
+===========
+
+rockenfield is a TCP/IP-based display driver for lucille.
+
+Requirements
+============
+
+rockenfield uses fltk library 1.1.9.
+
+http://www.fltk.org/
  
- rockenfield
+fltk library must be compiled with --enable-threads configure option.
 
-   rockenfield is a TCP/IP-based display driver for lucille.
+If your fltk library doesn't compiled with --enable-threads,
+undef -DENABLE_THREADING in the Makefile. 
+(Usually this decrease the performance of rockenfield)
 
- Note:
+Compile
+=======
 
- rockenfield uses fltk library.
+Just type make to build rockenfield.::
 
- http://www.fltk.org/
- 
- fltk library must be compiled with --enable-threads configure option.
+  $ make
 
- If your fltk library doesn't compiled with --enable-threads,
- undef -DENABLE_THREADING in the Makefile. 
- (Usually this decrease the performance of rockenfield)
+
+Install
+=======
+
+Just copy rockenfield to directory where PATH is set. e.g. ::
+
+  $ sudo cp rockenfield /usr/local/bin
