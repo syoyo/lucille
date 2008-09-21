@@ -1379,8 +1379,9 @@ idle(void *data)
 void
 helptext()
 {
-	gHelpTextBuf->append("'x'  Zoom in\n");
-	gHelpTextBuf->append("'z'  Zoom out");
+	gHelpTextBuf->append("'x'    Zoom in\n");
+	gHelpTextBuf->append("'z'    Zoom out");
+	gHelpTextBuf->append("SPACE  Reset view");
 }
 
 int

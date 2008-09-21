@@ -11,11 +11,11 @@ OPTFLAGS=-g
 TARGET=rockenfield
 
 EXTRA_DEF=-DENABLE_THREADING
-#EXTRA_DEF=
+# EXTRA_DEF=
 
 # If you have libpng, use those settings.
 DEFINES=$(EXTRA_DEF) -DWITH_PNG -I.
-PNGLIBS=-L/sw/lib -lpng -lz
+PNGLIBS=-L/opt/local/lib -lpng -lz
 # if you haven't libpng, use those settins.
 #DEFINES=-I. $(EXTRA_DEF)
 #PNGLIBS=
