@@ -1,6 +1,6 @@
-FLCFLAGS=`fltk-config --cflags`
-FLCXXFLAGS=`fltk-config --cxxflags`
-FLLDFLAGS=`fltk-config --ldflags`
+FLCFLAGS=`fltk-config --use-images --cflags`
+FLCXXFLAGS=`fltk-config --use-images --cxxflags`
+FLLDFLAGS=`fltk-config --use-images --ldflags`
 POSTEXEC=fltk-config --post
 INSTALLDIR=/usr/local/bin
 CC=gcc
@@ -15,7 +15,7 @@ EXTRA_DEF=-DENABLE_THREADING
 
 # If you have libpng, use those settings.
 DEFINES=$(EXTRA_DEF) -DWITH_PNG -I.
-PNGLIBS=-L/opt/local/lib -lpng -lz
+#PNGLIBS=-L/sw/lib -lpng -lz
 # if you haven't libpng, use those settins.
 #DEFINES=-I. $(EXTRA_DEF)
 #PNGLIBS=
@@ -26,7 +26,7 @@ OBJS=rockenfield.o ../rgbe.o
 all: $(TARGET)
 
 $(TARGET): $(SRCS) $(OBJS)
-	$(CXX) $(DEFINES) $(FLCXXFLAGS) $(CXXFLAGS) $(OPTFLAGS) -o $(TARGET) $(OBJS) $(FLLDFLAGS)	$(PNGLIBS)
+	$(CXX) $(DEFINES) $(FLCXXFLAGS) $(CXXFLAGS) $(OPTFLAGS) -o $(TARGET) $(OBJS) $(FLLDFLAGS)
 	$(POSTEXEC) $(TARGET)
 
 install:

@@ -1,3 +1,4 @@
+# vim: set noexpandtab
 import os, sys
 
 #
@@ -24,6 +25,7 @@ opts.Add('with_jpeglib'	, 'Use jpeglib to load/save jpeg image', 0)
 opts.Add('JPEGLIB_INC_PATH'	, 'Include path to libjpeg')
 opts.Add('JPEGLIB_LIB_PATH'	, 'Lib path to libjpeg')
 opts.Add('JPEGLIB_LIB_NAME'	, 'Library name of libjpeg')
+opts.Add('X11_LIB_PATH'	, 'Lib path to libX11')
 opts.Add('LLVM_CC'	, 'LLVM C frontend')
 opts.Add('LLVM_AR'	, 'LLVM ar')
 opts.Add('LLVM_LD'	, 'LLVM ld')
@@ -111,6 +113,8 @@ byteorder = sys.byteorder
 #
 if platform == 'darwin' and byteorder == 'little':
 	env.Append(CPPDEFINES = ['__x86__'])
+	env.Append(CPPDEFINES = ['WITH_X11'])
+	env['with_x11'] = 1
 
 	if env['enable_sse'] == 1:
 		env.Append(CPPDEFINES = ['WITH_SSE'])
@@ -136,4 +140,3 @@ if env['enable_sse'] == 1:
 		env['CFLAGS'].append('-msse2')
 
 SConscript(['src/SConscript'], exports='env')
-
