@@ -5,5 +5,10 @@ src/lsh/lsh
 src/lsh/parserib.output
 src/testbed/fluid_gui.*
 src/testbed/testbed
+src/lsh/lexrib.c
+src/lsh/parserib.c
 .sconsign.dblite
 sample
+tags
+testbed
+lucillle
