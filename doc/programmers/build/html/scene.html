@@ -81,6 +81,8 @@
     <span class="n">ri_float_t</span>     <span class="n">kd</span><span class="p">;</span>                      <span class="c">/* diffuse coefficient      */</span>
     <span class="n">ri_float_t</span>     <span class="n">ks</span><span class="p">;</span>                      <span class="c">/* specular coefficient     */</span>
 
+    <span class="n">ri_light_t</span>    <span class="o">*</span><span class="n">light</span><span class="p">;</span>
+
 <span class="p">}</span> <span class="n">ri_geom_t</span><span class="p">;</span>
 </pre></div>
 <p>ポリゴンの各頂点データはインデックス形式でアクセスされる. たとえば 0 番目のポリゴンの頂点が欲しい場合は以下のようにして頂点データを取得することができる.</p>
@@ -105,11 +107,11 @@
 <ul class="simple">
 <li>エリアライト</li>
 <li>ドームライト(skylight, HDRI lighting)</li>
+<li>ディレクショナルライト(sunlight)</li>
 </ul>
-<p>ポイントライトはサポートされない.</p>
-</div>
+<p>ポイントライトはサポートされない(小さな面積を持つエリアライトで近似する).</p>
 <div class="section">
-<h2 id="id4">エリアライト<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
+<h3 id="id4">エリアライト<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
 <p>任意の三角形形状をエリアライトとして定義することができる. エリアライトを定義するジオメトリ情報は <tt class="docutils literal"><span class="pre">ri_geom_t</span></tt> と共通である. エリアライトの光源色は一定である.ポリゴンごとに設定することはできない.</p>
 <p>エリアライトは以下のようにプログラミングする.:</p>
 <div class="highlight"><pre><span class="n">ri_geom_t</span>  <span class="o">*</span><span class="n">geom</span>  <span class="o">=</span> <span class="n">ri_geom_new</span><span class="p">();</span>
@@ -122,8 +124,13 @@
 </pre></div>
 </div>
 <div class="section">
-<h2 id="id5">ドームライト<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h2>
+<h3 id="id5">ドームライト<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h3>
 <p>ドームライトは無限遠にある全球状のライトである. スカイライトや HDRI ライティング(テクスチャを光源とみなす手法)を行うのに適している.</p>
+</div>
+<div class="section">
+<h3 id="id6">ディレクショナルライト<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h3>
+<p>無限の遠くにあり、方向性のみを持つライト. sunlight(太陽光)に使われる.</p>
+</div>
 </div>
 </div>
 

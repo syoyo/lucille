@@ -150,6 +150,7 @@ ri_render_init()
 #endif
 
     ri_display_drv_t *hdr_drv  = NULL;
+    ri_display_drv_t *file_drv = NULL;
     ri_display_drv_t *sock_drv = NULL;
 
     if ( initialized ) {
@@ -225,9 +226,20 @@ ri_render_init()
     hdr_drv->progress = hdr_dd_progress;
     hdr_drv->name     = strdup( "hdr" );
     hdr_drv->info     =
-        strdup( "Save the image as a Radiance .hdr format(HDR)" );
+        strdup( "Save the image as a Radiance .hdr format(HDR) file" );
     ri_render_register_display_drv( grender, "hdr", hdr_drv );
-    ri_render_register_display_drv( grender, RI_FILE, hdr_drv );
+
+    file_drv           = ( ri_display_drv_t * )
+                ri_mem_alloc( sizeof( ri_display_drv_t ) );
+    file_drv->open     = hdr_dd_open;
+    file_drv->write    = hdr_dd_write;
+    file_drv->close    = hdr_dd_close;
+    file_drv->progress = hdr_dd_progress;
+    file_drv->name     = strdup( "file" );
+    file_drv->info     =
+        strdup( "Alias to \"hdr\" display driver" );
+    ri_render_register_display_drv( grender, RI_FILE, file_drv );
+
 
     sock_drv           = ( ri_display_drv_t * )
                 ri_mem_alloc( sizeof( ri_display_drv_t ) );
