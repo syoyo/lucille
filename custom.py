@@ -70,3 +70,5 @@ with_jpeglib = 1
 JPEGLIB_INC_PATH = '/usr/local/include'
 JPEGLIB_LIB_PATH = '/usr/local/lib'
 JPEGLIB_LIB_NAME = 'jpeg'
+
+X11_LIB_PATH = '/usr/X11/lib'

@@ -117,6 +117,9 @@ libPath=['../base', '../display', '../transport', '../imageio', '../render', '..
 if env['with_jpeglib']:
 	libs.append([env['JPEGLIB_LIB_NAME']]) 
 
+if env['with_x11']:
+	libPath.append([env['X11_LIB_PATH']])
+	libs.append('X11')
 
 env['CPPPATH'].append(incPath)
 env['LIBPATH'].append(libPath)
