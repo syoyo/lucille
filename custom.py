@@ -25,7 +25,7 @@ custom_cxxflags = [ '-g', '-W', '-Wall']
 build_target = 'debug'
 
 #
-# SSE option.
+# SSE option. default = 1
 #
 enable_sse = 1
 
@@ -33,9 +33,9 @@ enable_sse = 1
 # Specify floating point precision.
 #
 # 0 : use float
-# 1 : use double
+# 1 : use double(default)
 #
-use_double = 0
+use_double = 1
 
 #
 # LLVM settings
@@ -51,7 +51,6 @@ LLVM_LINK   = 'llvm-ld'
 # 64bit
 #
 enable_64bit = 0
-
 
 
 #

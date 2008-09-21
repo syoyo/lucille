@@ -50,3 +50,7 @@ progName='lsh'
 lsh = env.Program(progName, srcs + p + l,
             CPPPATH=incPath, LIBS=libs, LIBPATH=libPath)
 
+
+env.Install("../../bin", lsh)
+env.Alias('install', "../../bin")
+

@@ -6,7 +6,7 @@ Import('env')
 env = env.Clone()
 
 
-prog_name='lucille'
+prog_name='lucile'
 srcs=Split("""
 main.cpp
 """)
@@ -68,7 +68,7 @@ def ParseConfig(env,command,options):
 ParseConfig(env, "fltk-config", "--use-gl --cxxflags")
 ParseConfig(env, "fltk-config", "--use-gl --ldflags")
 
-target = "lucillle"
+target = "lucille"
 fltk_post_cmd = "fltk-config --post " + target
 env['LINKCOM'] += " ; " + fltk_post_cmd
 
