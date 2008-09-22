@@ -6,6 +6,8 @@
 custom_cflags   = [ '-g', '-W', '-Wall']
 custom_cxxflags = [ '-g', '-W', '-Wall']
 
+install_prefix  = '/usr/local'
+
 #
 # OpenMPI support(TODO)
 #

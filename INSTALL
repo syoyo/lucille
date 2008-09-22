@@ -3,14 +3,14 @@ INSTALL
 
   0. Requrement.
   
-    To build lucille, you'll need tools below.
+    To build lucille, you'll need follwing tools.
   
     - python ( for scons )
-    - scons ( http://www.scons.org/ )
+    - scons > 1.0 ( http://www.scons.org/ )
     - flex
     - bison
     - gcc > 4.0 (If you use gcc)
-    - cunit(Optional. Used for unit testing. http://cunit.sourceforge.net/ )
+    - cunit ( Optional. Used for unit testing. http://cunit.sourceforge.net/ )
   
   
   1. build
@@ -26,6 +26,17 @@ INSTALL
 
 
     After the build successes, lsh(renderer program) is located at
-    src/lsh.
+    bin/lsh.
+
+
+  2. intall
+
+    If you want install built lucille binaries and libraries into system
+    directory, type following command.
+
+    $ sudo scons --prefix=/PATH/TO/INSTALL
+
+    Binaries are installed into /PATH/TO/INTALL/bin, libraries are installed
+    into /PATH/TO/INSTALL/lib
 
 

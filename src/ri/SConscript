@@ -1,3 +1,5 @@
+import os
+
 srcs=Split("""
 apitable.c
 attribute.c
@@ -19,4 +21,15 @@ Import('env')
 incPath=['../base', '../transport', '../render', '../ri', '../../include']
 libName='riri'
 
-env.Library(libName, srcs, CPPPATH=incPath)
+l = env.Library(libName, srcs, CPPPATH=incPath)
+
+if env['PREFIX'] == None:
+  # install locally
+  install_libdir = "../../lib"
+else:
+  install_libdir = os.path.join(env['PREFIX'], "lib")
+
+install_lib = env.Install(install_libdir, l)
+
+Default(install_lib)
+

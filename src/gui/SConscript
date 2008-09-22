@@ -1,12 +1,11 @@
 import os, sys
 
-
 Import('env')
 
 env = env.Clone()
 
 
-prog_name='lucile'
+prog_name='lucille'
 srcs=Split("""
 main.cpp
 """)
@@ -74,3 +73,12 @@ env['LINKCOM'] += " ; " + fltk_post_cmd
 
 luc = env.Program(prog_name, srcs)
 
+if env['PREFIX'] == None:
+  # install locally
+  install_bindir = "../../bin"
+else:
+  install_bindir = os.path.join(env['PREFIX'], "bin")
+
+install_bin = env.Install(install_bindir, luc)
+
+Default(install_bin)

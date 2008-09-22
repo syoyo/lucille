@@ -53,7 +53,12 @@ progName='lsh'
 lsh = env.Program(progName, srcs + p + l,
             CPPPATH=incPath, LIBS=libs, LIBPATH=libPath)
 
+if env['PREFIX'] == None:
+  # install locally
+  install_bindir = "../../bin"
+else:
+  install_bindir = os.path.join(env['PREFIX'], "bin")
 
-env.Install("../../bin", lsh)
-env.Alias('install', "../../bin")
+install_bin = env.Install(install_bindir, lsh)
 
+Default(install_bin)

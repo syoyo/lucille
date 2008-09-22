@@ -32,6 +32,16 @@ opts.Add('LLVM_LD'	, 'LLVM ld')
 opts.Add('LLVM_RANLIB'	, 'LLVM ranlib')
 opts.Add('LLVM_LINK'	, 'LLVM link')
 
+# Installer options
+opts.Add('install_prefix'	, 'Prefix to install dir')
+
+AddOption('--prefix',
+          dest='prefix',
+          type='string',
+          nargs=1,
+          action='store',
+          metavar='DIR',
+          help='installation prefix')
 
 #
 # path
@@ -42,7 +52,7 @@ path = os.environ['PATH']
 #
 # Get env
 #
-env = Environment(options = opts, ENV= {'PATH' : path})
+env = Environment(options = opts, ENV={'PATH' : path}, PREFIX = GetOption('prefix'))
 
 #
 # Add custom CFLAGS

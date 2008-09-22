@@ -1,3 +1,5 @@
+import os
+
 srcs=Split("""
 framebufferdrv.c
 hdrdrv.c
@@ -12,4 +14,15 @@ Import('env')
 incPath=['../base', '../ri', '../imageio', '../../include']
 libName='ridisplay'
 
-env.Library(libName, srcs, CPPPATH=incPath)
+l = env.Library(libName, srcs, CPPPATH=incPath)
+
+if env['PREFIX'] == None:
+  # install locally
+  install_libdir = "../../lib"
+else:
+  install_libdir = os.path.join(env['PREFIX'], "lib")
+
+install_lib = env.Install(install_libdir, l)
+
+Default(install_lib)
+

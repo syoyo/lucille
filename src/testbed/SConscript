@@ -127,3 +127,13 @@ env['LIBPATH'].append(libPath)
 env['LIBS'].append(libs)
 
 targetbin = env.Program(target, srcs)
+
+if env['PREFIX'] == None:
+  # install locally
+  install_bindir = "../../bin"
+else:
+  install_bindir = os.path.join(env['PREFIX'], "bin")
+
+install_bin = env.Install(install_bindir, targetbin)
+
+Default(install_bin)

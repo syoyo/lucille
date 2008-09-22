@@ -1,3 +1,5 @@
+import os
+
 srcs=Split("""
 accel.c
 beam.c
@@ -39,13 +41,19 @@ ugrid.c
 zorder2d.c
 """)
 
-
-# TO BE removed
-# sis.c
-
 Import('env')
 
 incPath=['../base', '../imageio', '../transport', '../display', '../render', '../ri', '../../include']
 libName='rirender'
 
-env.Library(libName, srcs, CPPPATH=incPath)
+l = env.Library(libName, srcs, CPPPATH=incPath)
+
+if env['PREFIX'] == None:
+  # install locally
+  install_libdir = "../../lib"
+else:
+  install_libdir = os.path.join(env['PREFIX'], "lib")
+
+install_lib = env.Install(install_libdir, l)
+
+Default(install_lib)

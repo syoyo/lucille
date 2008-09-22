@@ -1,3 +1,5 @@
+import os
+
 srcs=Split("""
 array.c
 dlload.c
@@ -25,4 +27,15 @@ Import('env')
 incPath=['../ri', '../../include']
 libName='ribase'
 
-env.Library(libName, srcs, CPPPATH=incPath)
+l = env.Library(libName, srcs, CPPPATH=incPath)
+
+if env['PREFIX'] == None:
+  # install locally
+  install_libdir = "../../lib"
+else:
+  install_libdir = os.path.join(env['PREFIX'], "lib")
+
+install_lib = env.Install(install_libdir, l)
+
+Default(install_lib)
+
