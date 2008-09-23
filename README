@@ -18,7 +18,13 @@
 	- Mac OS-X
 	- Linux( x86 )
 	- Windows
-	
+
+ information:
+        - home page
+          http://lucille.sourceforge.net/
+
+        - project management
+          http://redmine.s21g.com/projects/show/lucille
 
  copyright:
 	- 2003-2203 Syoyo FUJITA( syoyo@lucillerender.org )
