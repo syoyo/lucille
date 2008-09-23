@@ -13,8 +13,6 @@ libName='ritransport'
 
 l = env.Library(libName, srcs, CPPPATH=incPath)
 
-install_libdir = os.path.join(env['install_prefix'], "lib")
-
 if env['PREFIX'] == None:
   # install locally
   install_libdir = "../../lib"

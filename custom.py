@@ -6,8 +6,6 @@
 custom_cflags   = [ '-g', '-W', '-Wall']
 custom_cxxflags = [ '-g', '-W', '-Wall']
 
-install_prefix  = '/usr/local'
-
 #
 # OpenMPI support(TODO)
 #
@@ -72,4 +70,8 @@ JPEGLIB_INC_PATH = '/usr/local/include'
 JPEGLIB_LIB_PATH = '/usr/local/lib'
 JPEGLIB_LIB_NAME = 'jpeg'
 
+#
+# Use X11?
+#
+with_x11 = 0
 X11_LIB_PATH = '/usr/X11/lib'
