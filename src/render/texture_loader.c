@@ -155,15 +155,29 @@ ri_texture_load(const char *filename)
         return p;
     }
 
-    if (!ri_option_find_file(fullpath,
-                             ri_render_get()->context->option,
-                             filename)) {
-        ri_log(LOG_FATAL, "Can't find textue file \"%s\"", filename);
-        ri_log(LOG_FATAL, "Searched following pathes.");
-        ri_option_show_searchpath(ri_render_get()->context->option);
-        exit(-1);
-    }
+    if (ri_render_get() == NULL) {
+
+        /* The function is called before the renderer is initialized.
+         * Disable file search.
+         */
+
+        ri_log(LOG_WARN, "ri_texture_load was called before initializing the renderer. Finding a texture file from search path is disabled.\n");
+
+        strcpy(fullpath, filename);
     
+    } else {
+
+        if (!ri_option_find_file(fullpath,
+                                 ri_render_get()->context->option,
+                                 filename)) {
+            ri_log(LOG_FATAL, "Can't find textue file \"%s\"", filename);
+            ri_log(LOG_FATAL, "Searched following pathes.");
+            ri_option_show_searchpath(ri_render_get()->context->option);
+            exit(-1);
+        }
+    
+    }
+
     {
         unsigned int  width;
         unsigned int  height;
