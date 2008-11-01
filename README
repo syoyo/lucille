@@ -8,7 +8,6 @@
 
  features:
 	- Monte Carlo ray tracing
-	- Photon mapping
 	- Supports RIB( The RenderMan(R) Interface Bytestream ) file format
 	- RenderMan Shading Language( limited and experimental )
 	- Parallel Rendering( with MPI )
@@ -28,6 +27,12 @@
 
  copyright:
 	- 2003-2203 Syoyo FUJITA( syoyo@lucillerender.org )
+
+
+ For more details on lucille, see doc direcotry and INSTALL file.
+
+
+
 
 
 
