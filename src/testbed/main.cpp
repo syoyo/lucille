@@ -7,7 +7,10 @@
 
 #include "bvh.h"
 #include "render.h"
+#include "texture.h"
+#include "IBLSampler.h"
 
+ri_texture_t *iblmap;
 
 GLMmodel *
 loadObj(const char *name)
@@ -75,6 +78,19 @@ main(int argc, char **argv)
 
     const char *defname = "plane.obj";
     const char *filename;
+    const char *iblmapname = "grace_probe.hdr";
+
+    
+    ri_intersection_state_t *state;
+    sample_ibl(iblmap, state);
+
+    exit(0);
+
+    iblmap = ri_texture_load(iblmapname);
+    if (iblmap == NULL) {
+        printf("can't load map [ %s ] \n", iblmapname);
+        exit(0);
+    } 
 
     filename = defname;
     if (argc > 1) {

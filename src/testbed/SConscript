@@ -97,11 +97,13 @@ fluid_gui.cpp
 main.cpp
 trackball.cpp
 GLView.cpp
+HDRImageView.cpp
 glm.cpp
 controller.cpp
 BVHVisualizer.cpp
 simplerender.cpp
 timer.c
+IBLSampler.c
 """)
 
 target = "testbed"
