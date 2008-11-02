@@ -382,14 +382,14 @@ ri_beam_set(
     /*
      * Find dominant plane. Use dir[0]
      */
-    maxval        = dir[0][0];
+    maxval        = fabs(dir[0][0]);
     dominant_axis = 0;
-    if ( (maxval < dir[0][1]) ) {
-        maxval        = dir[0][0];
+    if ( (maxval < fabs(dir[0][1])) ) {
+        maxval        = fabs(dir[0][0]);
         dominant_axis = 1;
     }
-    if ( (maxval < dir[0][2]) ) {
-        maxval        = dir[0][2];
+    if ( (maxval < fabs(dir[0][2])) ) {
+        maxval        = fabs(dir[0][2]);
         dominant_axis = 2;
     }
          
@@ -458,6 +458,8 @@ ri_beam_set(
     vcross( beam->normal[1], beam->dir[2], beam->dir[1] );
     vcross( beam->normal[2], beam->dir[3], beam->dir[2] );
     vcross( beam->normal[3], beam->dir[0], beam->dir[3] );
+
+    beam->is_tetrahedron = 0;
 
     return 0;   /* OK   */
 }
@@ -597,6 +599,7 @@ void ri_beam_clip_by_triangle2d(
     }
 #endif
 
+
     /*
      * subdivide outer beam.
      */
@@ -612,7 +615,10 @@ void ri_beam_clip_by_triangle2d(
             /*
              * TODO: Employ sophisticated polygon subdivision.
              */
-            assert( outer_len[i] < 6 );
+            if (outer_len[i] >= 8) {
+                printf("outer_len[%d] = %d\n", i, outer_len[i]);
+            }
+            assert( outer_len[i] < 8 );
 
             if (outer_len[i] == 5) {
 
