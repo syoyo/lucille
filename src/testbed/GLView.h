@@ -23,7 +23,7 @@ class GLView : public Fl_Gl_Window {
 
         viewOrg[0]    =   0.0f;
         viewOrg[1]    =   0.0f;
-        viewOrg[2]    =  10.0f;
+        viewOrg[2]    =   5.0f;
 
         viewTarget[0] =   0.0f;
         viewTarget[1] =   0.0f;
@@ -32,6 +32,8 @@ class GLView : public Fl_Gl_Window {
         sceneScale    =   1.0f;
 
         trackball( currQuat, 0.0, 0.0, 0.0, 0.0 );
+
+        rotX = 0.0f; rotY = 0.0f;
 
         bvhVisualizer = new BVHVisualizer();
 
@@ -62,6 +64,8 @@ class GLView : public Fl_Gl_Window {
     int            mouseX, mouseY;
     int            pressed;
     int            pressedButton;
+
+    float          rotX, rotY;
   
     unsigned char *image;
     float         *floatImage;

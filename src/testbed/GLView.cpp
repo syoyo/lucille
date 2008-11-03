@@ -186,6 +186,7 @@ GLView::handle(int e)
 
                 if (this->pressedButton == FL_LEFT_MOUSE) {
 
+#if 1
                     trackball(this->prevQuat,
                               t * (2.0 * mx - w()) / (float)w(),
                               t * (h() - 2.0 * my) / (float)h(),
@@ -193,6 +194,11 @@ GLView::handle(int e)
                               t * (h() - 2.0 * y)  / (float)h());
 
                     add_quats(this->prevQuat, this->currQuat, this->currQuat);
+#else
+                    rotX += (float)(x - mx);
+                    //rotY += t * (h() - 2.0 * (y - my)) / (float)h();
+#endif
+                    
 
 
                 } else if (this->pressedButton == FL_MIDDLE_MOUSE) {
@@ -340,8 +346,13 @@ GLView::draw()
                   this->viewTarget[0], this->viewTarget[1], this->viewTarget[2],
                   0.0, 1.0, 0.0);
 
+#if 1
         build_rotmatrix(mat, this->currQuat);
         glMultMatrixf(&mat[0][0]);
+#else
+        glRotatef(rotX, 0.0f, 1.0f, 0.0f);
+        glRotatef(rotY, 1.0f, 0.0f, 0.0f);
+#endif
 
         glPushMatrix();
 
@@ -412,7 +423,16 @@ GLView::getView( float eye[4], float lookat[4], float up[4] )
     float m[4][4];
     float localUp[4] = { 0.0f, 1.0f, 0.0f, 1.0f };
 
+#if 1
     build_rotmatrix(m, this->currQuat);
+#else
+    glPushMatrix();
+    glLoadIdentity();
+    glRotatef(rotX, 0.0f, 1.0f, 0.0f);
+    glRotatef(rotY, 1.0f, 0.0f, 0.0f);
+    glGetFloatv(GL_MODELVIEW_MATRIX, (GLfloat *)m);
+    glPopMatrix();
+#endif
 
     float localEye[4];
     float localTarget[4];
@@ -562,6 +582,7 @@ GLView::renderImage()
     vec   veye, vlookat, vup;
 
     printf("[render] renderImage()\n");
+
 
     this->getView( eye, lookat, up );
 

@@ -118,8 +118,8 @@ main(int argc, char **argv)
         maxscale = scale[2];
     }
 
-    guiGLView->viewOrg[2] = -2.0 * maxscale;
-    guiGLView->sceneScale = -2.0 * maxscale;
+    guiGLView->viewOrg[2] = -1.0 * maxscale;
+    guiGLView->sceneScale = -1.0 * maxscale;
 
     paramWindow->show();
     mainWindow->show();

@@ -243,6 +243,10 @@ render_beam_adaptive(
         beamdir,
         corner, du, dv,
         (float)beamsize, s, t);
+
+    for (i = 0; i < 4; i++) {
+        printf("beamdir[%d] = %f, %f, %f\n", i, beamdir[i][0], beamdir[i][1], beamdir[i][2]);
+    }
                 
     invalid = ri_beam_set( &beam, eye, beamdir );
 
@@ -262,7 +266,7 @@ render_beam_adaptive(
     stat = ri_bvh_intersect_beam_visibility(
                 (void *)bvh, &beam, &diag);
 
-    printf("stat(%d, %d) = %d\n", i, j, stat);
+    printf("stat = %d\n", stat);
 
     if (stat == RI_BEAM_HIT_PARTIALLY) {
 
@@ -300,7 +304,11 @@ render_beam_adaptive(
         radiance[0] = 1.0;
         radiance[1] = 1.0;
         radiance[2] = 1.0;
-    } else {
+    } else if (stat == -1) {
+        radiance[0] = 0.0;
+        radiance[1] = 1.0;
+        radiance[2] = 1.0;
+    } else { 
         radiance[0] = 0.0;
         radiance[1] = 0.0;
         radiance[2] = 1.0;
