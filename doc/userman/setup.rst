@@ -5,6 +5,7 @@ lucille インストール
 ====================
 
 ここでは、lucille をソースパッケージからインストールする手順を解説します.
+バイナリパッケージでインストールしている場合には以下の手順を行う必要はありません.
 
 依存ライブラリ
 ==============
@@ -51,9 +52,9 @@ libzlib があると、圧縮ファイルや圧縮テクスチャを扱うこと
 ソースディレクトリのトップにある ```custum.py``` を編集します.
 
 * build_target : ビルドターゲットを指定します. ``debug``, ``release``, ``speed`` から選択します.
-* enable_sse : SSE 命令を使うかどうか指定します.
-* use_double : double 精度で演算を行うかどうか指定します.
-* enable_64bit : 64bit バイナリを生成するかどうか指定します.
+* enable_sse : SSE 命令を使うかどうか指定します. デフォルトは 1 です.
+* use_double : double 精度で演算を行うかどうか指定します. デフォルトは 1 です.
+* enable_64bit : 64bit バイナリを生成するかどうか指定します. デフォルトは 0 です.
 * with_zlib : 圧縮ファイルをサポートします. 有効にした場合は、ZLIB_LIC_PATH, ZLIB_LIBPATH, ZLIB_LIB_NAME で zlib のライブラリパスなどを指定できます.
 * with_jpeglib : jpeg ファイルをサポートします. 有効にした場合は、JPEGLIB_LIC_PATH, JPEGLIB_LIBPATH, JPEGLIB_LIB_NAME で libjpeg のライブラリパスなどを指定できます.
 

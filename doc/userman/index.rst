@@ -2,20 +2,21 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to lucille user manual.'s documentation!
-================================================
+lucille ユーザマニュアル
+========================
 
 Contents:
 
 .. toctree::
    :maxdepth: 2
 
+   intro
    setup
+   tutorial
+   commands
 
-Indices and tables
+検索
 ==================
 
-* :ref:`genindex`
-* :ref:`modindex`
 * :ref:`search`
 
