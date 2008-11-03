@@ -548,6 +548,14 @@ void ri_beam_clip_by_triangle2d(
 
     idx = 1;
 
+    // DBG
+    for (i = 0; i < len; i++) {
+        printf("beam p[%d] = %f, %f\n",i,input_p[i][0], input_p[i][1]);
+    }
+    for (i = 0; i < 3; i++) {
+        printf("plane p[%d] = %f, %f\n",i,plane[i].p[0], plane[i].p[1]);
+    }
+
     for (i = 0; i < 3; i++) {
 
         inner_p      = &inner_polygon[idx][0];   /* output buf   */

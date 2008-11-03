@@ -337,7 +337,6 @@ ri_rasterize_beam(
     ri_triangle_t     *triangle)
 {
     int           i;
-    int           s, t;
     int           n;
 
     ri_vector_t   points[4];            /* Points onto the plane defined by
@@ -398,7 +397,7 @@ find_isect_pos_onto_the_triangle_plane(
     ri_vector_t e1, e2; 
     ri_vector_t p, s, q;
     ri_float_t  a, inva;
-    ri_float_t  t, u, v;
+    ri_float_t  t;
     double      eps = 1.0e-14;
 
     vcpy( v0, triangle->v[0] );

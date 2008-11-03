@@ -75,13 +75,6 @@
 #define BVH_MAXMISSBEAMS     1024
 
 /*
- * Flags for beam tracing
- */
-#define BEAM_MISS_COMPLETELY    0
-#define BEAM_HIT_COMPLETELY     1
-#define BEAM_HIT_PARTIALLY      2
-
-/*
  * Buffer for binning to compute approximated SAH 
  */
 typedef struct _bvh_bin_buffer_t {
@@ -227,6 +220,12 @@ static int bvh_traverse_beam(
           ri_beam_t               *beam,
           bvh_stack_t             *stack );     /* [buffer]             */
 
+static int bvh_traverse_beam_visibility(
+          ri_qbvh_node_t          *root,
+          ri_bvh_diag_t           *diag,        /* [modified]           */
+          ri_beam_t               *beam,
+          bvh_stack_t             *stack );     /* [buffer]             */
+
 static void project_triangles(
           ri_triangle2d_t *tri2d_out,              /* [out]                */
     const ri_triangle_t   *triangles,              /* [in]                 */
@@ -239,6 +238,9 @@ static int test_beam_aabb(
           ri_vector_t  bmin,
           ri_vector_t  bmax,
     const ri_beam_t   *beam);
+
+
+static void bvh_invalidate_cache_node( ri_qbvh_node_t *node );
 
 
 static ri_bvh_diag_t *gdiag;                    /* TODO: thread-safe    */
@@ -368,6 +370,47 @@ ri_bvh_free( void *accel )
     ri_bvh_t *bvh = (ri_bvh_t *)accel;
 
     ri_mem_free(bvh);
+}
+
+void
+bvh_invalidate_cache_node( ri_qbvh_node_t *node )
+{
+    int   i;
+    void *ptr;
+
+    if (node->is_leaf) {
+
+        for (i = 0; i < 3; i++) {   /* for each axis */
+
+            ptr = (void *)node->child[1+i];
+
+            if (ptr) {  /* 2D triangle cache was created, release it */
+
+                ri_mem_free(ptr);
+
+                node->child[1+i] = NULL;
+            }
+
+        }
+
+    } else {
+
+        for (i = 0; i < 2; i++) {
+            bvh_invalidate_cache_node(node->child[i]);
+        }
+
+    }
+
+}
+
+void
+ri_bvh_invalidate_cache( void *accel )
+{
+    assert( accel != NULL );
+
+    ri_bvh_t *bvh = (ri_bvh_t *)accel;
+
+    bvh_invalidate_cache_node(bvh->root);
 }
 
 int
@@ -521,6 +564,59 @@ ri_bvh_intersect_beam(
         // ri_intersection_state_build( state_out, ray->org, ray->dir );
     }
                         
+    return ret;
+}
+
+
+int
+ri_bvh_intersect_beam_visibility(
+    void                    *accel,
+    ri_beam_t               *beam,
+    void                    *user)
+{
+    ri_bvh_diag_t *diag_ptr;
+    ri_bvh_t      *bvh;
+
+    assert( accel      != NULL );
+    assert( beam       != NULL );
+
+    bvh = (ri_bvh_t *)accel;
+
+    if (user) {
+        diag_ptr = (ri_bvh_diag_t *)user;
+        memset( diag_ptr, 0, sizeof(ri_bvh_diag_t));
+    } else {
+        diag_ptr = NULL;
+    }
+    
+    int ret;
+
+#ifdef RI_BVH_TRACE_STATISTICS
+    g_stattrav.nbeams++;
+#endif
+
+    /*
+     * TODO: Provide indivisual stack for each thread.
+     */
+    bvh_stack_t stack;
+    stack.depth = 0;
+
+    /*
+     * Firstly check if the beam hits scene bbox.
+     */
+    int hit;
+    
+    hit = test_beam_aabb( bvh->bmin, bvh->bmax, beam );
+        
+    if (!hit) {
+        return RI_BEAM_MISS_COMPLETELY;       /* Completely misses */
+    }
+
+    ret = bvh_traverse_beam_visibility(  bvh->root,
+                                         diag_ptr, 
+                                         beam,
+                                        &stack );
+
     return ret;
 }
 
@@ -1954,7 +2050,7 @@ test_beam_triangle(
          * Beam completely misses the triangle.
          * (but there is a case that beam contains the triangle.)
          */
-        return BEAM_MISS_COMPLETELY;
+        return RI_BEAM_MISS_COMPLETELY;
 
     } else if (mask == 0xf) {
 
@@ -1965,12 +2061,12 @@ test_beam_triangle(
             t_out[i] = t[i];
         }
 
-        return BEAM_HIT_COMPLETELY;
+        return RI_BEAM_HIT_COMPLETELY;
 
     } else {
 
         /* Needs beam splitting   */
-        return BEAM_HIT_PARTIALLY;
+        return RI_BEAM_HIT_PARTIALLY;
 
     }
 
@@ -2071,6 +2167,10 @@ bvh_intersect_leaf_node_beam(
         int         j;
         int         nhit_beams;
         int         nmiss_beams;
+        int         nouter_beams;
+        int         ninner_beams;
+        ri_beam_t   outer_beams[8];
+        ri_beam_t   inner_beams[8];
         ri_beam_t   hit_beams[8];
 
         for (i = 0; i < ntriangles; i++) {
@@ -2078,7 +2178,7 @@ bvh_intersect_leaf_node_beam(
             ri_beam_clip_by_triangle2d(
                 &hit_beams[0], &g_miss_beams[0],
                 &nhit_beams, &nmiss_beams,
-                triangle2ds, beam);
+                &triangle2ds[i], beam);
 
             printf("hit beams = %d, miss beams = %d\n", nhit_beams, nmiss_beams);
 
@@ -2100,12 +2200,12 @@ bvh_intersect_leaf_node_beam(
         ret = test_beam_triangle( u, v, t, triangles + i, beam );
 
         switch (ret) {
-        case BEAM_HIT_COMPLETELY:
+        case RI_BEAM_HIT_COMPLETELY:
             printf("hit completely. tri = %d of %d\n", i, ntriangles);
             break;
 
-        case BEAM_MISS_COMPLETELY:
-        case BEAM_HIT_PARTIALLY:
+        case RI_BEAM_MISS_COMPLETELY:
+        case RI_BEAM_HIT_PARTIALLY:
             printf("miss or hit partially. tri = %d of %d\n", i, ntriangles);
 
             /* Subdivide beam.  */
@@ -2115,6 +2215,102 @@ bvh_intersect_leaf_node_beam(
             
 
     return 0;
+}
+
+
+/* Retuns one of them.
+ *
+ *   RI_BEAM_MISS_COMPLETELY
+ *   RI_BEAM_HIT_PARTIALLY
+ *   RI_BEAM_HIT_COMPLETELY
+ */
+int
+bvh_intersect_leaf_node_beam_visibility(
+    ri_qbvh_node_t          *node,
+    ri_beam_t               *beam )
+{
+    uint32_t         tid;
+    uint32_t         i;
+    uint32_t         ntriangles;
+    ri_triangle_t   *triangles;
+    ri_triangle2d_t *triangle2ds;
+
+    /*
+     * Init
+     */
+    tid    = 0;
+
+    ntriangles = *((uint32_t *)&node->bbox[0]);
+    triangles  = (ri_triangle_t *)node->child[0];
+
+    /*
+     * Firstly, check if it is the first time visiting to this node.
+     * This is determined whether child[1:3] is NULL or not.
+     * If NULL, it is the first time, so we create list of 2d projected
+     * triangles.
+     */
+    triangle2ds = (ri_triangle2d_t *)node->child[beam->dominant_axis + 1];
+    if (triangle2ds == NULL) {
+
+        printf("proj: %p, n = %d\n", &node->child[beam->dominant_axis + 1], ntriangles);
+
+        triangle2ds = ri_mem_alloc(sizeof(ri_triangle2d_t) * ntriangles);
+        
+        project_triangles( triangle2ds,
+                           triangles,
+                           ntriangles,
+                           beam->dominant_axis,
+                           beam->d,
+                           beam->org );
+
+        /*
+         * TODO: sort triangles in its projectd size.
+         */
+
+        node->child[beam->dominant_axis + 1] = (ri_qbvh_node_t *)triangle2ds;
+
+        printf("node set: %p\n", node->child[beam->dominant_axis + 1]);
+    }
+
+#ifdef RI_BVH_ENABLE_DIAGNOSTICS
+    if (gdiag) gdiag->ntriangle_isects++;
+#endif
+
+#ifdef RI_BVH_TRACE_STATISTICS
+    g_stattrav.ntested_triangles += ntriangles;
+#endif
+
+    {
+        //int         nhit_beams;
+        //int         nmiss_beams;
+        //ri_beam_t   hit_beams[8];
+
+        int         nouter_beams;
+        int         ninner_beams;
+        ri_beam_t   outer_beams[8];
+        ri_beam_t   inner_beams[8];
+
+        for (i = 0; i < ntriangles; i++) {
+
+            ri_beam_clip_by_triangle2d(
+                &outer_beams[0], &inner_beams[0],
+                &nouter_beams, &ninner_beams,
+                &triangle2ds[i], beam);
+
+            if (ninner_beams > 0) {
+                if (nouter_beams > 0) {
+                    return RI_BEAM_HIT_PARTIALLY;
+                } else {
+                    return RI_BEAM_HIT_COMPLETELY;
+                }
+            }
+        }
+
+        // The beam completely miss the obstacles.
+
+    }
+
+    return RI_BEAM_MISS_COMPLETELY;
 }
 
 /*
@@ -2216,6 +2412,106 @@ bvh_traverse_beam(
 end_traverse:
 
     return 0;
+}
+
+/*
+ * Traverse BVH with beam, just checking whether beam hits obstacles or not.
+ */
+int
+bvh_traverse_beam_visibility(
+    ri_qbvh_node_t          *root,
+    ri_bvh_diag_t           *diag,          /* [modified]   */
+    ri_beam_t               *beam,
+    bvh_stack_t             *stack )        /* [buffer]     */
+{
+
+    ri_qbvh_node_t       *node;
+    int                   ret;
+    int                   order;            /* traversal order  */
+
+    assert( root != NULL );
+
+#ifdef RI_BVH_ENABLE_DIAGNOSTICS
+    gdiag = diag;
+#endif
+
+    node = root;
+
+    while (1) {
+
+        if ( node->is_leaf ) {
+
+#ifdef RI_BVH_ENABLE_DIAGNOSTICS
+            if (gdiag) gdiag->nleaf_node_traversals++;
+#endif
+#ifdef RI_BVH_TRACE_STATISTICS
+            g_stattrav.nleaf_node_traversals++;
+#endif
+
+            ret = bvh_intersect_leaf_node_beam_visibility( node, beam );
+
+            if (RI_BEAM_HIT_PARTIALLY || RI_BEAM_HIT_COMPLETELY) {
+                /* The beam hits something. Early exit. */
+                return ret;
+            }
+
+            /* pop */
+            if (stack->depth < 1) {
+                return RI_BEAM_MISS_COMPLETELY;
+            }
+
+            stack->depth--;
+            assert(stack->depth >= 0);
+            node = stack->nodestack[stack->depth];
+
+        } else {
+
+#ifdef RI_BVH_ENABLE_DIAGNOSTICS
+            if (gdiag) gdiag->ninner_node_traversals++;
+#endif
+
+#ifdef RI_BVH_TRACE_STATISTICS
+            g_stattrav.ninner_node_traversals++;
+#endif
+
+            ret = test_beam_node( node, beam );
+
+            if (ret == 0) {
+
+                /* pop */
+                if (stack->depth < 1) {
+                    return RI_BEAM_MISS_COMPLETELY;
+                }
+
+                stack->depth--;
+                assert(stack->depth >= 0);
+                node = stack->nodestack[stack->depth];
+
+            } else if (ret == 1) {
+
+                node = node->child[0];
+
+            } else if (ret == 2) {
+
+                node = node->child[1];
+
+            } else {    /* both */
+
+                order = beam->dirsign[beam->dominant_axis];
+
+                /* push */
+                stack->nodestack[stack->depth] = node->child[1 - order];
+                stack->depth++;
+                assert( stack->depth < BVH_MAXDEPTH );
+                node = node->child[order];
+            
+            }
+
+        }
+
+    }
+    
+    return RI_BEAM_MISS_COMPLETELY;
 }
 
 /*

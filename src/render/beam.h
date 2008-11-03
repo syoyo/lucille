@@ -21,6 +21,13 @@ extern "C" {
 #include "vector.h"
 #include "geom.h"
 
+/*
+ * Flags for beam tracing
+ */
+#define RI_BEAM_MISS_COMPLETELY    0
+#define RI_BEAM_HIT_COMPLETELY     1
+#define RI_BEAM_HIT_PARTIALLY      2
+
 typedef struct _ri_triangle2d_t {
 
     ri_float_t  v[3][2];

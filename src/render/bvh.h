@@ -187,6 +187,8 @@ typedef struct _ri_bvh_t {
  */
 extern void *ri_bvh_build         (const void                    *data);
 extern void  ri_bvh_free          (      void                    *arg);
+extern void  ri_bvh_invalidate_cache
+                                  (      void                    *data);
 extern int   ri_bvh_intersect     (      void                    *accel,
                                          ri_ray_t                *ray,
                                          ri_intersection_state_t *state_out,
@@ -195,6 +197,21 @@ extern int   ri_bvh_intersect     (      void                    *accel,
 extern int   ri_bvh_intersect_beam(      void                    *accel,
                                          ri_beam_t               *beam,
                                          ri_raster_plane_t       *raster_out,
+                                         void                    *user);
+
+/*
+ * Just query whether the beam intersects some obstacles in the scene.
+ *
+ * Return value:
+ *
+ *  RI_BEAM_MISS_COMPLETELY
+ *  RI_BEAM_HIT_COMPLETELY
+ *  RI_BEAM_HIT_PARTIALLY
+ *  (Values are defined in beam.h)
+ */
+extern int   ri_bvh_intersect_beam_visibility(
+                                         void                    *accel,
+                                         ri_beam_t               *beam,
                                          void                    *user);
 
 /*
