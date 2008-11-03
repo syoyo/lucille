@@ -142,8 +142,14 @@ if platform == 'linux2' and byteorder == 'little':
 	if env['enable_sse'] == 1:
 			env.Append(CPPDEFINES = ['WITH_SSE'])
 
+#
+# Common settings for linux target.
+#
 if platform == 'linux2':
 	env.Append(CPPDEFINES = ['LINUX'])
+
+	if env['with_x11']:
+		env.Append(CPPDEFINES = ['WITH_X11'])
 
 #
 # SSE handling
