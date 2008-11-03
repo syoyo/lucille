@@ -23,7 +23,7 @@ class GLView : public Fl_Gl_Window {
 
         viewOrg[0]    =   0.0f;
         viewOrg[1]    =   0.0f;
-        viewOrg[2]    = -10.0f;
+        viewOrg[2]    =  10.0f;
 
         viewTarget[0] =   0.0f;
         viewTarget[1] =   0.0f;

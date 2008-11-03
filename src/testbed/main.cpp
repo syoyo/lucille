@@ -81,16 +81,16 @@ main(int argc, char **argv)
     const char *iblmapname = "grace_probe.hdr";
 
     
-    ri_intersection_state_t *state;
-    sample_ibl(iblmap, state);
+    // ri_intersection_state_t *state;
+    // sample_ibl(iblmap, state);
 
-    exit(0);
+    // exit(0);
 
-    iblmap = ri_texture_load(iblmapname);
-    if (iblmap == NULL) {
-        printf("can't load map [ %s ] \n", iblmapname);
-        exit(0);
-    } 
+    //iblmap = ri_texture_load(iblmapname);
+    //if (iblmap == NULL) {
+    //    printf("can't load map [ %s ] \n", iblmapname);
+    //    exit(0);
+    //} 
 
     filename = defname;
     if (argc > 1) {

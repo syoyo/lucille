@@ -250,6 +250,47 @@ GLView::restore()
 
 }
 
+static void
+drawGridPlane()
+{
+    const int   ngrids = 10;
+    int         u, v;
+
+
+    glDisable(GL_LIGHTING);
+    glColor3f(0.5f, 0.5f, 0.5f);
+
+    for (u = 0; u < ngrids + 1; u++) {
+
+        glBegin(GL_LINES);
+        glVertex3f(2.0f * (u / (float)ngrids) - 1.0f,
+                   0.0f,
+                   -1.0f);
+        glVertex3f(2.0f * (u / (float)ngrids) - 1.0f,
+                   0.0f,
+                   1.0f);
+        glEnd();
+
+    }
+
+    for (v = 0; v < ngrids + 1; v++) {
+
+        glBegin(GL_LINES);
+        glVertex3f(-1.0f,
+                   0.0f,
+                   2.0f * (v / (float)ngrids) - 1.0f);
+        glVertex3f(1.0f,
+                   0.0f,
+                   2.0f * (v / (float)ngrids) - 1.0f);
+        glEnd();
+
+    }
+
+    glEnable(GL_LIGHTING);
+
+
+}
+
 void
 GLView::draw()
 {
@@ -281,6 +322,7 @@ GLView::draw()
         glDisable(GL_DEPTH_TEST);
         glRasterPos2i(0, 0);
         glPixelZoom(1.0, 1.0);
+        printf("gldraw\n");
         glDrawPixels(this->imageWidth, this->imageHeight, GL_RGB, GL_UNSIGNED_BYTE, this->image);
 
         glMatrixMode(GL_PROJECTION);
@@ -302,6 +344,11 @@ GLView::draw()
         glMultMatrixf(&mat[0][0]);
 
         glPushMatrix();
+
+        glPushMatrix();
+        glScalef(this->sceneScale, this->sceneScale, this->sceneScale);
+        drawGridPlane();
+        glPopMatrix();
 
 #if 1
         //

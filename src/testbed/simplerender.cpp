@@ -207,6 +207,130 @@ simple_render(
 }
 
 void
+mybreak()
+{
+    printf("dbg\n");
+}
+
+void
+render_beam_adaptive(
+    ri_bvh_t *bvh,
+    float    *image,
+    int       width,
+    int       height,
+    int       beamsize,
+    vec       eye,
+    vec       corner,
+    vec       du,
+    vec       dv,
+    float     s,
+    float     t)
+{
+
+    int        i, j;
+    int        u, v;
+
+    vec        radiance;
+    vec        beamdir[4];
+
+    int                     stat;
+    int                     invalid;
+    ri_beam_t               beam;
+    ri_bvh_diag_t           diag;
+
+
+    get_beamdir(
+        beamdir,
+        corner, du, dv,
+        (float)beamsize, s, t);
+                
+    invalid = ri_beam_set( &beam, eye, beamdir );
+
+    if (invalid) {
+        radiance[0] = 1.0;
+        radiance[1] = 0.0;
+        radiance[2] = 0.0;
+        for (v = 0; v < beamsize; v++) {
+            for (u = 0; u < beamsize; u++) {
+                record_sample( image, width, height, s + u, t + v, radiance );
+            }
+        }
+        return;
+    }            
+
+
+    stat = ri_bvh_intersect_beam_visibility(
+                (void *)bvh, &beam, &diag);
+
+    printf("stat(%d, %d) = %d\n", i, j, stat);
+
+    if (stat == RI_BEAM_HIT_PARTIALLY) {
+
+        /* subdiv */
+        if (beamsize > 8) {
+
+            for (v = 0; v < 2; v++) {
+                for (u = 0; u < 2; u++) {
+
+                    render_beam_adaptive(
+                        bvh,
+                        image,
+                        width,
+                        height,
+                        beamsize / 2,
+                        eye,
+                        corner,
+                        du, dv,
+                        s + (beamsize / 2) * u, t + (beamsize / 2) * v);
+
+                }
+            }
+
+            return;
+
+        } else {
+
+            radiance[0] = 0.5;
+            radiance[1] = 0.5;
+            radiance[2] = 0.5;
+
+        }
+
+    } else if (stat == RI_BEAM_HIT_COMPLETELY) {
+        radiance[0] = 1.0;
+        radiance[1] = 1.0;
+        radiance[2] = 1.0;
+    } else {
+        radiance[0] = 0.0;
+        radiance[1] = 0.0;
+        radiance[2] = 1.0;
+    }
+
+
+    for (v = 0; v < beamsize; v++) {
+        for (u = 0; u < beamsize; u++) {
+
+            record_sample( image, width, height, s + u, t + v, radiance );
+
+        }
+    }
+
+    // write border
+    radiance[0] = 0.0;
+    radiance[1] = 1.0;
+    radiance[2] = 0.0;
+
+    for (v = 0; v < beamsize; v++) {
+        record_sample( image, width, height, s, t + v, radiance );
+    }
+
+    for (u = 0; u < beamsize; u++) {
+        record_sample( image, width, height, s + u, t, radiance );
+    }
+
+}
+
+void
 simple_render_beam(
     ri_bvh_t *bvh,
     float    *image,
@@ -232,10 +356,8 @@ simple_render_beam(
     vec        raster_frame[3];
     vec        raster_corner;
 
-    ri_float_t offset[2];
-    ri_float_t scale[2];
-
     int                     hit;
+    int                     stat;
     int                     invalid;
     ri_beam_t               beam;
     ri_raster_plane_t      *rasterplane;
@@ -256,21 +378,17 @@ simple_render_beam(
     vcpy( camera_frame[1], dv );
     vcpy( camera_frame[2], dw );
 
-#if 0
-    ri_raster_plane_setup( 
-        rasterplane,
-        width,     
-        height,     
-        camera_frame,
-        corner,
-        eye,
-        fov);
-#endif
-
     ri_bvh_clear_stat_traversal();
+
+    // MUST CALL
+    ri_bvh_invalidate_cache( (void *)bvh );
 
     for (j = 0; j < height; j += beamsize) {
         for (i = 0; i < width; i += beamsize) {
+
+            if (i == 0 && j == 0) {
+                mybreak();
+            }
 
             s = (float)i;
             t = (float)j;
@@ -296,6 +414,18 @@ simple_render_beam(
                 eye,
                 fov);
 
+            render_beam_adaptive(
+                bvh,
+                image,
+                width,
+                height,
+                beamsize,
+                eye,
+                corner,
+                du, dv,
+                s, t);
+
+#if 0
             get_beamdir(
                 beamdir,
                 corner, du, dv,
@@ -318,42 +448,25 @@ simple_render_beam(
 
 
 
-            hit = ri_bvh_intersect_beam( (void *)bvh, &beam, rasterplane, &diag );
+            stat = ri_bvh_intersect_beam_visibility(
+                        (void *)bvh, &beam, &diag);
 
-            if (hit) {
+            printf("stat(%d, %d) = %d\n", i, j, stat);
 
-                if (gvisualizeMode == VISUALIZE_NUM_TRAVERSALS) {
-                    radiance[0] = diag.ninner_node_traversals;
-                    radiance[1] = diag.ninner_node_traversals;
-                    radiance[2] = diag.ninner_node_traversals;
-                } else if (gvisualizeMode == VISUALIZE_NUM_ISECTS) {
-                    radiance[0] = diag.ntriangle_isects;
-                    radiance[1] = diag.ntriangle_isects;
-                    radiance[2] = diag.ntriangle_isects;
-                } else if (gvisualizeMode == VISUALIZE_IMAGE) {
-                    // radiance[0] = state.t;
-                    // radiance[1] = state.t;
-                    // radiance[2] = state.t;
-                    radiance[0] = 1.0;
-                    radiance[1] = 1.0;
-                    radiance[2] = 1.0;
-                }
-
+            if (stat == RI_BEAM_HIT_COMPLETELY) {
+                radiance[0] = 1.0;
+                radiance[1] = 1.0;
+                radiance[2] = 1.0;
+            } else if (stat == RI_BEAM_HIT_PARTIALLY) {
+                radiance[0] = 0.5;
+                radiance[1] = 0.5;
+                radiance[2] = 0.5;
             } else {
-
                 radiance[0] = 0.0;
                 radiance[1] = 0.0;
-                radiance[2] = 0.0;
-
+                radiance[2] = 1.0;
             }
 
-            for (v = 0; v < rasterplane->height; v++) {
-                for (u = 0; u < rasterplane->width; u++) {
-                    if (rasterplane->t[v * rasterplane->width + u] > 0.0) {
-                        printf("raster[%d][%d] = %f\n", u, v, rasterplane->t[v * rasterplane->width + u]);
-                    }
-                }
-            }
 
             for (v = 0; v < beamsize; v++) {
                 for (u = 0; u < beamsize; u++) {
@@ -362,6 +475,22 @@ simple_render_beam(
 
                 }
             }
+
+            // write border
+            radiance[0] = 0.0;
+            radiance[1] = 1.0;
+            radiance[2] = 0.0;
+            for (v = 0; v < beamsize; v++) {
+
+                record_sample( image, width, height, s, t + v, radiance );
+
+            }
+            for (u = 0; u < beamsize; u++) {
+
+                record_sample( image, width, height, s + u, t, radiance );
+
+            }
+#endif
 
         }
     }
