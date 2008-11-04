@@ -2244,6 +2244,8 @@ bvh_intersect_leaf_node_beam_visibility(
     ntriangles = *((uint32_t *)&node->bbox[0]);
     triangles  = (ri_triangle_t *)node->child[0];
 
+#if 0   // TODO: remove
+
     /*
      * Firstly, check if it is the first time visiting to this node.
      * This is determined whether child[1:3] is NULL or not.
@@ -2272,6 +2274,7 @@ bvh_intersect_leaf_node_beam_visibility(
 
         printf("node set: %p\n", node->child[beam->dominant_axis + 1]);
     }
+#endif
 
 #ifdef RI_BVH_ENABLE_DIAGNOSTICS
     if (gdiag) gdiag->ntriangle_isects++;
@@ -2282,17 +2285,33 @@ bvh_intersect_leaf_node_beam_visibility(
 #endif
 
     {
-        //int         nhit_beams;
-        //int         nmiss_beams;
-        //ri_beam_t   hit_beams[8];
 
+        int             ret;
+        ri_vector_t     u;
+        ri_vector_t     v;
+        ri_vector_t     t;
+        
+#if 0    
         int         nouter_beams;
         int         ninner_beams;
         ri_beam_t   outer_beams[8];
         ri_beam_t   inner_beams[8];
+#endif
 
         for (i = 0; i < ntriangles; i++) {
 
+            ret = test_beam_triangle(
+                        u, v, t,
+                        &triangles[i],
+                        beam);
+
+            if ((ret == RI_BEAM_HIT_COMPLETELY) ||
+                (ret == RI_BEAM_HIT_PARTIALLY)) {
+                return ret;
+            }
+
+                
+#if 0
             ri_beam_clip_by_triangle2d(
                 &outer_beams[0], &inner_beams[0],
                 &nouter_beams, &ninner_beams,
@@ -2305,6 +2324,7 @@ bvh_intersect_leaf_node_beam_visibility(
                     return RI_BEAM_HIT_COMPLETELY;
                 }
             }
+#endif
         }
 
         // The beam completely miss the obstacles.
@@ -2518,7 +2538,8 @@ bvh_traverse_beam_visibility(
 /*
  * Project vertices of triangle onto axis-aligned plane.
  */
-static void project_triangles(
+void
+project_triangles(
           ri_triangle2d_t *tri2d_out,      /* [out]                */
     const ri_triangle_t   *triangles,      /* [in]                 */
           uint32_t         ntriangles,
