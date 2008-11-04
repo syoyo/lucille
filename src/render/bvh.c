@@ -609,7 +609,8 @@ ri_bvh_intersect_beam_visibility(
     hit = test_beam_aabb( bvh->bmin, bvh->bmax, beam );
         
     if (!hit) {
-        return RI_BEAM_MISS_COMPLETELY;       /* Completely misses */
+        //return RI_BEAM_MISS_COMPLETELY;       /* Completely misses */
+        return -1;       /* Completely misses */
     }
 
     ret = bvh_traverse_beam_visibility(  bvh->root,
@@ -2568,10 +2569,17 @@ static void project_triangles(
                 k = 0.0;
             }
 
-            tri2d_out[i].v[j][0] = org[uv[axis][0]] + k * vo[uv[axis][0]];
-            tri2d_out[i].v[j][1] = org[uv[axis][1]] + k * vo[uv[axis][1]];
+            //tri2d_out[i].v[j][0] = org[uv[axis][0]] + k * vo[uv[axis][0]];
+            //tri2d_out[i].v[j][1] = org[uv[axis][1]] + k * vo[uv[axis][1]];
+            tri2d_out[i].v[j][0] = k * triangles[i].v[j][uv[axis][0]];
+            tri2d_out[i].v[j][1] = k * triangles[i].v[j][uv[axis][1]];
 
-            printf("tri[%d] v[%d] = %f, %f\n",  i, j,
+            printf("tri[%d] v[%d] = %f, %f, %f\n",  i, j,
+                triangles[i].v[j][0],
+                triangles[i].v[j][1],
+                triangles[i].v[j][2]);
+
+            printf("tri[%d] pv[%d] = %f, %f\n",  i, j,
                 tri2d_out[i].v[j][0],
                 tri2d_out[i].v[j][1]);
         }
