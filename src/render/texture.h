@@ -16,15 +16,28 @@ extern "C" {
 #define MAPPING_ANGULAR_MAP
 #define MAPPING_LATLONG
 
+#define RI_MAX_MIPMAP_SIZE 16           /* Up to 65536x65536                */
+
 typedef struct _ri_texture_t
 {
-    float         *data;                /* texel is strictly fp32 value. */
+    float         *data;                /* texel is strictly fp32 value.    */
     int            width, height; 
     int            maxsize_pow2n;       /* nearest 2^n value of
                                          * width or height.
                                          */
-    int            mapping;             /* mapping method for IBL */
+    int            mapping;             /* mapping method for IBL           */
 } ri_texture_t;
+
+typedef struct _ri_mipmap_t
+{
+    int         nlevels;
+
+    int         width[RI_MAX_MIPMAP_SIZE];
+    int         height[RI_MAX_MIPMAP_SIZE];
+
+    float      *data[RI_MAX_MIPMAP_SIZE];
+
+} ri_mipmap_t;
 
 typedef struct _ri_rawtexture_t
 {
@@ -52,6 +65,10 @@ extern void          ri_texture_ibl_fetch(
 
 extern void          ri_texture_scale(ri_texture_t *texture,
                                       ri_float_t scale);
+
+extern ri_mipmap_t  *ri_texture_make_mipmap(
+                                      const ri_texture_t *texture);
+                        
 
 #ifdef __cplusplus
 }    /* extern "C" */

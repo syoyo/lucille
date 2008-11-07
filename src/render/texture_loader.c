@@ -356,6 +356,107 @@ make_texture(ri_rawtexture_t *rawtex)
     
 }
 
+//
+// Simple 2x2 -> 1x1 minification.
+// TODO: Add sophisticated filtering when calculating mipmap.
+//
+static void gen_mipmap(float *dst, float *src, int srcw, int srch)
+{
+    
+    int k;
+    int w, h;
+    int dstw, dsth;
+
+    dstw = srcw / 2;
+    dsth = srch / 2;
+
+    ri_float_t val[4];
+
+    for (h = 0; h < dsth; h++) {
+        for (w = 0; w < dstw; w++) {
+            for (k = 0; k < 3; k++) {   /* RGB */
+                val[0] = src[3 * ((2 * h + 0) * srcw + (2 * w + 0)) + k];
+                val[1] = src[3 * ((2 * h + 0) * srcw + (2 * w + 1)) + k];
+                val[2] = src[3 * ((2 * h + 1) * srcw + (2 * w + 0)) + k];
+                val[3] = src[3 * ((2 * h + 1) * srcw + (2 * w + 1)) + k];
+
+                dst[3 * (h * dstw + w) + k] =
+                    0.25 * (val[0] + val[1] + val[2] + val[3]);
+            }
+        }
+    }
+
+
+}
+
+ri_mipmap_t *
+ri_texture_make_mipmap(
+    const ri_texture_t *texture)
+{
+    int max_size;
+    int nlevels;
+
+    ri_mipmap_t *mipmap;
+
+    if (texture->width > texture->height) {
+        max_size = texture->width;
+    } else {
+        max_size = texture->height;
+    }
+
+    /*
+     * 1. Calculate the number of mipmap levels.
+     */
+    {
+        int size     = max_size;
+        nlevels      = 0;
+
+        while (size < 2) {
+            nlevels++;
+            size /= 2;
+        }
+    }
+
+    assert(nlevels < RI_MAX_MIPMAP_SIZE);
+
+    /*
+     * 2. Calculate mipmaps
+     */
+    {
+        int      i;
+        int      w, h;
+        float   *src;
+
+        mipmap  = (ri_mipmap_t *)ri_mem_alloc(sizeof(ri_mipmap_t));
+        w       = texture->width;
+        h       = texture->height;
+
+        mipmap->width[0]    = w;
+        mipmap->height[0]   = h;
+        mipmap->data[0]     = ri_mem_alloc(sizeof(float) * w * h * 3);
+        memcpy(&mipmap->data[0], texture->data, sizeof(float) * w * h * 3);
+
+        for (i = 1; i < nlevels; i++) {
+
+            w /= 2; h /= 2;
+
+            mipmap->width[i]    = w;
+            mipmap->height[i]   = h;
+            mipmap->data[i]     = ri_mem_alloc(sizeof(float) * w * h * 3);
+
+            src = mipmap->data[i-1];
+
+            gen_mipmap(mipmap->data[i], src, w, h);
+
+        }
+
+    }
+
+    return mipmap;
+
+}
+    
+
 #if 0   // TODO
 // Generate blocked mipmap from raw texture map.
 // TODO: implement.
