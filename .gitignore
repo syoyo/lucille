@@ -7,6 +7,7 @@ src/testbed/fluid_gui.*
 src/testbed/testbed
 src/lsh/lexrib.c
 src/lsh/parserib.c
+src/lsh/parserib.h
 .sconsign.dblite
 sample
 tags
