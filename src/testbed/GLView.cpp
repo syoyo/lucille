@@ -164,6 +164,11 @@ GLView::handle(int e)
                 this->pressedButton = FL_MIDDLE_MOUSE;
             }
 
+            // Control + L mouse -> R mouse
+            if ( (state & FL_CTRL) && (this->pressedButton == FL_LEFT_MOUSE) ) {
+                this->pressedButton = FL_RIGHT_MOUSE;
+            }
+
             this->mouseX = Fl::event_x();
             this->mouseY = Fl::event_y();
 

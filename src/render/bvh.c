@@ -609,7 +609,8 @@ ri_bvh_intersect_beam_visibility(
     hit = test_beam_aabb( bvh->bmin, bvh->bmax, beam );
         
     if (!hit) {
-        return RI_BEAM_MISS_COMPLETELY;       /* Completely misses */
+        //return RI_BEAM_MISS_COMPLETELY;       /* Completely misses */
+        return -1;       /* Completely misses */
     }
 
     ret = bvh_traverse_beam_visibility(  bvh->root,
@@ -1992,8 +1993,8 @@ test_beam_triangle(
 {
 
     int         i;
-
     int         mask;
+    int         cnt;
     ri_float_t  u[4], v[4], t[4];
 
     ri_vector_t v0, v1, v2;
@@ -2047,10 +2048,53 @@ test_beam_triangle(
     if (mask == 0) {
 
         /* 
-         * Beam completely misses the triangle.
-         * (but there is a case that beam contains the triangle.)
+         * Check the case that all ray misses the triangle, but the beam
+         * contains the triangle.
+         * TODO: SIMDize.
          */
+
+        /* Check U */
+        cnt = 0;
+        for (i = 0; i < 4; i++) {
+            if (u[i] < 0.0) cnt++;
+        }
+
+        if ( (cnt != 0) && (cnt != 4) ) {
+            return RI_BEAM_HIT_PARTIALLY;
+        }
+
+        cnt = 0;
+        for (i = 0; i < 4; i++) {
+            if (u[i] > 1.0) cnt++;
+        }
+
+        if ( (cnt != 0) && (cnt != 4) ) {
+            return RI_BEAM_HIT_PARTIALLY;
+        }
+
+        /* Check V */
+        cnt = 0;
+        for (i = 0; i < 4; i++) {
+            if (v[i] < 0.0) cnt++;
+        }
+
+        if ( (cnt != 0) && (cnt != 4) ) {
+            return RI_BEAM_HIT_PARTIALLY;
+        }
+
+        /* Check U + V */
+        cnt = 0;
+        for (i = 0; i < 4; i++) {
+            if ((u[i] + v[i]) >= 1.0) cnt++;
+        }
+
+        if ( (cnt != 0) && (cnt != 4) ) {
+            return RI_BEAM_HIT_PARTIALLY;
+        }
+            
+
         return RI_BEAM_MISS_COMPLETELY;
+        //return RI_BEAM_HIT_COMPLETELY;
 
     } else if (mask == 0xf) {
 
@@ -2470,9 +2514,12 @@ bvh_traverse_beam_visibility(
 
             ret = bvh_intersect_leaf_node_beam_visibility( node, beam );
 
-            if (RI_BEAM_HIT_PARTIALLY || RI_BEAM_HIT_COMPLETELY) {
+            if ((ret == RI_BEAM_HIT_PARTIALLY) ||
+                (ret == RI_BEAM_HIT_COMPLETELY)) {
+
                 /* The beam hits something. Early exit. */
                 return ret;
+
             }
 
             /* pop */
@@ -2589,10 +2636,17 @@ project_triangles(
                 k = 0.0;
             }
 
-            tri2d_out[i].v[j][0] = org[uv[axis][0]] + k * vo[uv[axis][0]];
-            tri2d_out[i].v[j][1] = org[uv[axis][1]] + k * vo[uv[axis][1]];
+            //tri2d_out[i].v[j][0] = org[uv[axis][0]] + k * vo[uv[axis][0]];
+            //tri2d_out[i].v[j][1] = org[uv[axis][1]] + k * vo[uv[axis][1]];
+            tri2d_out[i].v[j][0] = k * triangles[i].v[j][uv[axis][0]];
+            tri2d_out[i].v[j][1] = k * triangles[i].v[j][uv[axis][1]];
 
-            printf("tri[%d] v[%d] = %f, %f\n",  i, j,
+            printf("tri[%d] v[%d] = %f, %f, %f\n",  i, j,
+                triangles[i].v[j][0],
+                triangles[i].v[j][1],
+                triangles[i].v[j][2]);
+
+            printf("tri[%d] pv[%d] = %f, %f\n",  i, j,
                 tri2d_out[i].v[j][0],
                 tri2d_out[i].v[j][1]);
         }
