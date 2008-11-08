@@ -39,6 +39,27 @@ typedef struct _ri_mipmap_t
 
 } ri_mipmap_t;
 
+/*
+ * SAT(Summed Area Table) image.
+ */
+typedef struct _ri_sat_t
+{
+    /*
+     * TODO: Derive precision needed for floating point SAT pixel.
+     *
+     * For integer value, SAT pixel should have enough precision to store
+     * (maxIntValue) * w * h value.
+     * For example, maxIntValue = 256, w = 256 and h = 256, required precision
+     *
+     * is
+     *
+     *   256 * 256 * 256 = 16777216 = 24bits
+     *
+     */
+    double        *data;                /* SAT pixels                       */
+    int            width, height; 
+} ri_sat_t;
+
 typedef struct _ri_rawtexture_t
 {
     ri_float_t    *data;
@@ -68,6 +89,13 @@ extern void          ri_texture_scale(ri_texture_t *texture,
 
 extern ri_mipmap_t  *ri_texture_make_mipmap(
                                       const ri_texture_t *texture);
+
+/*
+ * Create SAT image from a texture.
+ */
+extern ri_sat_t     *ri_texture_make_sat(
+                                      const ri_texture_t *texture);
+                                            
                         
 
 #ifdef __cplusplus

@@ -389,6 +389,11 @@ static void gen_mipmap(float *dst, float *src, int srcw, int srch)
 
 }
 
+/*
+ * TODO: Consider moving mipmap gen source into another file.
+ *       texture_loader.c should contain only source codes for loading
+ *       texture resources.
+ */
 ri_mipmap_t *
 ri_texture_make_mipmap(
     const ri_texture_t *texture)
@@ -456,6 +461,83 @@ ri_texture_make_mipmap(
 
 }
     
+
+ri_sat_t *
+ri_texture_make_sat(
+    const ri_texture_t *texture)
+{
+
+    ri_sat_t *sat;
+
+    /*
+     * 1. Allocate resources for SAT.
+     */
+    { 
+        sat = (ri_sat_t *)ri_mem_alloc(sizeof(ri_sat_t));
+
+        sat->data = (double *)ri_mem_alloc(
+                        sizeof(double) * texture->width * texture->height * 3);
+
+        sat->width  = texture->width;
+        sat->height = texture->height;
+    }
+
+    /*
+     * Calculate SAT.
+     * TODO: Acturally, SAT image have (w+1) x (h+1) resolution.
+     */
+    {
+        int k;
+        int i, j;
+        int w = texture->width;
+        int h = texture->height;
+        
+        
+        /*
+         * 1. Horizontal
+         */
+
+        for (j = 0; j < h; j++) {
+
+            for (k = 0; k < 3; k++) {
+                sat->data[3 * (j * w) + k] = texture->data[3 * (j * w) + k];
+            }
+
+            for (i = 1; i < w; i++) {
+
+                for (k = 0; k < 3; k++) {
+                    sat->data[3 * (j * w + i) + k] =
+                          sat->data[3 * (j * w + (i-1)) + k]
+                        + texture->data[3 * (j * w + i) + k];
+                }
+
+            }
+
+        }
+
+        /*
+         * 2. Vertical
+         */
+
+        for (j = 1; j < h; j++) {
+
+            for (i = 0; i < w; i++) {
+
+                for (k = 0; k < 3; k++) {
+                    sat->data[3 * (j * w + i) + k] =
+                          sat->data[3 * ((j-1) * w + i) + k]
+                        + sat->data[3 * (j * w + i) + k];
+                }
+
+            }
+
+        }
+        
+
+    }
+
+    return sat;
+}
 
 #if 0   // TODO
 // Generate blocked mipmap from raw texture map.
