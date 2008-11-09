@@ -9,8 +9,11 @@
 #include "render.h"
 #include "texture.h"
 #include "IBLSampler.h"
+#include "image_saver.h"
 
-ri_texture_t *iblmap;
+// set from conf file.
+char iblmapname[1024];
+char objname[1024];
 
 GLMmodel *
 loadObj(const char *name)
@@ -70,29 +73,80 @@ init(const char *objname)
 
 }
 
+void
+load_conf()
+{
+    const char *confname = "conf.dat";
+
+    FILE *fp;
+
+    fp = fopen(confname, "r");
+    if (!fp) {
+        printf("can't open file [ %s ]\n", confname);
+        exit(1);
+    }
+
+    fscanf(fp, "%s\n", objname);
+    fscanf(fp, "%s\n", iblmapname);
+
+    printf("CONF: objname = %s\n", objname);
+    printf("CONF: iblname = %s\n", iblmapname);
+
+    fclose(fp);
+
+}
+
+void
+test_sat()
+{
+    ri_texture_t  tex;
+    ri_sat_t     *sat;
+    int s = 4;
+    int i, j;
+
+    tex.data = (float *)malloc(sizeof(float) * s * s * 3);
+    tex.width     = s;
+    tex.height    = s;
+
+    for (i = 0; i < 3 * s * s; i++) {
+        tex.data[i] = 1.0f;
+    }
+
+    sat = ri_texture_make_sat(&tex);
+
+    for (j = 0; j < s; j++) {
+        for (i = 0; i < s; i++) {
+            printf("[%d][%d] = %f\n", j, i, sat->data[3 * (j * s + i)]);
+        }
+    }
+}
+
 int
 main(int argc, char **argv)
 {
     float scale[3];
     float maxscale;
 
-    const char *defname = "plane.obj";
     const char *filename;
-    const char *iblmapname = "grace_probe.hdr";
 
-    
-    // ri_intersection_state_t *state;
-    // sample_ibl(iblmap, state);
+    test_sat();
+    load_conf();
+
+    //ri_intersection_state_t *state;
+    //sample_ibl(iblmap, state);
 
     // exit(0);
 
-    //iblmap = ri_texture_load(iblmapname);
-    //if (iblmap == NULL) {
-    //    printf("can't load map [ %s ] \n", iblmapname);
-    //    exit(0);
-    //} 
+    giblmap = ri_texture_load(iblmapname);
+    if (giblmap == NULL) {
+        printf("can't load map [ %s ] \n", iblmapname);
+        exit(0);
+    } 
 
-    filename = defname;
+    glatlongmap = ri_texture_make_longlat_from_angularmap(
+        giblmap, 128, 128);
+
+    filename = objname;
     if (argc > 1) {
         // printf("testbed <model.obj>\n");
         // exit(1);
@@ -119,6 +173,8 @@ main(int argc, char **argv)
     }
 
     guiGLView->viewOrg[2] = -1.0 * maxscale;
+    guiGLView->saveCurrentViewAsDefaultView();
+
     guiGLView->sceneScale = -1.0 * maxscale;
 
     paramWindow->show();

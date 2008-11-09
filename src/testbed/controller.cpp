@@ -19,12 +19,14 @@
 GLMmodel   *gobj;
 ri_scene_t *gscene;
 int         gvisualizeMode = VISUALIZE_IMAGE;
+ri_texture_t *giblmap;
+ri_texture_t *glatlongmap;
 
 Fl_Menu_Item visualizeMenu[] = {
-    { "Image"      , 0, 0, (void *)VISUALIZE_IMAGE          },
-    { "# of travs" , 0, 0, (void *)VISUALIZE_NUM_TRAVERSALS },
-    { "# of isects", 0, 0, (void *)VISUALIZE_NUM_ISECTS     },
-    { 0 }
+    { "Image"      , 0, 0, (void *)VISUALIZE_IMAGE          , 0, 0, 0, 0, 0},
+    { "# of travs" , 0, 0, (void *)VISUALIZE_NUM_TRAVERSALS , 0, 0, 0, 0, 0},
+    { "# of isects", 0, 0, (void *)VISUALIZE_NUM_ISECTS     , 0, 0, 0, 0, 0},
+    { 0            , 0, 0, 0                                , 0, 0, 0, 0, 0}
 };
 
 void
@@ -40,6 +42,8 @@ setup_param_gui()
 void
 visualize_choice_cb(Fl_Choice *w, void *arg)
 {
+    (void)arg;
+
     // switch ( (int)(w->mvalue()->user_data()) ) {
     // case VISUALIZE_IMAGE:
     // case VISUALIZE_NUM_TRAVERSALS:
@@ -57,12 +61,12 @@ savePNGFile(
     int width,
     int height)
 {
-	int i, j;
+	int i;
 
 	FILE *fp;
 	png_structp png_ptr;
 	png_infop info_ptr;
-	const char *filename;
+	//const char *filename;
 	png_bytep *rowp;
 
 	fp = fopen(pngfilename, "wb");
@@ -103,6 +107,9 @@ savePNGFile(
 
 void save_image_png_cb(Fl_Menu_*w, void *arg)
 {
+    (void)w;
+    (void)arg;
+
     savePNGFile( "output.png",
                  guiGLView->image,
                  guiGLView->imageWidth,
@@ -260,6 +267,7 @@ render(
     int beam_size = 64;
 
     //simple_render( (ri_bvh_t *)gscene->accel->data, image, width, height, eye, lookat, up );
-    simple_render_beam( (ri_bvh_t *)gscene->accel->data, image, width, height, beam_size, eye, lookat, up );
+    simple_render_ibl( (ri_bvh_t *)gscene->accel->data, image, width, height, eye, lookat, up );
+    //simple_render_beam( (ri_bvh_t *)gscene->accel->data, image, width, height, beam_size, eye, lookat, up );
 
 }

@@ -29,6 +29,8 @@ class GLView : public Fl_Gl_Window {
         viewTarget[1] =   0.0f;
         viewTarget[2] =   0.0f;
 
+        saveCurrentViewAsDefaultView();
+
         sceneScale    =   1.0f;
 
         trackball( currQuat, 0.0, 0.0, 0.0, 0.0 );
@@ -51,12 +53,18 @@ class GLView : public Fl_Gl_Window {
         visualizeMode = 0;
     }
 
+    void           saveCurrentViewAsDefaultView();
+    void           resetView();
+
     void           renderImage();
 
 
     float          viewOrg[3];
     float          viewTarget[3];
     float          sceneScale;
+
+    float          defViewOrg[3];
+    float          defViewTarget[3];
 
     // mouse
     float          currQuat[4];

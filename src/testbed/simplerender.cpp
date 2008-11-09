@@ -1,14 +1,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "bvh.h"
 #include "beam.h"
+#include "memory.h"
+#include "image_saver.h"
 
 #include "controller.h"
 #include "simplerender.h"
 
+#include "IBLSampler.h"
+
 ri_float_t fov = 45.0;
+
+const int raster_size = 64;
 
 static void
 setup_camera(
@@ -155,6 +162,9 @@ simple_render(
 
     ri_bvh_clear_stat_traversal();
 
+    // MUST CALL
+    ri_bvh_invalidate_cache( (void *)bvh );
+
     for (j = 0; j < height; j++) {
         for (i = 0; i < width; i++) {
 
@@ -206,6 +216,136 @@ simple_render(
     ri_bvh_report_stat_traversal();
 }
 
+static ri_texture_t *
+make_Lmap(ri_texture_t *longlatmap)
+{
+    int w, h;
+    ri_texture_t *tex;
+
+    w = longlatmap->width;
+    h = longlatmap->height;
+    
+    tex = (ri_texture_t *)ri_mem_alloc(sizeof(ri_texture_t));
+    tex->data = (float *)ri_mem_alloc(sizeof(float) * w * h * 4);
+    tex->width  = w;
+    tex->height = h;
+
+    int i, j;
+    int idx;
+    double sinTheta;
+    
+    for (j = 0; j < h; j++) {
+        sinTheta = sin(M_PI * j / (double)h);
+        for (i = 0; i < w; i++) {
+            idx = 4 * (j * w + i);
+            tex->data[idx + 0] = sinTheta * longlatmap->data[idx + 0];
+            tex->data[idx + 1] = sinTheta * longlatmap->data[idx + 1];
+            tex->data[idx + 2] = sinTheta * longlatmap->data[idx + 2];
+        }
+    }
+
+    return tex;
+}
+
+void
+simple_render_ibl(
+    ri_bvh_t *bvh,
+    float    *image,
+    int       width,
+    int       height,
+    vec       eye,
+    vec       lookat,
+    vec       up)
+{
+    int      i, j;
+    float    s, t;
+
+    vec      corner;
+    vec      du; 
+    vec      dv; 
+    vec      dw; 
+
+    vec      radiance;
+    vec      raydir;
+
+    int                     hit;
+    ri_ray_t                ray;
+    ri_intersection_state_t state;
+    ri_bvh_diag_t           diag;
+
+    setup_camera(
+        corner, du, dv, dw,
+        eye, lookat, up,
+        width, height, fov);
+
+    ri_bvh_clear_stat_traversal();
+    // MUST CALL
+    ri_bvh_invalidate_cache( (void *)bvh );
+
+    ri_texture_t            prodmap;        /* L x B x V    */
+    ri_texture_t           *Lmap;
+
+    Lmap = make_Lmap(glatlongmap);
+
+    //ri_image_save_hdr("muda.hdr", Lmap->data, Lmap->width, Lmap->height);
+
+    prodmap.width  = Lmap->width;
+    prodmap.height = Lmap->height;
+    prodmap.data   = (float *)ri_mem_alloc(sizeof(float) * prodmap.width * prodmap.height * 4);
+
+    for (j = 0; j < height; j++) {
+        printf("render line %d...\n", j);
+        for (i = 0; i < width; i++) {
+
+            s = (float)i;
+            t = (float)j;
+
+            get_eyedir(
+                raydir,
+                corner, du, dv,
+                s, t);
+                
+            memset( &state, 0, sizeof(ri_ray_t));
+            vcpy( ray.org, eye );
+            vcpy( ray.dir, raydir );
+
+            memset( &state, 0, sizeof(ri_intersection_state_t));
+
+            hit = ri_bvh_intersect( (void *)bvh, &ray, &state, &diag );
+
+            if (hit) {
+
+                memset(prodmap.data, 0, sizeof(float) * 4 * prodmap.width * prodmap.height);
+                sample_ibl_naive(radiance, bvh, giblmap, &state, 16, 16);
+                //sample_ibl_beam(radiance, bvh, Lmap, &prodmap, &state);
+                //exit(0);    // HACK
+
+            } else {
+
+                /*
+                 * IBL is directly seen.
+                 */
+                ri_texture_ibl_fetch(radiance,
+                                     giblmap,
+                                     ray.dir);
+
+                // HACK
+                //vscale(radiance, radiance, 00.0);
+
+            }
+
+            record_sample( image, width, height, s, t, radiance );
+
+        }
+    }
+
+    ri_bvh_report_stat_traversal();
+
+    free(prodmap.data);
+    free(Lmap->data);
+    free(Lmap);
+}
+
 void
 mybreak()
 {
@@ -227,7 +367,7 @@ render_beam_adaptive(
     float     t)
 {
 
-    int        i, j;
+    int        i;
     int        u, v;
 
     vec        radiance;
@@ -245,7 +385,7 @@ render_beam_adaptive(
         (float)beamsize, s, t);
 
     for (i = 0; i < 4; i++) {
-        printf("beamdir[%d] = %f, %f, %f\n", i, beamdir[i][0], beamdir[i][1], beamdir[i][2]);
+        // printf("beamdir[%d] = %f, %f, %f\n", i, beamdir[i][0], beamdir[i][1], beamdir[i][2]);
     }
                 
     invalid = ri_beam_set( &beam, eye, beamdir );

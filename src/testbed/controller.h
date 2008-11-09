@@ -5,10 +5,14 @@
 #include "defines.h"
 
 #include "scene.h"
+#include "texture.h"
 
-extern GLMmodel   *gobj;
-extern ri_scene_t *gscene;
-extern int         gvisualizeMode;
+extern GLMmodel        *gobj;
+extern ri_scene_t      *gscene;
+extern int              gvisualizeMode;
+extern ri_texture_t    *giblmap;
+extern ri_texture_t    *giblscledmap;
+extern ri_texture_t    *glatlongmap;
 
 //
 // GUI setup

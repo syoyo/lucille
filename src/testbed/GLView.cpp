@@ -32,6 +32,32 @@ void GLView::glInit()
 
 }
 
+void GLView::saveCurrentViewAsDefaultView() {
+
+    this->defViewOrg[0] = this->viewOrg[0];
+    this->defViewOrg[1] = this->viewOrg[1];
+    this->defViewOrg[2] = this->viewOrg[2];
+
+    this->defViewTarget[0] = this->viewTarget[0];
+    this->defViewTarget[1] = this->viewTarget[1];
+    this->defViewTarget[2] = this->viewTarget[2];
+
+}
+
+void GLView::resetView() {
+
+    this->viewOrg[0] = this->defViewOrg[0];
+    this->viewOrg[1] = this->defViewOrg[1];
+    this->viewOrg[2] = this->defViewOrg[2];
+
+    this->viewTarget[0] = this->defViewTarget[0];
+    this->viewTarget[1] = this->defViewTarget[1];
+    this->viewTarget[2] = this->defViewTarget[2];
+
+    trackball(currQuat, 0.0, 0.0, 0.0, 0.0);
+
+}
+
 static const char *viewfile = "view.dat";
 
 static void saveView(GLView *w)
@@ -83,6 +109,11 @@ GLView::handleKey(int k)
     bool needRedraw = false;
 
     switch (k) {
+    case ' ':
+        this->resetView();
+        needRedraw = true;
+        break;
+ 
     case 's':
         loadView(this);
         needRedraw = true;
@@ -630,6 +661,8 @@ GLView::renderImage()
         break;
 
     default:
+        minval = 0.0;
+        maxval = 1.0;
         tonemap( this->image, this->floatImage, this->imageWidth, this->imageHeight , minval, maxval);
         break;
 
