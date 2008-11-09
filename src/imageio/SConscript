@@ -3,6 +3,7 @@ import os
 srcs=Split("""
 rgbe.c
 image_loader.c
+image_saver.c
 """)
 
 Import('env')
