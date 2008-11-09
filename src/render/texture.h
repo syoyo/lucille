@@ -96,6 +96,13 @@ extern ri_mipmap_t  *ri_texture_make_mipmap(
 extern ri_sat_t     *ri_texture_make_sat(
                                       const ri_texture_t *texture);
                                             
+/*
+ * Create LongLat coord texture from anular map coord texture.
+ */
+extern ri_texture_t *ri_texture_make_longlat_from_angularmap(
+                                      ri_texture_t       *texture,
+                                      int                 longlat_width,
+                                      int                 longlat_height);
                         
 
 #ifdef __cplusplus

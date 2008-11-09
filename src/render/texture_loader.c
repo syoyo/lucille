@@ -374,13 +374,13 @@ static void gen_mipmap(float *dst, float *src, int srcw, int srch)
 
     for (h = 0; h < dsth; h++) {
         for (w = 0; w < dstw; w++) {
-            for (k = 0; k < 3; k++) {   /* RGB */
-                val[0] = src[3 * ((2 * h + 0) * srcw + (2 * w + 0)) + k];
-                val[1] = src[3 * ((2 * h + 0) * srcw + (2 * w + 1)) + k];
-                val[2] = src[3 * ((2 * h + 1) * srcw + (2 * w + 0)) + k];
-                val[3] = src[3 * ((2 * h + 1) * srcw + (2 * w + 1)) + k];
+            for (k = 0; k < 4; k++) {   /* RGBA */
+                val[0] = src[4 * ((2 * h + 0) * srcw + (2 * w + 0)) + k];
+                val[1] = src[4 * ((2 * h + 0) * srcw + (2 * w + 1)) + k];
+                val[2] = src[4 * ((2 * h + 1) * srcw + (2 * w + 0)) + k];
+                val[3] = src[4 * ((2 * h + 1) * srcw + (2 * w + 1)) + k];
 
-                dst[3 * (h * dstw + w) + k] =
+                dst[4 * (h * dstw + w) + k] =
                     0.25 * (val[0] + val[1] + val[2] + val[3]);
             }
         }
@@ -438,8 +438,8 @@ ri_texture_make_mipmap(
 
         mipmap->width[0]    = w;
         mipmap->height[0]   = h;
-        mipmap->data[0]     = ri_mem_alloc(sizeof(float) * w * h * 3);
-        memcpy(&mipmap->data[0], texture->data, sizeof(float) * w * h * 3);
+        mipmap->data[0]     = ri_mem_alloc(sizeof(float) * w * h * 4);
+        memcpy(&mipmap->data[0], texture->data, sizeof(float) * w * h * 4);
 
         for (i = 1; i < nlevels; i++) {
 
@@ -447,7 +447,7 @@ ri_texture_make_mipmap(
 
             mipmap->width[i]    = w;
             mipmap->height[i]   = h;
-            mipmap->data[i]     = ri_mem_alloc(sizeof(float) * w * h * 3);
+            mipmap->data[i]     = ri_mem_alloc(sizeof(float) * w * h * 4);
 
             src = mipmap->data[i-1];
 
@@ -476,7 +476,7 @@ ri_texture_make_sat(
         sat = (ri_sat_t *)ri_mem_alloc(sizeof(ri_sat_t));
 
         sat->data = (double *)ri_mem_alloc(
-                        sizeof(double) * texture->width * texture->height * 3);
+                        sizeof(double) * texture->width * texture->height * 4);
 
         sat->width  = texture->width;
         sat->height = texture->height;
@@ -499,16 +499,16 @@ ri_texture_make_sat(
 
         for (j = 0; j < h; j++) {
 
-            for (k = 0; k < 3; k++) {
-                sat->data[3 * (j * w) + k] = texture->data[3 * (j * w) + k];
+            for (k = 0; k < 4; k++) {
+                sat->data[4 * (j * w) + k] = texture->data[4 * (j * w) + k];
             }
 
             for (i = 1; i < w; i++) {
 
-                for (k = 0; k < 3; k++) {
-                    sat->data[3 * (j * w + i) + k] =
-                          sat->data[3 * (j * w + (i-1)) + k]
-                        + texture->data[3 * (j * w + i) + k];
+                for (k = 0; k < 4; k++) {
+                    sat->data[4 * (j * w + i) + k] =
+                          sat->data[4 * (j * w + (i-1)) + k]
+                        + texture->data[4 * (j * w + i) + k];
                 }
 
             }
@@ -523,10 +523,10 @@ ri_texture_make_sat(
 
             for (i = 0; i < w; i++) {
 
-                for (k = 0; k < 3; k++) {
-                    sat->data[3 * (j * w + i) + k] =
-                          sat->data[3 * ((j-1) * w + i) + k]
-                        + sat->data[3 * (j * w + i) + k];
+                for (k = 0; k < 4; k++) {
+                    sat->data[4 * (j * w + i) + k] =
+                          sat->data[4 * ((j-1) * w + i) + k]
+                        + sat->data[4 * (j * w + i) + k];
                 }
 
             }
@@ -537,6 +537,121 @@ ri_texture_make_sat(
     }
 
     return sat;
+}
+
+static void
+normalize3(double v[3])
+{
+    double len;
+
+    len = sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+    if (len >= 1.0e-6) {
+        len = 1.0 / len;
+        v[0] *= len;
+        v[1] *= len;
+        v[2] *= len;
+    }
+
+}
+
+static void
+longtitude_latitude2xyz(
+    double xyz[3],
+    double uv[2])
+{
+    double phi, theta;
+
+    theta = uv[1] * M_PI;
+    phi   = uv[0] * 2.0 * M_PI;
+
+    xyz[0] =  sin(theta) * cos(phi);
+    xyz[1] =  -cos(theta);
+    xyz[2] =  sin(theta) * sin(phi);
+}
+
+static void
+fetch_angular_map_from_xyz(
+    float           col[3],
+    double          xyz[3],
+    const float    *img,
+    int             width,
+    int             height)
+{
+    int    t, s; 
+    double r;
+    double norm2;
+    double u, v;
+
+    normalize3(xyz);
+
+    r = (1.0 / M_PI) * acos(xyz[2]);
+    norm2 = xyz[0] * xyz[0] + xyz[1] * xyz[1];
+    if (norm2 > 1.0e-6) r /= sqrt(norm2);
+
+    u = xyz[0] * r;
+    v = xyz[1] * r;
+
+    u = 0.5 * u + 0.5;
+    v = 0.5 * v + 0.5;
+
+    t = u * width;
+    s = v * height;
+
+    col[0] = img[4 * (s * width + t) + 0];
+    col[1] = img[4 * (s * width + t) + 1];
+    col[2] = img[4 * (s * width + t) + 2];
+}
+
+static void
+angular_map2longtitude_latitude(
+    float       *dst,             /* long-lat coord   */
+    const float *src,             /* anular map coord */
+    int          dstw,
+    int          dsth,
+    int          srcw,
+    int          srch)
+{
+    int i, j;
+    double xyz[3];
+    double uv[2];
+    float  col[3];
+
+    for (j = 0; j < dsth; j++) {
+        for (i = 0; i < dstw; i++) {
+            uv[0] = i / (double)dstw;
+            uv[1] = j / (double)dsth;
+
+            longtitude_latitude2xyz(xyz, uv);
+
+            fetch_angular_map_from_xyz(col, xyz, src, srcw, srch);
+
+            dst[4 * (j * dstw + i) + 0] = col[0];
+            dst[4 * (j * dstw + i) + 1] = col[1];
+            dst[4 * (j * dstw + i) + 2] = col[2];
+            dst[4 * (j * dstw + i) + 3] = 1.0f;
+        }
+    }
+}
+
+ri_texture_t *
+ri_texture_make_longlat_from_angularmap(
+    ri_texture_t *texture,      /* angular map texture  */
+    int           longlat_width,
+    int           longlat_height)
+{
+    ri_texture_t *dst;
+
+    dst = (ri_texture_t *)ri_mem_alloc(sizeof(ri_texture_t));
+    dst->width  = longlat_width;
+    dst->height = longlat_height;
+    dst->data   = (float *)ri_mem_alloc(
+                    sizeof(float) * longlat_width * longlat_height * 4);
+
+    angular_map2longtitude_latitude(
+        dst->data, texture->data,
+        dst->width, dst->height, texture->width, texture->height);
+    
+    return dst;
 }
 
 #if 0   // TODO
