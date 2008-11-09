@@ -15,7 +15,7 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "image_loader.h"
+#include "image_saver.h"
 
 #include "log.h"
 #include "memory.h"
@@ -65,23 +65,24 @@ extern int ri_image_save_hdr(
 
     buf_image = (float *)ri_mem_alloc(sizeof(float) * width * height * 3);
 
-    
-    
     buf_width  = width;
     buf_height = height;
     endconv4(&buf_width);
     endconv4(&buf_height);
 	RGBE_WriteHeader(fp, buf_width, buf_height, NULL);
 
-    {
-        uint32_t i;
+    uint32_t i;
 
-        memcpy(buf_image, image, sizeof(float) * width * height * 3);
-        for (i = 0; i < width * height * 3; i++) {
-            endconv4(&buf_image[i]); 
-        }
+    for (i = 0; i < width * height; i++) {
+        buf_image[3 * i + 0] = image[4 * i + 0];
+        buf_image[3 * i + 1] = image[4 * i + 1];
+        buf_image[3 * i + 2] = image[4 * i + 2];
+        endconv4(&buf_image[3 * i + 0]); 
+        endconv4(&buf_image[3 * i + 1]); 
+        endconv4(&buf_image[3 * i + 2]); 
     }
-	RGBE_WritePixels_RLE(fp, buf_image, width, height);
+
+    RGBE_WritePixels_RLE(fp, buf_image, width, height);
 
     fclose(fp);
 

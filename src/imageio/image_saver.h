@@ -23,7 +23,7 @@ extern "C" {
 /* Save image as .hdr */
 extern int ri_image_save_hdr(
     const char      *filename,
-    flaot           *image,
+    float           *image,
     unsigned int     width,
     unsigned int     height);
 
