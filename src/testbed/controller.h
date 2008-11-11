@@ -13,6 +13,7 @@ extern int              gvisualizeMode;
 extern ri_texture_t    *giblmap;
 extern ri_texture_t    *giblscledmap;
 extern ri_texture_t    *glatlongmap;
+extern int              giblsamples;
 
 //
 // GUI setup

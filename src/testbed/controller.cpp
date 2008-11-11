@@ -21,6 +21,7 @@ ri_scene_t *gscene;
 int         gvisualizeMode = VISUALIZE_IMAGE;
 ri_texture_t *giblmap;
 ri_texture_t *glatlongmap;
+int           giblsamples;
 
 Fl_Menu_Item visualizeMenu[] = {
     { "Image"      , 0, 0, (void *)VISUALIZE_IMAGE          , 0, 0, 0, 0, 0},
@@ -161,10 +162,12 @@ parse_geom(
 
 
     ri_vector_t    *vertices;
+    ri_vector_t    *normals;
     unsigned int   *indices;
 
     geom     = ri_geom_new();
     vertices = (ri_vector_t *)ri_mem_alloc(sizeof(ri_vector_t) * grp->numtriangles * 3);
+    normals = (ri_vector_t *)ri_mem_alloc(sizeof(ri_vector_t) * grp->numtriangles * 3);
     indices  = (unsigned int *)ri_mem_alloc(sizeof(unsigned int ) * grp->numtriangles * 3);
 
     for (i = 0; i < grp->numtriangles; i++) {
@@ -206,6 +209,50 @@ parse_geom(
 
     ri_geom_add_positions( geom, grp->numtriangles * 3, vertices );
     ri_geom_add_indices( geom, grp->numtriangles * 3, indices );
+
+    if (model->numnormals) {
+
+        //assert(model->numvertices == model->numnormals);
+
+        for (i = 0; i < grp->numtriangles; i++) {
+            tid = grp->triangles[i];
+
+            id[0] = model->triangles[tid].nindices[0];
+            id[1] = model->triangles[tid].nindices[1];
+            id[2] = model->triangles[tid].nindices[2];
+
+            indices[ 3 * i + 0 ] = 3 * i + 0;
+            indices[ 3 * i + 1 ] = 3 * i + 1;
+            indices[ 3 * i + 2 ] = 3 * i + 2;
+
+            v[0] = model->normals[3 * id[0] + 0];
+            v[1] = model->normals[3 * id[0] + 1];
+            v[2] = model->normals[3 * id[0] + 2];
+
+            normals[3 * i + 0][0] = v[0];
+            normals[3 * i + 0][1] = v[1];
+            normals[3 * i + 0][2] = v[2];
+
+            v[0] = model->normals[3 * id[1] + 0];
+            v[1] = model->normals[3 * id[1] + 1];
+            v[2] = model->normals[3 * id[1] + 2];
+
+            normals[3 * i + 1][0] = v[0];
+            normals[3 * i + 1][1] = v[1];
+            normals[3 * i + 1][2] = v[2];
+
+            v[0] = model->normals[3 * id[2] + 0];
+            v[1] = model->normals[3 * id[2] + 1];
+            v[2] = model->normals[3 * id[2] + 2];
+
+            normals[3 * i + 2][0] = v[0];
+            normals[3 * i + 2][1] = v[1];
+            normals[3 * i + 2][2] = v[2];
+
+        }
+
+        ri_geom_add_normals( geom, grp->numtriangles * 3, normals );
+    }
 
     // ri_mem_free( vertices );
     // ri_mem_free( indices );

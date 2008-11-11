@@ -236,6 +236,7 @@ make_Lmap(ri_texture_t *longlatmap)
     
     for (j = 0; j < h; j++) {
         sinTheta = sin(M_PI * j / (double)h);
+        //sinTheta = 1.0;
         for (i = 0; i < w; i++) {
             idx = 4 * (j * w + i);
             tex->data[idx + 0] = sinTheta * longlatmap->data[idx + 0];
@@ -273,6 +274,11 @@ simple_render_ibl(
     ri_intersection_state_t state;
     ri_bvh_diag_t           diag;
 
+    int nphisamples, nthetasamples;
+
+    nphisamples   = (int)sqrt(giblsamples);
+    nthetasamples = (int)sqrt(giblsamples);
+
     setup_camera(
         corner, du, dv, dw,
         eye, lookat, up,
@@ -281,6 +287,8 @@ simple_render_ibl(
     ri_bvh_clear_stat_traversal();
     // MUST CALL
     ri_bvh_invalidate_cache( (void *)bvh );
+
+    clear_ibl_stat();
 
     ri_texture_t            prodmap;        /* L x B x V    */
     ri_texture_t           *Lmap;
@@ -316,7 +324,7 @@ simple_render_ibl(
             if (hit) {
 
                 memset(prodmap.data, 0, sizeof(float) * 4 * prodmap.width * prodmap.height);
-                //sample_ibl_naive(radiance, bvh, giblmap, &state, 16, 16);
+                //sample_ibl_naive(radiance, bvh, giblmap, &state, nthetasamples, nphisamples);
                 sample_ibl_beam(radiance, bvh, Lmap, &prodmap, &state);
                 //exit(0);    // HACK
 
@@ -340,6 +348,8 @@ simple_render_ibl(
     }
 
     ri_bvh_report_stat_traversal();
+
+    report_ibl_stat();
 
     free(prodmap.data);
     free(Lmap->data);

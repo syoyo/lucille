@@ -12,9 +12,9 @@ extern "C" {
 //
 // Stats
 //
-extern uint64_t ncompletely_visible    = 0;
-extern uint64_t npartially_visible     = 0;
-extern uint64_t ncompletely_invisible  = 0;
+extern uint64_t ncompletely_visible  ;
+extern uint64_t npartially_visible   ;
+extern uint64_t ncompletely_invisible;
 
 extern void sample_ibl_beam(
     ri_vector_t                      Lo,                /* [out]            */

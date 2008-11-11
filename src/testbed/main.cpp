@@ -30,7 +30,7 @@ loadObj(const char *name)
     }
 
     glmFacetNormals(model);
-    glmVertexNormals(model, 90.0);
+    glmVertexNormals(model, 80.0);
 
     printf("[obj] Load obj OK!\n");
     printf("[obj] ntriangles = %d\n", model->numtriangles);
@@ -88,9 +88,11 @@ load_conf()
 
     fscanf(fp, "%s\n", objname);
     fscanf(fp, "%s\n", iblmapname);
+    fscanf(fp, "%d\n", &giblsamples);
 
-    printf("CONF: objname = %s\n", objname);
-    printf("CONF: iblname = %s\n", iblmapname);
+    printf("CONF: objname    = %s\n", objname);
+    printf("CONF: iblname    = %s\n", iblmapname);
+    printf("CONF: iblsamples = %d\n", giblsamples);
 
     fclose(fp);
 
@@ -172,10 +174,10 @@ main(int argc, char **argv)
         maxscale = scale[2];
     }
 
-    guiGLView->viewOrg[2] = -1.0 * maxscale;
+    guiGLView->viewOrg[2] = 1.0 * maxscale;
     guiGLView->saveCurrentViewAsDefaultView();
 
-    guiGLView->sceneScale = -1.0 * maxscale;
+    guiGLView->sceneScale = 1.0 * maxscale;
 
     paramWindow->show();
     mainWindow->show();
