@@ -5,6 +5,9 @@
  *
  */
 
+#include <stdlib.h>
+#include <string.h>
+
 #include "vector.h"
 #include "geometric.h"
 #include "reflection.h"
@@ -146,7 +149,9 @@ ri_intersection_state_build(
         ri_vector_copy(n1, geom->normals[i1]);
         ri_vector_copy(n2, geom->normals[i2]);
 
-        ri_lerp_vector( state_inout->Ng, n0, n1, n2, u, v );
+        /* FIXME: Ng is calculated from p's. */
+        ri_normal_of_triangle( state_inout->Ng, v0, v1, v2 );
+        ri_lerp_vector( state_inout->Ns, n0, n1, n2, u, v );
 
         if (geom->tangents && geom->binormals) {
 
@@ -171,6 +176,8 @@ ri_intersection_state_build(
     } else {
 
         ri_normal_of_triangle( state_inout->Ng, v0, v1, v2 );
+        ri_vector_copy( state_inout->Ns, state_inout->Ng );
+
         ri_ortho_basis( tmpbasis, state_inout->Ng );
         ri_vector_copy( state_inout->tangent, tmpbasis[0] );
         ri_vector_copy( state_inout->binormal, tmpbasis[1] );

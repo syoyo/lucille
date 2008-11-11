@@ -953,7 +953,8 @@ trace(
     newstatus.ray_depth++;        /* increment ray depth */
     ri_vector_copy(newstatus.input.Cs,   state.color);
     ri_vector_copy(newstatus.input.P,    state.P);
-    ri_vector_copy(newstatus.input.N,    state.Ng);
+    ri_vector_copy(newstatus.input.N,    state.Ns);
+    ri_vector_copy(newstatus.input.Ng,   state.Ng);
     ri_vector_copy(newstatus.input.dPdu, state.tangent);
     ri_vector_copy(newstatus.input.dPdv, state.binormal);
     ri_vector_copy(newstatus.input.I,    eye);

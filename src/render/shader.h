@@ -95,6 +95,7 @@ typedef struct _ri_input_t
     ri_color_t  Cs;
     ri_vector_t P;
     ri_vector_t N;
+    ri_vector_t Ng;
     ri_vector_t dPdu;
     ri_vector_t dPdv;
     ri_vector_t I;
