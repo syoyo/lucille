@@ -316,8 +316,8 @@ simple_render_ibl(
             if (hit) {
 
                 memset(prodmap.data, 0, sizeof(float) * 4 * prodmap.width * prodmap.height);
-                sample_ibl_naive(radiance, bvh, giblmap, &state, 16, 16);
-                //sample_ibl_beam(radiance, bvh, Lmap, &prodmap, &state);
+                //sample_ibl_naive(radiance, bvh, giblmap, &state, 16, 16);
+                sample_ibl_beam(radiance, bvh, Lmap, &prodmap, &state);
                 //exit(0);    // HACK
 
             } else {

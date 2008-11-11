@@ -9,6 +9,13 @@ extern "C" {
 #include "intersection_state.h"
 #include "bvh.h"
 
+//
+// Stats
+//
+extern uint64_t ncompletely_visible    = 0;
+extern uint64_t npartially_visible     = 0;
+extern uint64_t ncompletely_invisible  = 0;
+
 extern void sample_ibl_beam(
     ri_vector_t                      Lo,                /* [out]            */
     ri_bvh_t                        *bvh,
@@ -23,6 +30,9 @@ extern void sample_ibl_naive(
     const ri_intersection_state_t   *isect,
     uint32_t                         ntheta_samples,
     uint32_t                         nphi_samples);
+
+extern void clear_ibl_stat();
+extern void report_ibl_stat();
 
 #ifdef __cplusplus
 }

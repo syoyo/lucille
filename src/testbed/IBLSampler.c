@@ -11,11 +11,66 @@
 #include "raytrace.h"
 #include "image_saver.h"
 #include "beam.h"
+#include "memory.h"
+
+//
+// TODO:
+//
+//  - Use FFT for faster convolution?
+//
 
 #define RESOLUTION  (64)
 #define SDIV        (2)
 
 #define MIN_DIV_SIZE (M_PI / (RESOLUTION))
+
+// Precalculate sin and cos for faster execution.
+double sin_theta_cache[8][SDIV * SDIV];
+double cos_theta_cache[8][SDIV * SDIV];
+double sin_phi_cache[8][SDIV * SDIV];
+double cos_phi_cache[8][SDIV * SDIV];
+
+static vec    dir_cache[8][SDIV * SDIV][4];
+static vec   *dirmap;
+
+//
+// Stats
+//
+uint64_t ncompletely_visible    = 0;
+uint64_t npartially_visible     = 0;
+uint64_t ncompletely_invisible  = 0;
+
+static void
+init_sin_cos_cache()
+{
+    int o, u;
+    int sx, sy;
+
+    double theta;
+    double phi;
+    double theta_step = (0.5 * M_PI) / SDIV;
+    double phi_step   = (2.0 * M_PI) / (4.0 * SDIV);
+
+    for (u = 0; u < 2; u++) {               // upper and lower
+        for (o = 0; o < 4; o++) {               // half of octants
+
+            for (sy = 0; sy < SDIV; sy++) {        // sub-regions
+                for (sx = 0; sx < SDIV; sx++) {
+
+                    theta = u * (0.5 * M_PI) + sy * theta_step;
+                    phi   = o * (M_PI * 0.5) + sx * phi_step;
+
+                    sin_theta_cache[u*4+o][sy*SDIV+sx] = sin(theta);
+                    cos_theta_cache[u*4+o][sy*SDIV+sx] = cos(theta);
+                    sin_phi_cache[u*4+o][sy*SDIV+sx] = sin(phi);
+                    cos_phi_cache[u*4+o][sy*SDIV+sx] = cos(phi);
+                    
+                }
+            }
+        }
+    } 
+}
+
 
 //
 // TODO: Use SAT technique.
@@ -38,6 +93,77 @@ static void uv2xyz(
     (*z) = cos(v) * sin(u);     // x
     (*x) = sin(v) * sin(u);     // y
     (*y) = cos(u);              // z
+}
+
+static void
+init_dir_map(int width, int height)
+{
+    int i, j;
+    double theta, phi;
+    
+    dirmap = (vec *)ri_mem_alloc(sizeof(vec) * width * height);
+
+    for (j = 0; j < height; j++) {
+        for (i = 0; i < width; i++) {
+
+                theta = j * (M_PI) / (double)width;
+                phi   = i * (2.0 * M_PI) / (double)height;
+
+                // Add eps to avoid numerical problem.
+                uv2xyz(&(dirmap[j * width + i][0]),
+                       &(dirmap[j * width + i][1]),
+                       &(dirmap[j * width + i][2]),
+                        theta, phi);
+        }
+    }
+
+}
+
+static void
+init_dir_cache()
+{
+    int o, u;
+    int sx, sy;
+
+    double theta;
+    double phi;
+    double theta_step = (0.5 * M_PI) / SDIV;
+    double phi_step   = (2.0 * M_PI) / (4.0 * SDIV);
+    double eps        = 0.00001;
+
+    vec    *dir;
+
+    for (u = 0; u < 2; u++) {               // upper and lower
+        for (o = 0; o < 4; o++) {               // half of octants
+
+            for (sy = 0; sy < SDIV; sy++) {        // sub-regions
+                for (sx = 0; sx < SDIV; sx++) {
+
+                    theta = u * (0.5 * M_PI) + sy * theta_step;
+                    phi   = o * (M_PI * 0.5) + sx * phi_step;
+
+                    //sin_theta_cache[u*4+o][sy*SDIV+sx] = sin(theta);
+                    //cos_theta_cache[u*4+o][sy*SDIV+sx] = cos(theta);
+                    //sin_phi_cache[u*4+o][sy*SDIV+sx] = sin(phi);
+                    //cos_phi_cache[u*4+o][sy*SDIV+sx] = cos(phi);
+
+                    dir = dir_cache[u*4+o][sy*SDIV+sx];
+
+                    // Add eps to avoid numerical problem.
+                    uv2xyz(&dir[0][0], &dir[0][1], &dir[0][2],
+                           theta + eps, phi + eps);
+                    uv2xyz(&dir[1][0], &dir[1][1], &dir[1][2],
+                           theta + eps, phi + phi_step - eps);
+                    uv2xyz(&dir[2][0], &dir[2][1], &dir[2][2],
+                           theta + theta_step - eps, phi + eps);
+                    uv2xyz(&dir[3][0], &dir[3][1], &dir[3][2],
+                           theta + theta_step - eps, phi + phi_step - eps);
+                    
+                }
+            }
+        }
+    } 
+
 }
 
 static int
@@ -107,7 +233,10 @@ contribute(
 
             p = phi + (u - us) * u_step; 
 
-            uv2xyz(&dir[0], &dir[1], &dir[2], t, p);
+            //uv2xyz(&dir[0], &dir[1], &dir[2], t, p);
+            dir[0] = dirmap[v * width + u][0];
+            dir[1] = dirmap[v * width + u][1];
+            dir[2] = dirmap[v * width + u][2];
 
             cosTheta = vdot(dir, n);
             if (cosTheta < 0.0) cosTheta = 0.0;
@@ -134,21 +263,31 @@ render_subregion(
     double                           phi,
     double                           theta_step,
     double                           phi_step,
+    vec                              dir[4],
     int                              depth)
 {
-    vec    dir[4];
+    //vec    dir[4];
+    vec    sub_dir[4];
     double dot;
     double sub_theta;
     double sub_phi;
     double sub_theta_step;
     double sub_phi_step;
-    double eps = 1.0e-6;
+    //double eps = 1.0e-6;
     vec    basis[3];
     
 
     int i, j;
 
     ri_ortho_basis(basis, n);
+
+    if (depth != 0) return;
+
+    printf("dir = \n");
+    ri_vector_print(dir[0]);
+    ri_vector_print(dir[1]);
+    ri_vector_print(dir[2]);
+    ri_vector_print(dir[3]);
 
     //printf("depth %d, subregion theta = %f, phi = %f, tstep = %f, pstep = %f\n",
     //    depth, theta, phi, theta_step, phi_step);
@@ -159,6 +298,7 @@ render_subregion(
         return;
     }
 
+#if 0
     // Add eps to avoid numerical problem.
     uv2xyz(&dir[0][0], &dir[0][1], &dir[0][2],
            theta + eps, phi + eps);
@@ -168,6 +308,7 @@ render_subregion(
            theta + theta_step - eps, phi + eps);
     uv2xyz(&dir[3][0], &dir[3][1], &dir[3][2],
            theta + theta_step - eps, phi + phi_step - eps);
+#endif
     
 
     /* Early check of visibility.
@@ -213,9 +354,12 @@ render_subregion(
                 sub_theta_step  = 0.5 * theta_step;
                 sub_phi_step    = 0.5 * phi_step;
 
+                // calc sub dir
+
                 render_subregion(bvh, Lmap, prodmap, isect, n,
                                  sub_theta, sub_phi,
-                                 sub_theta_step, sub_phi_step, depth + 1);
+                                 sub_theta_step, sub_phi_step,
+                                 sub_dir, depth + 1);
             }
         }
 
@@ -238,6 +382,9 @@ render_subregion(
         vis = check_visibility( bvh, org, dir );
 
         if (vis == RI_BEAM_HIT_PARTIALLY) {
+
+            npartially_visible++;
+            return;   // HACK
 
             // if (depth == 0) {
             //     printf("partially hit\n");
@@ -264,19 +411,24 @@ render_subregion(
                     sub_theta_step  = 0.5 * theta_step;
                     sub_phi_step    = 0.5 * phi_step;
 
+                    // TODO: calc sub_dir
+
                     render_subregion(bvh, Lmap, prodmap, isect, n,
                                      sub_theta, sub_phi,
-                                     sub_theta_step, sub_phi_step, depth + 1);
+                                     sub_theta_step, sub_phi_step,
+                                     sub_dir, depth + 1);
                 }
             }
 
         } else if (vis == RI_BEAM_HIT_COMPLETELY) {
 
             // Invisible. Do nothing.
+            ncompletely_invisible++;
 
         } else if (vis == RI_BEAM_MISS_COMPLETELY) {
 
             // Visible all region coverd by the beam.
+            ncompletely_visible++;
 
             contribute(
                 prodmap->data,
@@ -338,6 +490,8 @@ sample_ibl_beam(
     int o, u;
     int sx, sy;
 
+    static int initialized = 0;
+
     (void)Lmap;
     (void)isect;
     
@@ -345,6 +499,14 @@ sample_ibl_beam(
     double phi_step   = (2.0 * M_PI) / (4.0 * SDIV);
 
     double theta[4], phi[4];                // left, top, right, bottom
+
+    vec    dir[4];
+
+    if (!initialized) {
+        init_dir_cache();
+        init_dir_map(Lmap->width, Lmap->height);
+        initialized = 1;
+    } 
 
     for (u = 0; u < 2; u++) {               // upper and lower
         for (o = 0; o < 4; o++) {               // half of octants
@@ -366,13 +528,20 @@ sample_ibl_beam(
                     //    printf("[%d] = (%f, %f)\n", i, theta[i], phi[i]);
                     //}
 
+                    // get direction from precomputed table.
+                    vcpy(dir[0], dir_cache[u*4+o][sy*SDIV+sx][0]);
+                    vcpy(dir[1], dir_cache[u*4+o][sy*SDIV+sx][1]);
+                    vcpy(dir[2], dir_cache[u*4+o][sy*SDIV+sx][2]);
+                    vcpy(dir[3], dir_cache[u*4+o][sy*SDIV+sx][3]);
+
                     render_subregion(
                         bvh,
                         Lmap,
                         prodmap,
                         isect,
                         isect->Ng,
-                        theta[0], phi[0], theta_step, phi_step, 0);
+                        theta[0], phi[0], theta_step, phi_step,
+                        dir, 0);
 
                 }
             }
@@ -468,4 +637,20 @@ sample_ibl_naive(
 
     // Lo = (1/pi) * Lsum / (ntheta * nphi)
     vscale(Lo, power, 1.0 / (M_PI * ntheta_samples * nphi_samples));
+}
+
+void
+report_ibl_stat()
+{
+    printf("ncompletely_visible   = %d (%f %%)\n");
+    printf("npartially_visible    = %d (%f %%)\n");
+    printf("ncompletely_invisible = %d (%f %%)\n");
+}
+
+void
+clear_ibl_stat()
+{
+    ncompletely_visible   = 0;
+    npartially_visible    = 0;
+    ncompletely_invisible = 0;
 }
