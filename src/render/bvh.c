@@ -2053,6 +2053,17 @@ test_beam_triangle(
          * TODO: SIMDize.
          */
 
+        /* Firstly, check T */
+        cnt = 0;
+        for (i = 0; i < 4; i++) {
+            if (t[i] < 0.0) cnt++;
+        }
+
+        if (cnt == 4) {
+            return RI_BEAM_MISS_COMPLETELY;
+        }
+        
+
         /* Check U */
         cnt = 0;
         for (i = 0; i < 4; i++) {
