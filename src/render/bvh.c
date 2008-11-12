@@ -609,8 +609,7 @@ ri_bvh_intersect_beam_visibility(
     hit = test_beam_aabb( bvh->bmin, bvh->bmax, beam );
         
     if (!hit) {
-        //return RI_BEAM_MISS_COMPLETELY;       /* Completely misses */
-        return -1;       /* Completely misses */
+        return RI_BEAM_MISS_COMPLETELY;       /* Completely misses */
     }
 
     ret = bvh_traverse_beam_visibility(  bvh->root,
