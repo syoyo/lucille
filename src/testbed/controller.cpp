@@ -22,6 +22,13 @@ int         gvisualizeMode = VISUALIZE_IMAGE;
 ri_texture_t *giblmap;
 ri_texture_t *glatlongmap;
 int           giblsamples;
+int           gnsubsamples;
+
+int              gdebugpixel;
+int              gdebugpixel_x;
+int              gdebugpixel_y;
+
+int              gprogressiveMode = 0;
 
 Fl_Menu_Item visualizeMenu[] = {
     { "Image"      , 0, 0, (void *)VISUALIZE_IMAGE          , 0, 0, 0, 0, 0},
@@ -313,8 +320,8 @@ render(
 
     int beam_size = 64;
 
-    //simple_render( (ri_bvh_t *)gscene->accel->data, image, width, height, eye, lookat, up );
-    simple_render_ibl( (ri_bvh_t *)gscene->accel->data, image, width, height, eye, lookat, up );
+    simple_render_progressive( (ri_bvh_t *)gscene->accel->data, image, width, height, eye, lookat, up, 1 );
+    //simple_render_ibl( (ri_bvh_t *)gscene->accel->data, image, width, height, eye, lookat, up );
     //simple_render_beam( (ri_bvh_t *)gscene->accel->data, image, width, height, beam_size, eye, lookat, up );
 
 }

@@ -89,10 +89,12 @@ load_conf()
     fscanf(fp, "%s\n", objname);
     fscanf(fp, "%s\n", iblmapname);
     fscanf(fp, "%d\n", &giblsamples);
+    fscanf(fp, "%d\n", &gnsubsamples);
 
-    printf("CONF: objname    = %s\n", objname);
-    printf("CONF: iblname    = %s\n", iblmapname);
-    printf("CONF: iblsamples = %d\n", giblsamples);
+    printf("CONF: objname     = %s\n", objname);
+    printf("CONF: iblname     = %s\n", iblmapname);
+    printf("CONF: iblsamples  = %d\n", giblsamples);
+    printf("CONF: nsubsamples = %d\n", gnsubsamples);
 
     fclose(fp);
 

@@ -44,13 +44,19 @@ class GLView : public Fl_Gl_Window {
         //
         // Settings for render image
         //
-        image       = new unsigned char[3 * w * h];
-        floatImage  = new float[3 * w * h];
+        image            = new unsigned char[3 * w * h];
+        floatImage       = new float[3 * w * h];
+        floatAccumImage  = new float[3 * w * h];    // for progressive render
         imageWidth  = w;
         imageHeight = h;
 
 
         visualizeMode = 0;
+        debugPixelSelectionMode = 0;
+
+        progressiveMode = 0;
+        invalidateFrame = 0;
+        nRendererdFrames = 0;
     }
 
     void           saveCurrentViewAsDefaultView();
@@ -77,6 +83,7 @@ class GLView : public Fl_Gl_Window {
   
     unsigned char *image;
     float         *floatImage;
+    float         *floatAccumImage;
     int            imageWidth;
     int            imageHeight;
     
@@ -91,5 +98,14 @@ class GLView : public Fl_Gl_Window {
     BVHVisualizer *bvhVisualizer;
 
     int            visualizeMode;
+    int            debugPixelSelectionMode;
+
+
+    //
+    // Progressive rendering?
+    //
+    int            progressiveMode;
+    int            invalidateFrame;
+    int            nRendererdFrames;
 
 };

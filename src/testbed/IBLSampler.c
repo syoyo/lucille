@@ -35,6 +35,8 @@ static vec   *dirmap;
 static int    dirmap_width;
 static int    dirmap_height;
 
+static int    dtrace = 0;
+
 //
 // Stats
 //
@@ -42,6 +44,7 @@ uint64_t ncompletely_visible    = 0;
 uint64_t npartially_visible     = 0;
 uint64_t ncompletely_invisible  = 0;
 
+#if 0
 static void
 init_sin_cos_cache()
 {
@@ -72,6 +75,7 @@ init_sin_cos_cache()
         }
     } 
 }
+#endif
 
 
 //
@@ -149,7 +153,7 @@ init_dir_cache()
     double phi;
     double theta_step = (0.5 * M_PI) / SDIV;
     double phi_step   = (2.0 * M_PI) / (4.0 * SDIV);
-    double eps        = 0.00001;
+    double eps        = 0.001;
 
     vec    *dir;
 
@@ -168,6 +172,10 @@ init_dir_cache()
                     //cos_phi_cache[u*4+o][sy*SDIV+sx] = cos(phi);
 
                     dir = dir_cache[u*4+o][sy*SDIV+sx];
+
+                    // hack to avoid numerical problem.
+                    if (theta < 0.001) theta = 0.001;
+                    if (theta > M_PI - 0.001) theta = M_PI - 0.001;
 
                     // Add eps to avoid numerical problem.
                     uv2xyz(&dir[0][0], &dir[0][1], &dir[0][2],
@@ -196,7 +204,24 @@ check_visibility(
     int invalid;
     int vis;
 
-    invalid = ri_beam_set( &beam, org, dir );
+    /*
+     * Directions passed to ri_beam_set() is defined in the following order.
+     *
+     * 0 ---- 3
+     * |      |
+     * |      |
+     * 1 ---- 2
+     *
+     */
+
+    vec beamdir[4];
+
+    vcpy(beamdir[0], dir[0]);
+    vcpy(beamdir[1], dir[2]);
+    vcpy(beamdir[2], dir[3]);
+    vcpy(beamdir[3], dir[1]);
+
+    invalid = ri_beam_set( &beam, org, beamdir );
     if (invalid) exit(0);
     assert(invalid == 0);
 
@@ -204,6 +229,70 @@ check_visibility(
                 (void *)bvh, &beam, NULL);
 
     return vis;
+
+}
+
+static void
+contribute_debug(
+    float          *dst,
+    float          *L,                  /* IBL image in long-lat coord */
+    ri_vector_t     n,
+    double          theta,
+    double          phi,
+    double          theta_step,
+    double          phi_step,
+    int             width,
+    int             height)
+{
+
+    int u, v;
+    int us, ue;
+    int vs, ve;
+    int idx;
+
+    double u_step, v_step;
+    double t, p; 
+    double dir[3];
+    double cosTheta;
+
+
+    us = (int)((phi / (2.0 * M_PI)) * width);
+    if (us >= width) us = width - 1;
+    ue = (int)(((phi + phi_step) / (2.0 * M_PI)) * width);
+    if (ue >= width) ue = width - 1;
+    u_step = phi_step / (ue - us);
+
+    vs = (int)((theta / M_PI) * height);
+    if (vs >= height) vs = height - 1;
+    ve = (int)(((theta + theta_step) / M_PI) * height);
+    if (ve >= height) ve = height - 1;
+    v_step = theta_step / (ve - vs);
+
+    // TODO: employ fast spherical interpolation?
+
+    for (v = vs; v < ve; v++) {
+
+        t = theta + (v - vs) * v_step; 
+
+        for (u = us; u < ue; u++) {
+
+            p = phi + (u - us) * u_step; 
+
+            //uv2xyz(&dir[0], &dir[1], &dir[2], t, p);
+            dir[0] = dirmap[v * width + u][0];
+            dir[1] = dirmap[v * width + u][1];
+            dir[2] = dirmap[v * width + u][2];
+
+            cosTheta = vdot(dir, n);
+            if (cosTheta < 0.0) cosTheta = 0.0;
+
+            // L x cosTheta
+            idx = 4 * (v * width + u);
+            dst[idx + 0] = 1.0;
+            dst[idx + 1] = 0.0;
+            dst[idx + 2] = 0.0;
+        }
+    }
 
 }
 
@@ -272,6 +361,113 @@ contribute(
 
 }
 
+static void
+contribute_pixel(
+    float          *dst,
+    float          *L,                  /* IBL image in long-lat coord */
+    ri_vector_t     n,
+    double          theta,
+    double          phi,
+    vec             dir,
+    int             width,
+    int             height)
+{
+
+    int us;
+    int vs;
+    int idx;
+
+    double cosTheta;
+
+
+    us = (int)((phi / (2.0 * M_PI)) * width);
+    if (us >= width) us = width - 1;
+
+    vs = (int)((theta / M_PI) * height);
+    if (vs >= height) vs = height - 1;
+
+    cosTheta = vdot(dir, n);
+    if (cosTheta < 0.0) cosTheta = 0.0;
+
+    // L x cosTheta
+    idx = 4 * (vs * width + us);
+    dst[idx + 0] = cosTheta * L[idx + 0];
+    dst[idx + 1] = cosTheta * L[idx + 1];
+    dst[idx + 2] = cosTheta * L[idx + 2];
+}
+
+static void
+mc_sample_subregion(
+    ri_bvh_t                        *bvh,
+    const ri_texture_t              *Lmap,
+    ri_texture_t                    *prodmap,
+    const ri_intersection_state_t   *isect,
+    ri_vector_t                      n,
+    double                           theta,
+    double                           phi,
+    double                           theta_step,
+    double                           phi_step,
+    int                              depth)
+{
+    int i;
+    int hit;
+    int area_x;
+    int pixel_size;
+    int nsamples;
+    int x, y;
+    double u, v;
+    
+    vec                     raydir;
+    ri_ray_t                ray;
+    ri_intersection_state_t state;
+
+    area_x = Lmap->width / 8;
+
+    pixel_size = area_x / pow(2, depth);
+
+    if (pixel_size < 1) pixel_size = 1;
+
+    // at least, area covered by this subregion is 1x2 pixel.
+    nsamples = pixel_size * 2;
+
+    //printf("depth  = %d, pixel_size = %d, nsamples = %d\n", depth, pixel_size, nsamples);
+
+    /* slightly move the shading point towards the surface normal */
+    vcpy(ray.org, isect->P);
+    ray.org[0] += isect->Ns[0] * 0.00001;
+    ray.org[1] += isect->Ns[1] * 0.00001;
+    ray.org[2] += isect->Ns[2] * 0.00001;
+
+    for (y = 0; y < nsamples * 2; y++) {
+        for (x = 0; x < nsamples; x++) {
+
+            u = theta + ((y + drand48()) / (double)(nsamples*2)) * theta_step;
+            v = phi + ((x + drand48()) / (double)(nsamples)) * phi_step;
+
+            uv2xyz(&raydir[0], &raydir[1], &raydir[2], u, v);
+
+            vcpy(ray.dir, raydir);
+
+            hit = ri_bvh_intersect( (void *)bvh, &ray, &state, NULL );
+
+            if (!hit) {
+
+                contribute_pixel(
+                    prodmap->data,
+                    Lmap->data,
+                    n,
+                    u,
+                    v,
+                    raydir,
+                    prodmap->width,
+                    prodmap->height);
+
+            }
+        }
+    }
+}
+    
+
 
 static void
 render_subregion(
@@ -303,8 +499,22 @@ render_subregion(
 
     if ((theta_step < MIN_DIV_SIZE) ||
         (phi_step   < MIN_DIV_SIZE) ||
-        (depth      > 1)) {
+        (depth      > 2)) {
 
+        if (dtrace) {
+            contribute_debug(
+                prodmap->data,
+                Lmap->data,
+                n,
+                theta,
+                phi,
+                theta_step,
+                phi_step,
+                prodmap->width,
+                prodmap->height);
+            return;
+        }
+#if 0
         // FIXME!
         contribute(
             prodmap->data,
@@ -316,6 +526,20 @@ render_subregion(
             phi_step,
             prodmap->width,
             prodmap->height);
+#endif
+
+        /* Switch to monte carlo sampling */
+        mc_sample_subregion(
+            bvh,
+            Lmap,
+            prodmap,
+            isect,
+            n,
+            theta,
+            phi,
+            theta_step,
+            phi_step,
+            depth);
 
         return;
     }
@@ -465,10 +689,8 @@ convolve(
     vec L;
     vzero(L);
 
-    static int first = 1;
-    if (first) {
+    if (dtrace) {
         ri_image_save_hdr("prod.hdr", prodmap->data, prodmap->width, prodmap->height);
-        first = 0;
     }
     
     for (i = 0; i < prodmap->width * prodmap->height; i++) {
@@ -481,7 +703,6 @@ convolve(
     Lo[1] = k * L[1] / (prodmap->width * prodmap->height);
     Lo[2] = k * L[2] / (prodmap->width * prodmap->height);
 
-    printf("Lo = %f, %f, %f\n", Lo[0], Lo[1], Lo[2]);
 }
 
 
@@ -499,7 +720,8 @@ sample_ibl_beam(
     ri_bvh_t                        *bvh,
     const ri_texture_t              *Lmap,
     ri_texture_t                    *prodmap,           /* [buffer]         */
-    const ri_intersection_state_t   *isect)
+    const ri_intersection_state_t   *isect,
+    int                              debug)
 {
 
     int o, u;
@@ -517,6 +739,8 @@ sample_ibl_beam(
 
     vec    dir[4];
     vec    n;
+
+    dtrace = debug;
 
     if (!initialized) {
         init_dir_cache();

@@ -14,6 +14,12 @@ extern ri_texture_t    *giblmap;
 extern ri_texture_t    *giblscledmap;
 extern ri_texture_t    *glatlongmap;
 extern int              giblsamples;
+extern int              gnsubsamples;
+
+extern int              gdebugpixel;
+extern int              gdebugpixel_x;
+extern int              gdebugpixel_y;
+extern int              gprogressiveMode;
 
 //
 // GUI setup

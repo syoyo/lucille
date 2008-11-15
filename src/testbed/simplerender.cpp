@@ -216,6 +216,89 @@ simple_render(
     ri_bvh_report_stat_traversal();
 }
 
+void
+simple_render_progressive(
+    ri_bvh_t *bvh,
+    float    *image,
+    int       width,
+    int       height,
+    vec       eye,
+    vec       lookat,
+    vec       up,
+    int       nsamples)
+{
+    int      i, j;
+    float    s, t;
+
+    vec      corner;
+    vec      du; 
+    vec      dv; 
+    vec      dw; 
+
+    vec      radiance;
+    vec      raydir;
+
+    int                     hit;
+    ri_ray_t                ray;
+    ri_intersection_state_t state;
+    ri_bvh_diag_t           diag;
+
+    setup_camera(
+        corner, du, dv, dw,
+        eye, lookat, up,
+        width, height, fov);
+
+    ri_bvh_clear_stat_traversal();
+
+    // MUST CALL
+    ri_bvh_invalidate_cache( (void *)bvh );
+
+    int nthetasamples = (int)sqrt(nsamples);
+    int nphisamples   = (int)sqrt(nsamples);
+
+    if (nthetasamples < 1) nthetasamples = 1;
+    if (nphisamples   < 1) nphisamples   = 1;
+
+    for (j = 0; j < height; j++) {
+        for (i = 0; i < width; i++) {
+
+            s = (float)i;
+            t = (float)j;
+
+            get_eyedir(
+                raydir,
+                corner, du, dv,
+                s, t);
+                
+            memset( &state, 0, sizeof(ri_ray_t));
+            vcpy( ray.org, eye );
+            vcpy( ray.dir, raydir );
+
+            memset( &state, 0, sizeof(ri_intersection_state_t));
+
+            hit = ri_bvh_intersect( (void *)bvh, &ray, &state, &diag );
+
+            if (hit) {
+
+                sample_ibl_naive(radiance, bvh, giblmap, &state, nthetasamples, nphisamples);
+
+            } else {
+
+                radiance[0] = 0.0;
+                radiance[1] = 0.0;
+                radiance[2] = 0.0;
+
+            }
+
+            record_sample( image, width, height, s, t, radiance );
+
+        }
+    }
+
+    //ri_bvh_report_stat_traversal();
+}
+
+
 static ri_texture_t *
 make_Lmap(ri_texture_t *longlatmap)
 {
@@ -260,6 +343,7 @@ simple_render_ibl(
 {
     int      i, j;
     float    s, t;
+    int      u, v;
 
     vec      corner;
     vec      du; 
@@ -267,9 +351,11 @@ simple_render_ibl(
     vec      dw; 
 
     vec      radiance;
+    vec      radsum;
     vec      raydir;
 
     int                     hit;
+    int                     debug;
     ri_ray_t                ray;
     ri_intersection_state_t state;
     ri_bvh_diag_t           diag;
@@ -305,44 +391,62 @@ simple_render_ibl(
         printf("render line %d...\n", j);
         for (i = 0; i < width; i++) {
 
-            s = (float)i;
-            t = (float)j;
-
-            get_eyedir(
-                raydir,
-                corner, du, dv,
-                s, t);
-                
-            memset( &state, 0, sizeof(ri_ray_t));
-            vcpy( ray.org, eye );
-            vcpy( ray.dir, raydir );
-
-            memset( &state, 0, sizeof(ri_intersection_state_t));
-
-            hit = ri_bvh_intersect( (void *)bvh, &ray, &state, &diag );
-
-            if (hit) {
-
-                memset(prodmap.data, 0, sizeof(float) * 4 * prodmap.width * prodmap.height);
-                //sample_ibl_naive(radiance, bvh, giblmap, &state, nthetasamples, nphisamples);
-                sample_ibl_beam(radiance, bvh, Lmap, &prodmap, &state);
-                //exit(0);    // HACK
-
-            } else {
-
-                /*
-                 * IBL is directly seen.
-                 */
-                ri_texture_ibl_fetch(radiance,
-                                     giblmap,
-                                     ray.dir);
-
-                // HACK
-                //vscale(radiance, radiance, 00.0);
-
+            debug = 0;
+            if (gdebugpixel) {
+                if ((gdebugpixel_x == i) && (gdebugpixel_y == j)) {
+                    debug = 1;
+                }
             }
 
-            record_sample( image, width, height, s, t, radiance );
+            vzero(radsum);
+
+            for (v = 0; v < gnsubsamples; v++) {
+                for (u = 0; u < gnsubsamples; u++) {
+
+                    s = (float)i + u / (float)(gnsubsamples);
+                    t = (float)j + v / (float)(gnsubsamples);
+
+                    get_eyedir(
+                        raydir,
+                        corner, du, dv,
+                        s, t);
+                        
+                    memset( &state, 0, sizeof(ri_ray_t));
+                    vcpy( ray.org, eye );
+                    vcpy( ray.dir, raydir );
+
+                    memset( &state, 0, sizeof(ri_intersection_state_t));
+
+                    hit = ri_bvh_intersect( (void *)bvh, &ray, &state, &diag );
+
+                    if (hit) {
+
+                        //sample_ibl_naive(radiance, bvh, giblmap, &state, nthetasamples, nphisamples);
+                        memset(prodmap.data, 0, sizeof(float) * 4 * prodmap.width * prodmap.height);
+                        sample_ibl_beam(radiance, bvh, Lmap, &prodmap, &state, debug);
+                        //exit(0);    // HACK
+
+                    } else {
+
+                        /*
+                         * IBL is directly seen.
+                         */
+                        ri_texture_ibl_fetch(radiance,
+                                             giblmap,
+                                             ray.dir);
+
+                        // HACK
+                        //vscale(radiance, radiance, 00.0);
+
+                    }
+
+                    vadd(radsum, radsum, radiance);
+                }
+            }
+
+            vscale(radsum, radsum, 1.0 / (double)(gnsubsamples * gnsubsamples));
+
+            record_sample( image, width, height, (float)i, (float)j, radsum );
 
         }
     }

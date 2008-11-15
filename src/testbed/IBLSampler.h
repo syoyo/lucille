@@ -21,7 +21,8 @@ extern void sample_ibl_beam(
     ri_bvh_t                        *bvh,
     const ri_texture_t              *Lmap,
     ri_texture_t                    *prodmap,           /* [buffer]         */
-    const ri_intersection_state_t   *isect);
+    const ri_intersection_state_t   *isect,
+    int                              debug);
 
 extern void sample_ibl_naive(
     ri_vector_t                      Lo,                /* [out]            */

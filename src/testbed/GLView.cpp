@@ -12,6 +12,11 @@
 #include "timer.h"
 #include "controller.h"
 
+void idle_func()
+{
+    printf("idle\n");
+    Fl::redraw();
+}
 
 void GLView::glInit()
 {
@@ -113,6 +118,15 @@ GLView::handleKey(int k)
         this->resetView();
         needRedraw = true;
         break;
+
+    case 'd':
+        this->debugPixelSelectionMode = 1;
+        break;
+
+    case 'D':
+        this->debugPixelSelectionMode = 0;
+        gdebugpixel = 0;
+        break;
  
     case 's':
         loadView(this);
@@ -148,6 +162,20 @@ GLView::handleKey(int k)
         needRedraw = true;
         break;
 
+    case 'p':
+        this->progressiveMode = 1;
+        this->displayImage = 1;
+        printf("Progressive on\n");
+        needRedraw = true;
+        Fl::set_idle(idle_func);
+        break;
+
+    case 'P':
+        this->progressiveMode = 0;
+        printf("Progressive off\n");
+        needRedraw = true;
+        break;
+
     }
 
 
@@ -171,6 +199,8 @@ GLView::handle(int e)
 
     int k;
 
+    printf("handle\n");
+
     switch (e) {
 
         // Keyborad
@@ -185,6 +215,13 @@ GLView::handle(int e)
         case FL_PUSH:
 
             state = Fl::event_state();
+
+            if (this->debugPixelSelectionMode) {
+                gdebugpixel   = 1;
+                gdebugpixel_x = Fl::event_x();
+                gdebugpixel_y = Fl::event_y();
+                printf("DEBUG PIXEL %d, %d\n", gdebugpixel_x, gdebugpixel_y);
+            }
 
             this->pressed = 1;
 
@@ -204,8 +241,10 @@ GLView::handle(int e)
             this->mouseY = Fl::event_y();
 
             if (this->displayImage == true) {
-                this->displayImage = false;
-                this->restore();
+                if (!this->progressiveMode) {
+                    this->displayImage = false;
+                    this->restore();
+                }
             }
 
             trackball(this->prevQuat, 0, 0, 0, 0);
@@ -214,6 +253,9 @@ GLView::handle(int e)
             break;
 
         case FL_DRAG:
+
+            this->invalidateFrame = 1;
+            this->nRendererdFrames = 0;
 
             x = Fl::event_x();
             y = Fl::event_y();
@@ -349,7 +391,13 @@ GLView::draw()
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    printf("display\n");
+
     if (this->displayImage && this->image) {
+
+        if (this->progressiveMode) {
+            this->renderImage();
+        }
 
         glViewport(0,0,this->imageWidth,this->imageHeight);
         glMatrixMode(GL_PROJECTION);
@@ -613,7 +661,10 @@ find_minmaxval( float *minval, float *maxval, float *fimage, int width, int heig
 void
 GLView::renderImage()
 {
+    int   i;
     float eye[4], lookat[4], up[4];
+    float *fimg;
+    float invN;
 
     vec   veye, vlookat, vup;
 
@@ -645,29 +696,62 @@ GLView::renderImage()
             
     get_time(&e);
 
+    if (this->progressiveMode) {
+
+        this->nRendererdFrames++;
+
+        // clear accum buffer becuase something is changed(e.g. view).
+        if (this->invalidateFrame) { 
+            this->invalidateFrame = 0;
+            memset(this->floatAccumImage, 0, sizeof(float) * this->imageWidth * this->imageHeight * 3);
+        }
+
+        // accumurate & averaging.
+        //invN = 1.0f / (this->nRendererdFrames);
+        //invN = 1.0f;
+        //invN = 1.0f / (this->nRendererdFrames);
+        for (i = 0; i < this->imageWidth * this->imageHeight * 3; i++) {
+            this->floatAccumImage[i] += this->floatImage[i];    // accum
+        }
+
+    }
+
+    if (this->progressiveMode) {
+        fimg = this->floatAccumImage;
+    } else {
+        fimg = this->floatImage;
+    }
+        
+
     // this->setImage( grender->image, grender->width, grender->height );
     // this->showImage();
      
     float minval, maxval;
-    find_minmaxval( &minval, &maxval, this->floatImage, this->imageWidth, this->imageHeight);
+    find_minmaxval( &minval, &maxval, fimg, this->imageWidth, this->imageHeight);
 
     switch (gvisualizeMode) {
     case VISUALIZE_NUM_TRAVERSALS:
-        heatmap( this->image, this->floatImage, this->imageWidth, this->imageHeight , 0.0, 200.0);
+        heatmap( this->image, fimg, this->imageWidth, this->imageHeight , 0.0, 200.0);
         break;
 
     case VISUALIZE_NUM_ISECTS:
-        heatmap( this->image, this->floatImage, this->imageWidth, this->imageHeight , 0.0, 50.0);
+        heatmap( this->image, fimg, this->imageWidth, this->imageHeight , 0.0, 50.0);
         break;
 
     default:
-        minval = 0.0;
-        maxval = 1.0;
-        tonemap( this->image, this->floatImage, this->imageWidth, this->imageHeight , minval, maxval);
+        if (this->progressiveMode) {
+            minval = 0.0;
+            maxval = (float)this->nRendererdFrames;
+        } else {
+            minval = 0.0;
+            maxval = 1.0;
+        }
+
+        tonemap( this->image, fimg, this->imageWidth, this->imageHeight , minval, maxval);
         break;
 
     }
-
+    
     this->displayImage = true;
 
     double elap = elapsed_time(&s, &e);
