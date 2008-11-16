@@ -12,10 +12,27 @@
 #include "simplerender.h"
 
 #include "IBLSampler.h"
+#include "DirectLighting.h"
 
 ri_float_t fov = 45.0;
 
 const int raster_size = 64;
+
+static void uv2xyz(
+    double *x,
+    double *y,
+    double *z,
+    double  u,                  /* [0, pi]      */
+    double  v)                  /* [0, 2 pi]    */
+{
+    //
+    // The scene is defined in +Y up coord, so we align to this coord.
+    // It differs standard uv2xyz definition which is defined in +Z up coord.)
+    //
+    (*z) = cos(v) * sin(u);     // x
+    (*x) = sin(v) * sin(u);     // y
+    (*y) = cos(u);              // z
+}
 
 static void
 setup_camera(
@@ -238,6 +255,8 @@ simple_render_progressive(
     vec      radiance;
     vec      raydir;
 
+    vec      Li;
+
     int                     hit;
     ri_ray_t                ray;
     ri_intersection_state_t state;
@@ -258,6 +277,23 @@ simple_render_progressive(
 
     if (nthetasamples < 1) nthetasamples = 1;
     if (nphisamples   < 1) nphisamples   = 1;
+
+    ri_vector_t distant_light_dir;
+    ri_vector_t distant_light_col;
+
+    ri_vector_set4(distant_light_col, 1.0, 1.0, 1.0, 1.0);
+    if (genable_distant_light) {
+        uv2xyz(&distant_light_dir[0],
+               &distant_light_dir[1],
+               &distant_light_dir[2],
+                gdistant_light_theta,
+                gdistant_light_phi);
+
+        printf("dir = %f, %f, %f\n",
+            distant_light_dir[0],
+            distant_light_dir[1],
+            distant_light_dir[2]);
+    }
 
     for (j = 0; j < height; j++) {
         for (i = 0; i < width; i++) {
@@ -281,6 +317,16 @@ simple_render_progressive(
             if (hit) {
 
                 sample_ibl_naive(radiance, bvh, giblmap, &state, nthetasamples, nphisamples);
+
+                if (genable_distant_light) {
+
+                    sample_distant_light(
+                        Li, bvh, &state, distant_light_dir, distant_light_col, 0);
+                    radiance[0] += Li[0];
+                    radiance[1] += Li[1];
+                    radiance[2] += Li[2];
+                }
+
 
             } else {
 

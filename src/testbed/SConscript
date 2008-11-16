@@ -53,10 +53,10 @@ def ParseConfig(env,command,options):
         env_dict['LIBS'] = []
 
     if not env_dict.has_key('CXXFLAGS'):
-        env_dict['CXXFLAGS'] = []
+        env_dict['CXXFLAGS'] = ['-g']
 
     if not env_dict.has_key('LINKFLAGS'):
-        env_dict['LINKFLAGS'] = []
+        env_dict['LINKFLAGS'] = ['-g']
 
     # run the config program to get the options we need
     full_cmd = "%s %s" %  (WhereIs(command), os.path.join(options))
@@ -104,6 +104,7 @@ BVHVisualizer.cpp
 simplerender.cpp
 timer.c
 IBLSampler.c
+DirectLighting.c
 """)
 
 target = "testbed"

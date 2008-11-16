@@ -113,6 +113,8 @@ GLView::handleKey(int k)
 
     bool needRedraw = false;
 
+    int  state = Fl::event_state();
+
     switch (k) {
     case ' ':
         this->resetView();
@@ -127,7 +129,28 @@ GLView::handleKey(int k)
         this->debugPixelSelectionMode = 0;
         gdebugpixel = 0;
         break;
- 
+
+    case 'o':
+        this->onoffDistantLight = 1;
+        genable_distant_light = 1;
+        needRedraw = true;
+        break;
+
+    case 'O':
+        this->onoffDistantLight = 0;
+        genable_distant_light = 0;
+        needRedraw = true;
+        break;
+
+    case 'i':
+        if (state == FL_SHIFT) {
+            this->lightEditingMode = 0;
+        } else {
+            this->lightEditingMode = 1;
+        }
+        needRedraw = true;
+        break;
+
     case 's':
         loadView(this);
         needRedraw = true;
@@ -264,18 +287,28 @@ GLView::handle(int e)
 
                 if (this->pressedButton == FL_LEFT_MOUSE) {
 
-#if 1
-                    trackball(this->prevQuat,
-                              t * (2.0 * mx - w()) / (float)w(),
-                              t * (h() - 2.0 * my) / (float)h(),
-                              t * (2.0 * x - w())  / (float)w(),
-                              t * (h() - 2.0 * y)  / (float)h());
+                    // editing light pos?
+                    if (this->lightEditingMode) {
 
-                    add_quats(this->prevQuat, this->currQuat, this->currQuat);
+                        gdistant_light_phi   += (float)(x - mx) / 50.0;
+                        gdistant_light_theta += (float)(y - my) / 50.0;
+
+                        printf("L phi theta = %f, %f\n", gdistant_light_theta, gdistant_light_phi);
+
+                    } else {
+#if 1
+                        trackball(this->prevQuat,
+                                  t * (2.0 * mx - w()) / (float)w(),
+                                  t * (h() - 2.0 * my) / (float)h(),
+                                  t * (2.0 * x - w())  / (float)w(),
+                                  t * (h() - 2.0 * y)  / (float)h());
+
+                        add_quats(this->prevQuat, this->currQuat, this->currQuat);
 #else
-                    rotX += (float)(x - mx);
-                    //rotY += t * (h() - 2.0 * (y - my)) / (float)h();
+                        rotX += (float)(x - mx);
+                        //rotY += t * (h() - 2.0 * (y - my)) / (float)h();
 #endif
+                    }
                     
 
 
@@ -664,7 +697,6 @@ GLView::renderImage()
     int   i;
     float eye[4], lookat[4], up[4];
     float *fimg;
-    float invN;
 
     vec   veye, vlookat, vup;
 
@@ -740,8 +772,9 @@ GLView::renderImage()
 
     default:
         if (this->progressiveMode) {
-            minval = 0.0;
-            maxval = (float)this->nRendererdFrames;
+            //minval = 0.0;
+            //maxval = (float)this->nRendererdFrames;
+            printf("nRendererdFrames = %d\n", this->nRendererdFrames);
         } else {
             minval = 0.0;
             maxval = 1.0;

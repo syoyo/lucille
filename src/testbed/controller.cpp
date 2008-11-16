@@ -30,6 +30,10 @@ int              gdebugpixel_y;
 
 int              gprogressiveMode = 0;
 
+int              genable_distant_light = 0;
+float            gdistant_light_theta  = 0.5 * M_PI;
+float            gdistant_light_phi    = 0.5 * M_PI;
+
 Fl_Menu_Item visualizeMenu[] = {
     { "Image"      , 0, 0, (void *)VISUALIZE_IMAGE          , 0, 0, 0, 0, 0},
     { "# of travs" , 0, 0, (void *)VISUALIZE_NUM_TRAVERSALS , 0, 0, 0, 0, 0},

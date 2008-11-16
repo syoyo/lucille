@@ -441,8 +441,8 @@ mc_sample_subregion(
     for (y = 0; y < nsamples * 2; y++) {
         for (x = 0; x < nsamples; x++) {
 
-            u = theta + ((y + drand48()) / (double)(nsamples*2)) * theta_step;
-            v = phi + ((x + drand48()) / (double)(nsamples)) * phi_step;
+            u = theta + ((y + randomMT()) / (double)(nsamples*2)) * theta_step;
+            v = phi + ((x + randomMT()) / (double)(nsamples)) * phi_step;
 
             uv2xyz(&raydir[0], &raydir[1], &raydir[2], u, v);
 

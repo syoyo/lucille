@@ -21,6 +21,10 @@ extern int              gdebugpixel_x;
 extern int              gdebugpixel_y;
 extern int              gprogressiveMode;
 
+extern int              genable_distant_light;
+extern float            gdistant_light_theta;
+extern float            gdistant_light_phi;
+
 //
 // GUI setup
 //

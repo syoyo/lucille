@@ -36,6 +36,7 @@ class GLView : public Fl_Gl_Window {
         trackball( currQuat, 0.0, 0.0, 0.0, 0.0 );
 
         rotX = 0.0f; rotY = 0.0f;
+        rotLightX = 0.0f; rotLightY = 0.0f;
 
         bvhVisualizer = new BVHVisualizer();
 
@@ -57,6 +58,9 @@ class GLView : public Fl_Gl_Window {
         progressiveMode = 0;
         invalidateFrame = 0;
         nRendererdFrames = 0;
+
+        onoffDistantLight = 0;
+        lightEditingMode = 0;
     }
 
     void           saveCurrentViewAsDefaultView();
@@ -80,6 +84,7 @@ class GLView : public Fl_Gl_Window {
     int            pressedButton;
 
     float          rotX, rotY;
+    float          rotLightX, rotLightY;
   
     unsigned char *image;
     float         *floatImage;
@@ -107,5 +112,8 @@ class GLView : public Fl_Gl_Window {
     int            progressiveMode;
     int            invalidateFrame;
     int            nRendererdFrames;
+
+    int            onoffDistantLight;
+    int            lightEditingMode;
 
 };
