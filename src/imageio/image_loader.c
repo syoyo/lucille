@@ -187,6 +187,7 @@ load_hdr(
  *
  * ----------------------------------------------------------------------- */
 
+#ifdef WITH_JPEGLIB
 static float *
 load_jpeg(
     FILE           *fp,
@@ -249,6 +250,7 @@ load_jpeg(
 
     return fimage;
 }
+#endif
 
 static void endconv4(void *data)
 {
