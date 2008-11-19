@@ -71,8 +71,8 @@ if env['build_target'] == 'debug':
 	env.Append(CXXFLAGS = ['-g'])
 
 if env['build_target'] == 'release':
-	env.Append(CFLAGS   = ['-O2'])
-	env.Append(CXXFLAGS = ['-O2'])
+	env.Append(CFLAGS   = ['-g', '-O2'])
+	env.Append(CXXFLAGS = ['-g', '-O2'])
 
 #
 # LLVM
@@ -98,7 +98,8 @@ if env['use_double'] == 1:
 #
 if env['enable_64bit'] == 1:
 	env.Append(CPPDEFINES = ['__64bit__'])
-	env.Append(CFLAGS = ['-m64'])	# gcc only
+	env.Append(CFLAGS     = ['-m64'])         # gcc only
+	env.Append(LINKFLAGS  = ['-m64'])         # gcc only
 
 #
 # compression

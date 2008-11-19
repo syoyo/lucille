@@ -74,7 +74,7 @@ static inline uint32_t ri_atomic_cmpxchg32(
 }
 
 
-#if defined(__X86_64__)
+#if defined(__x86__) && defined(__64bit__)
 
 /*
  * 64-bit compare-and-swap in x86_64 environment.
@@ -96,7 +96,7 @@ static inline uint64_t ri_atomic_cmpxchg64(void *ptr,
     return out;
 }
 
-#else    /* !__X86_64__ */
+#else    /* !(__x86__ && __64bit) */
 
 static inline uint64_t ri_atomic_cmpxchg64(void *ptr,
     uint64_t oldv,
@@ -125,7 +125,7 @@ static inline uint64_t ri_atomic_cmpxchg64(void *ptr,
         return prev;
 }
 
-#endif    /* __X86_64__ */
+#endif    /* __x86__ && __64bit */
 
 #define RI_ATOMIC_CAS64(ptr, oldv, newv) (ri_atomic_cmpxchg64((ptr), (oldv), (newv)) == (oldv) ? 1 : 0)
 #define RI_ATOMIC_CAS32(ptr, oldv, newv) (ri_atomic_cmpxchg32((ptr), (oldv), (newv)) == (oldv) ? 1 : 0)

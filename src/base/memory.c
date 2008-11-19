@@ -34,7 +34,9 @@ static inline uint64_t alignup(uint64_t sz, uint32_t align)
 
 static inline void *alignptr(void *addr, uint32_t align)
 {
-    return (void *)(((uintptr_t)addr + (align - 1)) & ~(align - 1));
+    uintptr_t mask = ~((uintptr_t)(align - 1));
+
+    return (void *)(((uintptr_t)addr + (align - 1)) & mask);
 }
 
 void *
