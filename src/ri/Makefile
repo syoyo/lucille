@@ -1,8 +1,8 @@
 SCONS := scons -u
 
 all:
-	@$(SCONS) -Q install-local
+	@$(SCONS) -Q .
 
 
 clean:
-	@$(SCONS) -c -Q
+	@$(SCONS) -c -Q .

@@ -199,7 +199,8 @@ ri_api_exposure(RtFloat gain, RtFloat gamma)
 {
 	ri_display_t *disp;
 
-	disp = ri_render_get()->context->option->display;
+    /* Get current display driver */
+	disp = ri_option_get_curr_display(ri_render_get()->context->option);
 
 	disp->gain  = gain;
 	disp->gamma = gamma;
@@ -210,7 +211,7 @@ ri_api_pixel_samples(RtFloat xsamples, RtFloat ysamples)
 {
 	ri_display_t *disp;
 
-	disp = ri_render_get()->context->option->display;
+	disp = ri_option_get_curr_display(ri_render_get()->context->option);
 
 	if (xsamples < 1.0) xsamples = 1.0;
 	if (ysamples < 1.0) ysamples = 1.0;

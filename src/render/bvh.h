@@ -165,6 +165,12 @@ typedef struct _ri_bvh_stat_beam_traversal_t {
  */
 typedef struct _ri_bvh_t {
 
+    /* If the bvh is build for empty scene input, empty flag is set
+     * to distinguish null pointer which stands for a bvh is not constructed
+     * yet.
+     */
+    int                         empty;
+
     /*
      * Scene bounding box
      */

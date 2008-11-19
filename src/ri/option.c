@@ -75,12 +75,21 @@ static int to_int(RtPointer p)
 ri_option_t *
 ri_option_new()
 {
-	ri_option_t *p = NULL;
+    int              ret;
+	ri_option_t     *p    = NULL;
+	ri_display_t    *disp = NULL;
 
 	p = (ri_option_t *)ri_mem_alloc(sizeof(ri_option_t));
 
+
 	p->camera                    = ri_camera_new();
-	p->display                   = ri_display_new();
+    p->display_list              = ri_list_new();
+
+    disp                         = ri_display_new();
+    ret = ri_list_append(p->display_list, (void *)disp);
+    assert(ret == 0);
+
+    
 	p->hider                     = "hidden";
 	p->searchpath                = ri_ptr_array_new();
 	p->relative_detail           = 1.0;
@@ -148,8 +157,19 @@ ri_option_new()
 void
 ri_option_free(ri_option_t *option)
 {
+    ri_list_t *display_list;
+
 	ri_camera_free(option->camera);
-	ri_display_free(option->display);
+
+    display_list = ri_list_first(option->display_list);
+
+    while (display_list != NULL) {
+
+        ri_display_free((ri_display_t *)display_list->data);
+        display_list = ri_list_next(display_list);
+
+    }
+
 	ri_ptr_array_traverse(option->searchpath, free_func);
 	ri_ptr_array_free(option->searchpath);
 
@@ -301,6 +321,29 @@ ri_option_find_file(char *fullpath, const ri_option_t *option, const char *file)
 	}
 
 	return 0;
+}
+
+/* Function: ri_option_get_curr_display
+ *
+ *     Returns current display from the display list.
+ *
+ * Parameters:
+ *
+ *     option   - The option which contains the display list.
+ *
+ * Returns:
+ *
+ *     Current display. The API never returns NULL.
+ *
+ */
+ri_display_t *
+ri_option_get_curr_display(ri_option_t *option)
+{
+    ri_display_t *disp;
+
+    disp = (ri_display_t *)ri_list_last(option->display_list)->data;
+
+    return disp;
 }
 
 void

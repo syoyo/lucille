@@ -213,11 +213,14 @@ world_begin_cb(void)
 {
 	/* Override values with the value specified by command line argument. */
 
-	ri_option_t *opt = ri_render_get()->context->option;
+	ri_option_t  *opt = ri_render_get()->context->option;
+    ri_display_t *disp;
+
+    disp = ri_option_get_curr_display(ri_render_get()->context->option);
 
 	if (flag_pixelsamples) {
-		opt->display->sampling_rates[0] = pixelsamples;
-		opt->display->sampling_rates[1] = pixelsamples;
+		disp->sampling_rates[0] = pixelsamples;
+		disp->sampling_rates[1] = pixelsamples;
 	}
 
 	if (flag_maxraydepth) {
@@ -225,8 +228,8 @@ world_begin_cb(void)
 	}
 
 	if (flag_outputname) {
-		if (opt->display && opt->display->display_name) {
-			opt->display->display_name = outputname;
+		if (disp && disp->display_name) {
+			disp->display_name = outputname;
 		}
 	}
 }

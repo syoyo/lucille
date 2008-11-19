@@ -300,6 +300,12 @@ ri_bvh_build(
                              &ntriangles,
                               scene->geom_list);
 
+        if (ntriangles == 0) {
+            /* No geometry in the scene. We build empty bvh structure. */
+            bvh->empty = 1;
+            return bvh;
+        }
+
         tri_bboxes_buf = ri_mem_alloc(sizeof(tri_bbox_t) * ntriangles);
         ri_mem_copy(tri_bboxes_buf, tri_bboxes, sizeof(tri_bbox_t)*ntriangles);
 
@@ -429,6 +435,11 @@ ri_bvh_intersect(
 
     bvh = (ri_bvh_t *)accel;
 
+    if (bvh->empty) {
+        /* Always no hit for empty accel structure. */
+        return 0;
+    }
+
     if (user) {
         diag_ptr = (ri_bvh_diag_t *)user;
         memset( diag_ptr, 0, sizeof(ri_bvh_diag_t));
@@ -521,6 +532,11 @@ ri_bvh_intersect_beam(
 
     bvh = (ri_bvh_t *)accel;
 
+    if (bvh->empty) {
+        /* Always no hit for empty accel structure. */
+        return 0;
+    }
+
     if (user) {
         diag_ptr = (ri_bvh_diag_t *)user;
         memset( diag_ptr, 0, sizeof(ri_bvh_diag_t));
@@ -581,6 +597,11 @@ ri_bvh_intersect_beam_visibility(
     assert( beam       != NULL );
 
     bvh = (ri_bvh_t *)accel;
+
+    if (bvh->empty) {
+        /* Always no hit for empty accel structure. */
+        return 0;
+    }
 
     if (user) {
         diag_ptr = (ri_bvh_diag_t *)user;
@@ -1623,6 +1644,18 @@ create_triangle_list(
         n += geom->nindices / 3;
 
     }
+
+    if (n == 0) {
+
+        /* Empty scene */
+
+        (*triangles_out)  = NULL;
+        (*tri_bboxes_out) = NULL;
+        (*ntriangles)     = 0;
+
+        return;
+    }
+
 
     (*triangles_out)  = ri_mem_alloc(sizeof(ri_triangle_t) * n);
     (*tri_bboxes_out) = ri_mem_alloc(sizeof(tri_bbox_t) * n);

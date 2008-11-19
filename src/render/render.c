@@ -390,8 +390,11 @@ ri_render_setup(ri_render_t *render)
         horizontal_resolution;
     h = ri_render_get()->context->option->camera->
         vertical_resolution;
-    output = ri_render_get()->context->option->display->display_name;
-    dsp_type = ri_render_get()->context->option->display->display_type;
+
+    /* TODO: Support multiple display. */
+    disp     = ri_option_get_curr_display(ri_render_get()->context->option);
+    output   = disp->display_name;
+    dsp_type = disp->display_type;
 
     drv = ( ri_display_drv_t * ) ri_hash_lookup(
     ri_render_get()->display_drvs, dsp_type );
@@ -421,7 +424,6 @@ ri_render_setup(ri_render_t *render)
     ri_render_get()->display_drv = drv;
 
     opt = ri_render_get(  )->context->option;
-    disp = ri_render_get(  )->context->option->display;
 
     xsamples = ( int ) disp->sampling_rates[0];
     ysamples = ( int ) disp->sampling_rates[1];
@@ -695,12 +697,12 @@ subsample( pixelinfo_t * pixinfo, int x, int y, int threadid )
     ri_camera_t    *camera;
     ri_transport_info_t result;
 
-    camera = ri_render_get(  )->context->option->camera;
+    camera = ri_render_get()->context->option->camera;
 
     w = camera->horizontal_resolution;
     h = camera->vertical_resolution;
 
-    disp = ri_render_get(  )->context->option->display;
+    disp = ri_option_get_curr_display(ri_render_get()->context->option);
     xsamples = disp->sampling_rates[0];
     ysamples = disp->sampling_rates[1];
 
@@ -1048,7 +1050,7 @@ render_bucket(
     bucket->pixels = (ri_vector_t *)ri_mem_alloc_aligned(sizeof(ri_vector_t) * w * h, 32);
     bucket->depths = (ri_float_t *)ri_mem_alloc_aligned(sizeof(ri_float_t) * w * h, 32);
 
-    ri_log(LOG_INFO, "Rendering bucket region [%dx%d]", x, y);
+    //ri_log(LOG_INFO, "Rendering bucket region [%dx%d]", x, y);
 
     for (v = y; v < y + h; v++) { 
         for (u = x; u < x + w; u++) {

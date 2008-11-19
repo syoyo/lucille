@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include <ctype.h>	/* tolower() */
 
 #include "apitable.h"
@@ -79,9 +80,26 @@ ri_api_display(char *name, RtToken type, RtToken mode,
 		mode = RI_RGB;
 	}
 
-	disp = ri_render_get()->context->option->display;
 
-	disp->display_name = strdup(name);
+    /*
+     * Check if multiple display
+     */
+    if (name[0] == '+') {
+        
+        /* Create new display. 
+         * FIXME: copy display state from previous display.
+         */
+        disp = ri_display_new();
+        assert(strlen(name) > 1);
+	    disp->display_name = strdup(name + 1);
+
+    } else {
+
+        disp = ri_option_get_curr_display(ri_render_get()->context->option);
+	    disp->display_name = strdup(name);
+
+    }
+
 	disp->display_type = strdup(type);
 
 	for (i = 0; i < n; i++) {
@@ -125,7 +143,7 @@ auto_detect_format()
 	char          buf[1024];
 	int           len;
 
-	disp = ri_render_get()->context->option->display;
+	disp = ri_option_get_curr_display(ri_render_get()->context->option);
 
 
 	if (casecmp(disp->display_type, "file") == 0)  {

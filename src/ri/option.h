@@ -11,6 +11,7 @@
 #include <stdio.h>
 
 #include "array.h"
+#include "list.h"
 #include "display.h"
 #include "camera.h"
 #include "vector.h"
@@ -18,7 +19,12 @@
 typedef struct _ri_option_t
 {
 	ri_camera_t  *camera;
-	ri_display_t *display;
+
+    /* Current display driver */
+	//ri_display_t *display;  
+
+    /* RIB can specify multiple displays. */
+    ri_list_t    *display_list;
 
 	/* The type of hidden surface algorithm that is performed. */
 	RtToken hider;
@@ -104,18 +110,25 @@ extern "C" {
 #endif
 
 extern ri_option_t *ri_option_new           ();
-extern void         ri_option_free          (ri_option_t *option);
-extern void         ri_option_add_searchpath(ri_option_t *option, const char *path);
-extern int          ri_option_find_file(char *fullpath,
-					const ri_option_t *option,
-					const char *file);
+extern void         ri_option_free          (ri_option_t       *option);
+extern void         ri_option_add_searchpath(ri_option_t       *option,
+                                             const char        *path);
+
+extern int          ri_option_find_file     (char              *fullpath,
+                                             const ri_option_t *option,
+                                             const char        *file);
+
+extern ri_display_t *ri_option_get_curr_display(
+                                             ri_option_t       *option);
 
 /* For debug    */
-extern void         ri_option_show_searchpath(ri_option_t *option);
+extern void         ri_option_show_searchpath(
+                                             ri_option_t       *option);
 
 /* implemetation specific option */
-extern void	    ri_impl_option_insert   (const char *name, void *val);
-extern void        *ri_impl_option_get      (const char *name);
+extern void	        ri_impl_option_insert   (const char        *name, 
+                                             void              *val);
+extern void        *ri_impl_option_get      (const char        *name);
 
 #ifdef __cplusplus
 }	/* extern "C" */
