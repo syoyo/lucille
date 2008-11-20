@@ -258,6 +258,8 @@ window_loop()
 
 	XUnmapWindow(disp, window);
 	XFreeGC(disp, gc);
+
+    /* Note that XDestroyImage() frees image data set by XCreateImage(). */
 	XDestroyImage(xim);
 	XDestroyWindow(disp, window);
 	XCloseDisplay(disp);
@@ -327,8 +329,8 @@ fb_dd_open(const char *name, int width, int height,
 	gbuf = (char *)ri_mem_alloc(width * height * 4);
 	gmask = (char *)ri_mem_alloc(width * height);
 	for (i = 0; i < width * height; i++) {
-		gbuf[4 * i + 0] = 0;
-		gbuf[4 * i + 1] = 152;
+		gbuf[4 * i + 0] = 127;
+		gbuf[4 * i + 1] = 127;
 		gbuf[4 * i + 2] = 127;
 		gbuf[4 * i + 3] = 127;
 		gmask[i] = 1;	/* first time of writing to this pixel. */
@@ -532,6 +534,10 @@ fb_dd_close(void)
 
 	pthread_join(thread, NULL);
 
+    /* gbuf is already freed by XDestroyImage().
+     * No ri_mem_free(gbuf) is required.
+     */
+
 #endif
 
 #ifdef WITH_AQUA
@@ -557,9 +563,11 @@ fb_dd_close(void)
 	}
 
 	wait((int *)0);
-#endif
 
 	ri_mem_free(gbuf);
+
+#endif
+
 	ri_mem_free(gmask);
 
 	return 1;
