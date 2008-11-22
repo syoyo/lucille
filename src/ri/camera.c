@@ -24,6 +24,11 @@
 #include "render.h"
 #include "random.h"
 
+/* ----------------------------------------------------------------------------
+ * 
+ * Private functions
+ *
+ * ------------------------------------------------------------------------- */
 static int
 rootdeg2(
     ri_float_t root[2],        /* [out] */
@@ -92,6 +97,18 @@ dof(
         from[2] = lensdist;
 }
 
+/* ----------------------------------------------------------------------------
+ * 
+ * Public functionss
+ *
+ * ------------------------------------------------------------------------- */
+
+/*
+ * Function: ri_camera_new()
+ *
+ *   The constructor of ri_camera_t.
+ *
+ */
 ri_camera_t *
 ri_camera_new()
 {
@@ -231,7 +248,9 @@ ri_camera_get_pos_and_dir(
     ri_float_t         y)
 {
     ri_vector_t         v;
-    ri_float_t          flength = (ri_float_t)0.0;
+    ri_vector_t         dirpos;
+    ri_vector_t         o;
+    ri_float_t          flength = camera->flength;
     int                 ortho;
 
     ri_float_t          w;
@@ -253,7 +272,7 @@ ri_camera_get_pos_and_dir(
     /*
      * perturb ray for DOF effect.
      */
-    if ( camera->focal_length > 0.0 ) {
+    if ( camera->flength > 0.0 ) {
 
         /* TODO: fix this */
 
@@ -264,21 +283,32 @@ ri_camera_get_pos_and_dir(
             pos[2] = 0.0;
             pos[3] = 1.0;
 
+            dir[0] = v[0];
+            dir[1] = v[1];
+            dir[2] = 1.0;
+            dir[3] = 1.0;
+
+            ri_vector_transform( pos, v, c2w );
+
         } else {        /* perspective camera */
 
-            ri_vector_setzero( pos );
-            pos[3] = 1.0;
+            ri_vector_setzero( o );
+            o[3] = 1.0;
+
+#if 0
+            dof( o, v,
+                 camera->fstop,
+                 camera->focal_length,
+                 camera->focal_distance, flength );
+#endif
+
+            ri_vector_transform( pos, o, c2w );
+            ri_vector_transform( dirpos, v, c2w );
+
+            //ri_vector_transform( dirpos, v, c2w );
+            vsub(dir, dirpos, pos);
 
         }
-
-        dof( pos, v,
-             camera->fstop,
-             camera->focal_length,
-             camera->focal_distance, flength );
-
-        ri_vector_transform( dir, v, c2w );
-        ri_vector_copy( v, pos );
-        ri_vector_transform( pos, v, c2w );
 
     } else {
 
@@ -290,6 +320,11 @@ ri_camera_get_pos_and_dir(
             v[1] = v[1];
             v[2] = 0.0;
             v[3] = 1.0;
+
+            dir[0] = 0.0;
+            dir[1] = 0.0;
+            dir[2] = 1.0;
+            dir[3] = 0.0;
 
         } else {        /* perspective camera */
 
