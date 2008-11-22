@@ -447,23 +447,25 @@ fb_dd_write(int x, int y, const void *pixel)
 	static int ndrawed = 0;
 	       int progress_tick = gwidth;     
 
+    int yy = (gheight - y - 1);
+
 	if (x < 0) return 0;
 	if (x >= gwidth) return 0;
 	if (y < 0) return 0;
 	if (y >= gheight) return 0;
 
-	if (gmask[x + y * gwidth]) {
+	if (gmask[x + yy * gwidth]) {
 		/* first time */
-		gbuf[4 * (x + y * gwidth) + 0] = 255; /* A */
-		gbuf[4 * (x + y * gwidth) + 1] = ((unsigned char *)pixel)[0];    /* R */
-		gbuf[4 * (x + y * gwidth) + 2] = ((unsigned char *)pixel)[1]; /* G */
-		gbuf[4 * (x + y * gwidth) + 3] = ((unsigned char *)pixel)[2]; /* B */
-		gmask[x + y * gwidth] = 0;
+		gbuf[4 * (x + yy * gwidth) + 3] = 255; /* A */
+		gbuf[4 * (x + yy * gwidth) + 2] = ((unsigned char *)pixel)[0];    /* R */
+		gbuf[4 * (x + yy * gwidth) + 1] = ((unsigned char *)pixel)[1]; /* G */
+		gbuf[4 * (x + yy * gwidth) + 0] = ((unsigned char *)pixel)[2]; /* B */
+		gmask[x + yy * gwidth] = 0;
 	} else {
 		/* additive */
-		gbuf[4 * (x + y * gwidth) + 1] += ((unsigned char *)pixel)[0];    /* R */
-		gbuf[4 * (x + y * gwidth) + 2] += ((unsigned char *)pixel)[1]; /* G */
-		gbuf[4 * (x + y * gwidth) + 3] += ((unsigned char *)pixel)[2]; /* B */
+		gbuf[4 * (x + yy * gwidth) + 2] += ((unsigned char *)pixel)[0];    /* R */
+		gbuf[4 * (x + yy * gwidth) + 1] += ((unsigned char *)pixel)[1]; /* G */
+		gbuf[4 * (x + yy * gwidth) + 0] += ((unsigned char *)pixel)[2]; /* B */
 	}
 
 	ndrawed++;

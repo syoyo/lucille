@@ -75,6 +75,10 @@ hdr_dd_write(int x, int y, const void *pixel)
 	col[1] = ((float *)pixel)[1];
 	col[2] = ((float *)pixel)[2];
 
+    col[0] = 1.0f;
+    col[1] = 1.0f;
+    col[2] = 1.0f;
+
 	if (col[0] < 0.0) col[0] = 0.0;
 	if (col[1] < 0.0) col[1] = 0.0;
 	if (col[2] < 0.0) col[2] = 0.0;
