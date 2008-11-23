@@ -131,20 +131,32 @@ ri_list_remove_last(ri_list_t *list)
 ri_list_t *
 ri_list_remove_first(ri_list_t *list)
 {
-    ri_list_t *p;
+    ri_list_t *hdr;
+    ri_list_t *first;
+    ri_list_t *second;
+
+    /*
+     * Before remove : [hdr] -> first -> second
+     * After remove  : [hdr] -> second
+     */
 
     if (list == NULL) return NULL;
 
-    p = ri_list_first(list);
+    first = ri_list_first(list);
+    assert(first != NULL);
 
-    if (p->next) {
+    second = first->next;
+    if (second) {
 
-        list       = p->next;
-        list->prev = NULL;
+        hdr = first->prev;  // p->prev points to the header item in the list.
+        assert(hdr);
 
-        ri_mem_free(p);
+        hdr->next   = second;
+        second->prev = hdr;
+        
+        ri_mem_free(first);
 
-        return list;
+        return second;
 
     } else {
         return NULL;
