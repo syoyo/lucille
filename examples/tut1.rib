@@ -1,0 +1,10 @@
+##RenderMan RIB-Structure 1.0
+version 3.03
+WorldBegin
+Surface "constant" 
+Format 256 256 1
+Polygon "P" [ 0.500000 0.500000 0.500000
+              0.500000 -0.500000 0.500000
+              -0.500000 -0.500000 0.500000
+              -0.500000 0.500000 0.500000 ] 
+WorldEnd
