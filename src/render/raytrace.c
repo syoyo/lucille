@@ -71,18 +71,23 @@ ri_raytrace(
 void
 ri_raytrace_statistics()
 {
-    uint64_t ngridtravs;
-    uint64_t ntesttris;
-    uint64_t nrays;
+    uint64_t    ngridtravs;
+    uint64_t    ntesttris;
+    uint64_t    nrays;
+    double      nmrays;
 
-    ri_float_t             elapsed = 0.0;
+    double      elapsed = 0.0;
+
+    elapsed = ri_timer_elapsed( ri_render_get()->context->timer,
+                   "Render frame" );
 
     ngridtravs   = ri_render_get()->stat.ngridtravs;
     ntesttris    = ri_render_get()->stat.ntesttris;
     nrays        = ri_render_get()->stat.nrays;
 
-    elapsed = ri_timer_elapsed( ri_render_get()->context->timer,
-                   "Render frame" );
+    // Mega rays
+    nmrays       = (double)nrays / (1000.0 * 1000.0);
+
 
     printf( "\n" );
     printf( "/= Raytracing statistics =================="
@@ -95,7 +100,7 @@ ri_raytrace_statistics()
            ( double )ntesttris / ( double )nrays );
     printf( "| %-48s:  %20.6f\n", "The number of travs per ray",
            ( double )ngridtravs / ( double )nrays );
-    printf( "| %-48s:  %20.6f\n", "Rays/sec", ( double )nrays /
+    printf( "| %-48s:  %20.6f\n", "M Rays/sec", nmrays /
            ( double )elapsed );
     printf(
         "\\------------------------------------------------------------------------------\n" );

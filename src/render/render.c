@@ -1,3 +1,22 @@
+/*
+ *   lucille | Global Illumination renderer
+ *
+ *             written by Syoyo Fujita.
+ *
+ */
+
+/*
+ * Renderer system.
+ *
+ * Usually, rendering was done by bucket rendering. 
+ * The bucket stands for subregion of the image.
+ * Basically, the bucket is independently each other, thus the bucket
+ * might be computed in parallel(among threads, cores or nodes).
+ *
+ * TODO: - Refactor source code!
+ *
+ */
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -29,6 +48,7 @@
 #include "raytrace.h"
 #include "reflection.h"
 #include "transport.h"
+#include "ambientocclusion.h"
 #include "parallel.h"
 #include "shading.h"
 #include "qmc.h"
@@ -302,9 +322,11 @@ ri_render_frame(  )
 
 
     /*
-     * 2) Setup scene. calculate scene bounding box, create work queue, etc.
+     * 2) Setup scene and camera.
+     *    Calculate scene bounding box, create work queue, etc.
      */
     ri_scene_setup( scene );
+    ri_camera_setup( ri_render_get()->context->option->camera );
 
     create_bucket_list( ri_render_get(), ri_render_get()->bucket_queue);
 
@@ -429,7 +451,8 @@ ri_render_setup(ri_render_t *render)
     ysamples = ( int ) disp->sampling_rates[1];
 
     /*
-     * Init QMC sample 
+     * Init QMC sample.
+     * TODO: Remove QMC support.
      */
     init_sigma( xsamples, ysamples );
 
@@ -653,8 +676,7 @@ create_bucket_list(
 
         }
 
-        bucket_id = xp + nxbuckets * yp;
-
+        bucket_id = yp * nxbuckets + xp;
 
         ri_mt_queue_push(
             q,
@@ -740,7 +762,8 @@ subsample( pixelinfo_t * pixinfo, int x, int y, int threadid )
                 (ri_float_t)(y + jitter[1]));
 
             ri_vector_copy( ray.org, from );
-            ri_vector_sub( ray.dir, dir, from );
+            ri_vector_copy( ray.dir, dir );
+            //ri_vector_sub( ray.dir, dir, from );
             ri_vector_normalize( ray.dir );
 
             /* dimension 1 for screen x coordinate sample point,
@@ -762,8 +785,10 @@ subsample( pixelinfo_t * pixinfo, int x, int y, int threadid )
             /* assign threadid to ray's thread number */
             ray.thread_num = threadid;
 
-            ri_transport_sample( ri_render_get(  ),
-                                 &ray, &result );
+            /* HACK */
+            //ri_transport_sample( ri_render_get(  ),
+            //                     &ray, &result );
+            ri_transport_ambientocclusion(ri_render_get(), &ray, &result);
 
             ri_vector_add( accumrad, accumrad, result.radiance );
 
@@ -890,7 +915,7 @@ bucket_write(
     int             x, y;
     int             sx, sy;
     ri_vector_t     rad;
-    ri_float_t      floatcol[3];
+    float           floatcol[3];
     unsigned char   col[3];
     ri_camera_t    *camera;
 
@@ -917,9 +942,9 @@ bucket_write(
                  || strcmp( disp->display_type,
                             RI_FILE ) == 0 ) {
 
-                floatcol[0] = rad[0];
-                floatcol[1] = rad[1];
-                floatcol[2] = rad[2];
+                floatcol[0] = (float)rad[0];
+                floatcol[1] = (float)rad[1];
+                floatcol[2] = (float)rad[2];
 
                 drv->write( sx + x,
                             screenheight - ( sy + y ) - 1,
@@ -1020,6 +1045,7 @@ render_bucket_thread_func(void *arg)
          * Trace rays in this bucker region and render the image.
          */
         ret = render_bucket(bucket, info->thread_id);
+        assert(ret == 0);
 
     }
     
@@ -1067,12 +1093,9 @@ render_bucket(
         }
     }
 
-#if 0  // TODO
-    bucket_write(bucket, 
-    const bucket_t      *bucket,
-    ri_display_drv_t    *drv,
-    ri_display_t        *disp )
-#endif
+    bucket_write( bucket, 
+                  ri_render_get()->display_drv,
+                  ri_option_get_curr_display(ri_render_get()->context->option) );
 
     ri_mem_free_aligned(bucket->pixels);
     ri_mem_free_aligned(bucket->depths);

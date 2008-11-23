@@ -2,6 +2,7 @@ import os
 
 srcs=Split("""
 transport.c
+ambientocclusion.c
 """)
 
 # pathtrace.c
