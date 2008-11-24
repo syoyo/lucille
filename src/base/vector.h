@@ -161,9 +161,10 @@ static FORCE_INLINE void ri_vector_transform(
     /* Avoid the problem in the case of addr(dst) == addr(src). */
     ri_vector_t v;
     vcpy(v, src);
+    v[3] = 1.0;
 
     for (j = 0; j < 4; j++) {
-        dst[j] = 0.0f;
+        dst[j] = 0.0;
         for (i = 0; i < 4; i++)
             dst[j] += v[i] * mat->f[i][j];
     }
