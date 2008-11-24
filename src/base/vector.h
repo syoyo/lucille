@@ -86,32 +86,6 @@ static FORCE_INLINE void ri_vector_normalize(ri_vector_t dst)
 } while (0);
 #define vcross(dst, a, b) ri_vector_cross(dst, a, b);
 
-
-static FORCE_INLINE void ri_vector_transform(
-    ri_vector_t        dst,
-    const ri_vector_t  src,
-    const ri_matrix_t *mat )
-{
-    /*
-     * Matrix is defined in row-major order, and vector is treated as a row
-     * vector.
-     *
-     * i.e.
-     *                                    | m00 m01 m02 m03 |
-     *                                    | m10 m11 m12 m13 |
-     * (d0, d1, d2, d3) = (s0, s1, s2, s3)| m20 m21 m22 m23 |
-     *                                    | m30 m31 m32 m33 |
-     */
-
-    int i, j;
-
-    for (j = 0; j < 4; j++) {
-        dst[j] = 0.0f;
-        for (i = 0; i < 4; i++)
-            dst[j] += src[i] * mat->f[i][j];
-    }
-}
-
 #define ri_vector_set1(dst, f) do { \
     (dst)[0] = (f); \
     (dst)[1] = (f); \
@@ -165,6 +139,36 @@ static FORCE_INLINE void ri_vector_transform(
     (dst)[3] = ((a)[3] < (b)[3]) ? (a)[3] : (b)[3]; \
 } while (0);
 #define vmin(dst, a, b) ri_vector_min(dst, a, b)
+
+static FORCE_INLINE void ri_vector_transform(
+    ri_vector_t        dst,
+    const ri_vector_t  src,
+    const ri_matrix_t *mat )
+{
+    /*
+     * Matrix is defined in row-major order, and vector is treated as a row
+     * vector.
+     *
+     * i.e.
+     *                                    | m00 m01 m02 m03 |
+     *                                    | m10 m11 m12 m13 |
+     * (d0, d1, d2, d3) = (s0, s1, s2, s3)| m20 m21 m22 m23 |
+     *                                    | m30 m31 m32 m33 |
+     */
+
+    int i, j;
+
+    /* Avoid the problem in the case of addr(dst) == addr(src). */
+    ri_vector_t v;
+    vcpy(v, src);
+
+    for (j = 0; j < 4; j++) {
+        dst[j] = 0.0f;
+        for (i = 0; i < 4; i++)
+            dst[j] += v[i] * mat->f[i][j];
+    }
+}
+
 
 /* RenderMan vector float -> lucille internal vector float conversion */
 static FORCE_INLINE void ri_vector_set_from_rman(
