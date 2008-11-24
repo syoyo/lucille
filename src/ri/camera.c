@@ -283,12 +283,14 @@ ri_camera_get_pos_and_dir(
             pos[2] = 0.0;
             pos[3] = 1.0;
 
-            dir[0] = v[0];
-            dir[1] = v[1];
-            dir[2] = 1.0;
-            dir[3] = 1.0;
+            dirpos[0] = v[0];
+            dirpos[1] = v[1];
+            dirpos[2] = 1.0;
+            dirpos[3] = 1.0;
 
-            ri_vector_transform( pos, v, c2w );
+            ri_vector_transform( pos   , pos   , c2w );
+            ri_vector_transform( dirpos, dirpos, c2w );
+            vsub(dir, dirpos, pos);
 
         } else {        /* perspective camera */
 
@@ -316,15 +318,19 @@ ri_camera_get_pos_and_dir(
 
         if ( ortho ) {  /* orthographic camera */
 
-            v[0] = v[0];
-            v[1] = v[1];
-            v[2] = 0.0;
-            v[3] = 1.0;
+            pos[0] = v[0];
+            pos[1] = v[1];
+            pos[2] = 0.0;
+            pos[3] = 1.0;
 
-            dir[0] = 0.0;
-            dir[1] = 0.0;
+            dir[0] = v[0];
+            dir[1] = v[1];
             dir[2] = 1.0;
-            dir[3] = 0.0;
+            dir[3] = 1.0;
+
+            ri_vector_transform( pos   , pos   , c2w );
+            ri_vector_transform( dirpos, dirpos, c2w );
+            vsub(dir, dirpos, pos);
 
         } else {        /* perspective camera */
 
