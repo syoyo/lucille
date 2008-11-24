@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #ifdef WITH_DMALLOC
 #include <dmalloc.h>
 #endif
@@ -24,6 +25,7 @@ typedef struct _ribstack_t
     const char         *rib;
     YY_BUFFER_STATE     state;
     struct _ribstack_t *next;
+    FILE               *ribin;
 } ribstack_t;
 
 static ribstack_t *ribstack = NULL;
@@ -35,7 +37,7 @@ int str_pos;
 int lexrib_mode_param;
 int lexrib_mode_skip;
 
-static FILE *ribin;
+//static FILE *gribin = NULL;             /* Used if len(ribstack) == 0 */
 
 void add_string_char(char c)
 {
@@ -83,14 +85,13 @@ static void read_archive(const char *rib)
     stack->state = YY_CURRENT_BUFFER;
     stack->rib   = gribfile;
     stack->next  = ribstack;
+    stack->ribin = fp;
     ribstack     = stack;
 
     state = yy_create_buffer(fp, YY_BUF_SIZE);
 
     /* Change reading input RIB file. */
     yy_switch_to_buffer(state);
-
-    ribin = fp;
 
     /* tear down is done in <<EOF>> pattern */
 }
@@ -215,11 +216,14 @@ ReadArchive[ \t]*\"[^\"]*\" {
         ribstack_t *next = ribstack->next;
 
         yy_delete_buffer(YY_CURRENT_BUFFER);
-        fclose(ribin);
+        assert(ribstack->ribin != NULL);
+        fclose(ribstack->ribin);
+        ribstack->ribin = NULL;
         yy_switch_to_buffer(ribstack->state);
 
         gribfile = ribstack->rib;
 
+        assert(ribstack);
         free(ribstack);
         ribstack = next;
     } else {
