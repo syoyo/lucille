@@ -5,4 +5,4 @@ all:
 
 
 clean:
-	@$(SCONS) -c -Q
+	@$(SCONS) -c -Q .

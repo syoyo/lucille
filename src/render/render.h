@@ -61,35 +61,34 @@ typedef struct _ri_render_t
     ri_statistic_t      stat;               /* statistics for rendering     */
 
 
-    void           (*progress_handler)(void);
+    void               (*progress_handler)(void);
 
 
-    int             dd_use_callback;        /* use callback display driver? */
+    int                 dd_use_callback;        /* use callback display driver? */
 
-    char            ribpath[MAX_RIBPATH];    /* RIB file path     */
+    char                ribpath[MAX_RIBPATH];    /* RIB file path     */
 
-    ri_debugger_t  *debugger;
+    ri_debugger_t      *debugger;
 
-    int             is_debug_mode;    
+    int                 is_debug_mode;    
 
     /*
      * QMC related stuff 
      */
-    int             **perm_table;        /* permutation sequences */
+    int                **perm_table;        /* permutation sequences */
 
 
     
     /*
      * Scene
      */
-    ri_scene_t     *scene;
+    ri_scene_t         *scene;
 
-    int             bucket_size;
-    ri_mt_queue_t  *bucket_queue;
-    int             bucket_order;    
+    int                 bucket_size;
+    ri_mt_queue_t      *bucket_queue;
+    int                 bucket_order;    
 
-    int             nthreads;
-
+    int                 nthreads;
 
 } ri_render_t;
 

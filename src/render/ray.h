@@ -38,6 +38,7 @@ typedef struct _ri_ray_t {
      * Precomputed coefficients
      */
     int         dir_sign[3];        /* 1 if (dir < 0.0)             */
+    ri_vector_t dir_signv;          
     ri_vector_t invdir;             /* 1 / dir                      */
 
     /*

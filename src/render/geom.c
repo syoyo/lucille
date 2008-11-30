@@ -55,19 +55,23 @@ ri_geom_new()
 }
 
 void
-ri_geom_delete(
+ri_geom_free(
     ri_geom_t *geom )
 {
-    ri_mem_free( geom->positions );
-    ri_mem_free( geom->normals );
-    ri_mem_free( geom->tangents );
-    ri_mem_free( geom->binormals );
-    ri_mem_free( geom->indices );
-    ri_mem_free( geom->texcoords );
-    ri_mem_free( geom->colors );
-    ri_mem_free( geom->opacities );
-    ri_mem_free( geom->shader );
-    ri_mem_free( geom );
+    if (geom) {
+
+        ri_mem_free( geom->positions );
+        ri_mem_free( geom->normals );
+        ri_mem_free( geom->tangents );
+        ri_mem_free( geom->binormals );
+        ri_mem_free( geom->indices );
+        ri_mem_free( geom->texcoords );
+        ri_mem_free( geom->colors );
+        ri_mem_free( geom->opacities );
+        ri_mem_free( geom->shader );
+        ri_mem_free( geom );
+
+    }
 }
 
 void

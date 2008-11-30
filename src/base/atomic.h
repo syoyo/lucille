@@ -134,7 +134,25 @@ static inline uint64_t ri_atomic_cmpxchg64(void *ptr,
 
 #else    /* non x86 processor */
 
-/* TODO: */
+static inline int ri_atomic_read(int *ptr)
+{
+    return (*ptr);
+}
+
+static inline void ri_atomic_inc(int *ptr)
+{
+    /* TODO */
+}
+
+static inline void ri_atomic_dec(int *ptr)
+{
+    /* TODO */
+}
+
+/* TODO */
+#define RI_ATOMIC_CAS64(ptr, oldv, newv)
+#define RI_ATOMIC_CAS32(ptr, oldv, newv)
+
 
 #endif    /* __x86__ */
 

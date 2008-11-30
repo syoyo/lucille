@@ -27,7 +27,11 @@
 #define M_PI 3.141592
 #endif
 
-static int typesize[] = {sizeof(ri_float_t) * 4, sizeof(char), sizeof(ri_float_t)};
+static int typesize[] = 
+    { sizeof(ri_float_t) * 4        /* TYPEVECTOR   */
+    , sizeof(char)                  /* TYPESTRING   */ 
+    , sizeof(ri_float_t)            /* TYPEFLOAT    */
+    };
 
 typedef struct _lightsource_info_t
 {

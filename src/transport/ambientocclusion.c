@@ -36,7 +36,7 @@
  *
  * ------------------------------------------------------------------------ */
 
-int
+static int
 calculate_occlusion(
     ri_vector_t                    Lo,              /* [out] */
     const ri_intersection_state_t *isect,

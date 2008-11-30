@@ -136,6 +136,11 @@ ri_intersection_state_build(
 
     ri_vector_copy( state_inout->P, isectpoint );
 
+    ri_vector_copy( state_inout->I, dir );
+    ri_vector_normalize( state_inout->I );
+
+    ri_vector_copy( state_inout->E, eye );
+
     i0 = geom->indices[index + 0];
     i1 = geom->indices[index + 1];
     i2 = geom->indices[index + 2];

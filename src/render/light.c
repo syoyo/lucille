@@ -100,7 +100,7 @@ void
 ri_light_free(ri_light_t *light)
 {
     ri_mem_free(light->sisfile);
-    ri_geom_delete(light->geom);
+    ri_geom_free(light->geom);
     ri_mem_free(light);
 }
 

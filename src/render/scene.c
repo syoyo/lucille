@@ -36,10 +36,12 @@ ri_scene_new()
 
     p = ( ri_scene_t * )ri_mem_alloc( sizeof( ri_scene_t ) );
 
-    p->geom_list  = ri_list_new();
-    p->light_list = ri_list_new();
+    p->geom_list    = ri_list_new();
+    p->light_list   = ri_list_new();
 
-    p->accel      = ri_accel_new();
+    p->envmap_light = NULL;
+
+    p->accel        = ri_accel_new();
 
     return p;
 }
@@ -52,6 +54,10 @@ ri_scene_free( ri_scene_t * scene )
 
     ri_list_free( scene->geom_list );
     ri_list_free( scene->light_list );
+
+    if (scene->envmap_light) {
+        ri_light_free(scene->envmap_light);
+    }
 
     //assert(scene->accel);
     //assert(scene->accel->free);
@@ -118,7 +124,15 @@ ri_scene_add_geom( ri_scene_t *scene, const ri_geom_t * geom )
 void
 ri_scene_add_light( ri_scene_t *scene, const ri_light_t * light )
 {
-    ri_list_append( scene->light_list, ( void * ) light );
+    if (light->type == LIGHTTYPE_IBL) {
+
+        scene->envmap_light = (ri_light_t *)light;
+
+    } else {
+
+        ri_list_append( scene->light_list, ( void * ) light );
+
+    }
 }
 
 int

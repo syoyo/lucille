@@ -466,7 +466,11 @@ ri_pointspolygons_parse(RtInt npolys, RtInt nverts[], RtInt verts[],
 
         param = (RtFloat *)params[i];
 
-        if (strcmp(tokens[i], RI_P) == 0) { /* position */
+        /*
+         * Position
+         */
+        if (strcmp(tokens[i], RI_P) == 0) {
+
             if (attr->sides == 2) {
                 positions = (ri_vector_t *)ri_mem_alloc(
                         sizeof(ri_vector_t) * nvertices * 2);
@@ -476,11 +480,13 @@ ri_pointspolygons_parse(RtInt npolys, RtInt nverts[], RtInt verts[],
             }
 
             for (j = 0; j < nvertices; j++) {
+
                 /*
                  * transform vector from object space
                  * to world space
                  */
                 ri_vector_set_from_rman(v, &param[j * 3]);
+
                 ri_vector_transform(positions[j], v, &om);
 
                 if (attr->sides == 2) {
@@ -499,7 +505,12 @@ ri_pointspolygons_parse(RtInt npolys, RtInt nverts[], RtInt verts[],
                                       (const ri_vector_t *)positions);
             }
 
-        } else if (strcmp(tokens[i], RI_N) == 0) { /* normal */
+        /*
+         * Per vertex normal
+         */
+        } else if ( (strcmp(tokens[i], RI_N) == 0) ||
+                    (strcmp(tokens[i], "vertex normal N") == 0)) {
+
             if (attr->sides == 2) {
                 normals = (ri_vector_t *)ri_mem_alloc(
                         sizeof(ri_vector_t) * 2 * nvertices);
@@ -694,8 +705,19 @@ ri_api_polygon(RtInt nverts, RtInt n, RtToken tokens[], RtPointer params[])
     if (ri_render_get()->context->arealight_block) {
         arealight = (ri_light_t *)
                 ri_list_last(ri_render_get()->scene->light_list)->data;
-        arealight->geom = geom;
-        geom->light = arealight;
+
+        if (arealight == NULL) {
+
+            ri_log(LOG_WARN, "Invalid RIB structure?\n");
+
+        } else {
+
+            assert(arealight->geom);
+
+            arealight->geom = geom;
+            geom->light = arealight;
+
+        }
     }
 
     /*
@@ -723,7 +745,18 @@ ri_api_pointspolygons(RtInt npolys, RtInt nverts[], RtInt verts[],
     if (ri_render_get()->context->arealight_block) {
         arealight = (ri_light_t *)
                 ri_list_last(ri_render_get()->scene->light_list)->data;
-        arealight->geom = geom;
+
+        if (arealight == NULL) {
+
+            ri_log(LOG_WARN, "Invalid RIB structure?\n");
+
+        } else {
+
+            assert(arealight->geom);
+
+            arealight->geom = geom;
+
+        }
     } else {
         ri_scene_add_geom(ri_render_get()->scene, geom);
     }
@@ -749,7 +782,19 @@ ri_api_pointsgeneralpolygons(RtInt npolys, RtInt nloops[],
     if (ri_render_get()->context->arealight_block) {
         arealight = (ri_light_t *)
                 ri_list_last(ri_render_get()->scene->light_list)->data;
-        arealight->geom = geom;
+
+        if (arealight == NULL) {
+
+            ri_log(LOG_WARN, "Invalid RIB structure?\n");
+
+        } else {
+
+            assert(arealight->geom);
+
+            arealight->geom = geom;
+
+        }
+
     } else {
         ri_scene_add_geom(ri_render_get()->scene, geom);
     }

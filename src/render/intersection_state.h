@@ -36,6 +36,7 @@ typedef struct _ri_intersection_state_t {
     ri_vector_t     P;              /* position                     */
     ri_vector_t     Ng;             /* geometry normal              */
     ri_vector_t     Ns;             /* shading normal               */
+    ri_vector_t     E;              /* eye position                 */
     ri_vector_t     I;              /* ray's incoming direction     */
     double          t;              /* distance to the hit point
                                      * from ray origin.             */
@@ -43,7 +44,7 @@ typedef struct _ri_intersection_state_t {
     ri_brdf_t      *fr;             /* BRDF                         */
 
     char            inside;         /* the ray hits the surface
-                                     * from back face?        */
+                                     * from back face?              */
 
     ri_geom_t      *geom;
     uint32_t        index;
