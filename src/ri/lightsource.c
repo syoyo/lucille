@@ -144,7 +144,7 @@ ri_api_area_light_source(RtToken name,
 		}
 
 		/* Set sunsky map to background map */
-		ri_render_get()->scene->background_map = light->texture;
+		ri_render_get()->scene->envmap_light = light;
 
 		/*
 		 * Create sunlight(as directional light)
@@ -174,7 +174,9 @@ ri_api_area_light_source(RtToken name,
 	} else {
 
 		for (i = 0; i < n; i++) {
+
 			if (strcmp(tokens[i], "direction") == 0) {
+
 				valp = (RtFloat *)params[i];
 				light->direction[0] = (ri_float_t)(*valp++);
 				light->direction[1] = (ri_float_t)(*valp++);
@@ -188,26 +190,35 @@ ri_api_area_light_source(RtToken name,
 							       light->direction[2]);
 		
 				light->type = LIGHTTYPE_DIRECTIONAL;
+
 			} else if (strcmp(tokens[i], "ibl") == 0) {
+
 				tokp = (RtToken *)params[i];
-				light->texture = ri_texture_load(*tokp);
-				//printf("ibl = [ %s ] \n", *tokp);
-				light->type = LIGHTTYPE_IBL;
+				light->texture  = ri_texture_load(*tokp);
+				light->type     = LIGHTTYPE_IBL;
+
+				ri_log(LOG_INFO, "Added EnvMap [ %s ]\n", *tokp);
+
 			} else if (strcmp(tokens[i], "iblscale") == 0) {
+
 				valp = (RtFloat *)params[i];
 				scale = *valp;
-				//printf("iblscale = [ %f ] \n", scale);
+
 			} else if (strcmp(tokens[i], "sisfile") == 0) {
+
 				tokp = (RtToken *)params[i];
 				light->sisfile = strdup((*tokp));
-				//printf("sisfile = [ %s ] \n", *tokp);
 				light->iblsampler = IBL_SAMPLING_STRUCTURED;
+
 			} else if (strcmp(tokens[i], "eihdrifile") == 0) {
+
 				tokp = (RtToken *)params[i];
 				light->eihdrifile = strdup((*tokp));
 				//printf("sisfile = [ %s ] \n", *tokp);
 				light->iblsampler = IBL_SAMPLING_STRUCTURED;
+
 			} else if (strcmp(tokens[i], "sampling") == 0) {
+
 				tokp = (RtToken *)params[i];
 				if (strcmp(*tokp, "cosweight") == 0) {
 					light->iblsampler = IBL_SAMPLING_COSWEIGHT;
