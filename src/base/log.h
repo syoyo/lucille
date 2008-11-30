@@ -33,6 +33,7 @@ extern void ri_log          (      int   level,
                              const char *message,
                              ...);
 
+
 #define ri_log_and_return_if(eval) {                        \
         if ((eval)) {                                       \
             ri_log(LOG_INFO, #eval);                        \

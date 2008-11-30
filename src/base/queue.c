@@ -35,6 +35,8 @@
 //#define LOCAL_DEBUG
 //#define LOCAL_VERBOSE
 
+#if defined(__x86__)
+
 /*
  * Macros
  */
@@ -440,6 +442,8 @@ ri_queue_free(
 	ri_mem_free_aligned(queue);
 
 }
+
+#endif  /* __x86__ */
 
 /* -------------------------------------------------------------------------
  *
