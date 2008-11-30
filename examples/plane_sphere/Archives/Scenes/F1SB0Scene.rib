@@ -1,0 +1,42 @@
+##RenderMan RIB-Structure 1.1 Entity
+version 3.03
+Display "0001.tif" "framebuffer" "rgb"
+Display "+0001.tif" "file" "rgba"
+##Include Archives/Cameras/F1CS0B0persp00Camera.rib
+ReadArchive "F1CS0B0persp00Camera.rib"
+WorldBegin
+	Atmosphere "MOSAICfog"
+		"uniform float isMist" [ 0.0 ]
+		"uniform float Misi" [ 0.0 ]
+		"uniform float Hi" [ 0.0 ]
+		"uniform float Di" [ 0.0 ]
+		"uniform float Sta" [ 0.0 ]
+		"uniform float MistType" [ 0.0 ]
+		"uniform color MistCol" [ 0.0565629005432 0.220815420151 0.40000000596 ]
+	#Begin scene objects
+	AttributeBegin
+		Transform [ 0.427946865559 0.453998327255 -0.0067489896901 0.0
+		            -0.198019221425 0.194960981607 0.558638691902 0.0
+		            0.408593207598 -0.381017416716 0.277805387974 0.0
+		            2.69366812706 -2.02698135376 0.956965506077 1.0 ]
+		##Include Archives/Objects/F1OB0SSphere.rib
+		ReadArchive "F1OB0SSphere.rib"
+	AttributeEnd
+	AttributeBegin
+		Transform [ 1.0 0.0 0.0 0.0
+		            0.0 1.0 0.0 0.0
+		            0.0 0.0 1.0 0.0
+		            0.075881972909 0.0832391753793 0.493130922318 1.0 ]
+		##Include Archives/Objects/F1OB0SCube.rib
+		ReadArchive "F1OB0SCube.rib"
+	AttributeEnd
+	AttributeBegin
+		Transform [ 1.56381595135 0.0 0.0 0.0
+		            0.0 1.56381595135 0.0 0.0
+		            0.0 0.0 1.56381595135 0.0
+		            0.0268974862993 -0.014167547226 -0.586333632469 1.0 ]
+		##Include Archives/Objects/F1OB0SPlane.rib
+		ReadArchive "F1OB0SPlane.rib"
+	AttributeEnd
+	#End scene objects
+WorldEnd

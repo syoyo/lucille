@@ -1,0 +1,6 @@
+##RenderMan RIB-Structure 1.1 Entity
+version 3.03
+ShadingInterpolation "smooth"
+AttributeBegin
+	Surface "MOSAICsurface"
+AttributeEnd

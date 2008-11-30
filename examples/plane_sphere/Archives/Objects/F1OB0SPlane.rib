@@ -1,0 +1,8 @@
+##RenderMan RIB-Structure 1.1 Entity
+version 3.03
+ShadingInterpolation "smooth"
+AttributeBegin
+	Surface "MOSAICsurface"
+	##Include Archives/Geometry/F1RMM0Plane.rib
+	ReadArchive "F1RMM0Plane.rib"
+AttributeEnd

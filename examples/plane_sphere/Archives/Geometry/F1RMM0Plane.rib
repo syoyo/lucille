@@ -1,0 +1,4 @@
+##RenderMan RIB-Structure 1.1 Entity
+version 3.03
+##Include Archives/Geometry/Cache/F1MPlane.rib
+ReadArchive "F1MPlane.rib"

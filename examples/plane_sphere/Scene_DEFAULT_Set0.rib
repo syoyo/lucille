@@ -1,0 +1,15 @@
+##RenderMan RIB-Structure 1.1
+##Scene: Scene
+##Creator: MOSAIC Beta-0.3.0: for Blender
+##CreationDate: 01:13pm 11/30/2008
+##For: Mosaic
+##Frames: 1
+version 3.03
+Option "searchpath" "string archive" [ "@:.:Archives:Archives/Scenes:Archives/Groups:Archives/Materials:Archives/Lights:Archives/Cameras:Archives/Geometry:Archives/Geometry/Cache:Archives/Objects" ]
+Option "searchpath" "string shader" [ "@:.:Shaders" ]
+Option "searchpath" "string texture" [ "@:.:Maps" ]
+Option "limits" "int[2] bucketsize" [ 32 32 ]
+Option "limits" "int eyesplits" [ 6 ]
+Option "limits" "int texturememory" [ 20000 ]
+##Include Archives/Scenes/F1SB0Scene.rib
+ReadArchive "F1SB0Scene.rib"

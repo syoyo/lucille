@@ -1,0 +1,4 @@
+##RenderMan RIB-Structure 1.1 Entity
+version 3.03
+##Include Archives/Geometry/Cache/F1MSphere.rib
+ReadArchive "F1MSphere.rib"
