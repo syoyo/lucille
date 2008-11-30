@@ -61,6 +61,10 @@
 #include "raster.h"
 #include "log.h"
 
+#ifdef WITH_MUDA
+#include "muda/rayaabb.c"
+#endif  /* WITH_MUDA */
+
 /*
  * Local flags
  */
@@ -487,6 +491,23 @@ ri_bvh_intersect(
     ray->dir_sign[0] = (ray->dir[0] < 0.0) ? 1 : 0;
     ray->dir_sign[1] = (ray->dir[1] < 0.0) ? 1 : 0;
     ray->dir_sign[2] = (ray->dir[2] < 0.0) ? 1 : 0;
+
+#ifdef WITH_MUDA
+
+    {
+        uint64_t ones;
+        uint64_t *ptr;
+
+        ones = 0xffffffffffffffff;
+        ptr = &ray->dir_signv[0];
+
+        (*ptr++) = (ray->dir[0] < 0.0) ? ones : 0;
+        (*ptr++) = (ray->dir[1] < 0.0) ? ones : 0;
+        (*ptr  ) = (ray->dir[2] < 0.0) ? ones : 0;
+
+    }
+
+#endif
 
     /*
      * Firstly check if the ray hits scene bbox.
@@ -940,6 +961,15 @@ test_ray_node(
     bmax_right[1] = node->bbox[BMAX_Y1];
     bmax_right[2] = node->bbox[BMAX_Z1];
 
+#ifdef WITH_MUDA
+
+    ray_aabb_mu(&hit_left, &tmin_left, &tmax_left,
+                ray->org, ray->dir_signv, ray->invdir, bmin_left, bmax_left);
+    ray_aabb_mu(&hit_right, &tmin_right, &tmax_right,
+                ray->org, ray->dir_signv, ray->invdir, bmin_right, bmax_right);
+
+#else
+
     hit_left = test_ray_aabb( &tmin_left, &tmax_left,
                                bmin_left,  bmax_left,
                                ray );
@@ -947,6 +977,7 @@ test_ray_node(
     hit_right = test_ray_aabb( &tmin_right, &tmax_right,
                                 bmin_right,  bmax_right,
                                 ray );
+#endif
     
     if ( hit_left && (tmin_left < tmax) ) {
         retcode |= 1;

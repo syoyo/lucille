@@ -48,11 +48,13 @@
 #include "raytrace.h"
 #include "reflection.h"
 #include "transport.h"
-#include "ambientocclusion.h"
+#include "parallel.h"
 #include "parallel.h"
 #include "shading.h"
 #include "qmc.h"
-#include "pathtrace.h"
+//#include "pathtrace.h"
+#include "ambientocclusion.h"
+#include "whitted.h"
 #include "hilbert2d.h"
 #include "zorder2d.h"
 #include "spiral.h"
@@ -788,7 +790,8 @@ subsample( pixelinfo_t * pixinfo, int x, int y, int threadid )
             /* HACK */
             //ri_transport_sample( ri_render_get(  ),
             //                     &ray, &result );
-            ri_transport_ambientocclusion(ri_render_get(), &ray, &result);
+            //ri_transport_ambientocclusion(ri_render_get(), &ray, &result);
+            ri_transport_whitted(ri_render_get(), &ray, &result);
 
             ri_vector_add( accumrad, accumrad, result.radiance );
 
@@ -1076,7 +1079,7 @@ render_bucket(
     bucket->pixels = (ri_vector_t *)ri_mem_alloc_aligned(sizeof(ri_vector_t) * w * h, 32);
     bucket->depths = (ri_float_t *)ri_mem_alloc_aligned(sizeof(ri_float_t) * w * h, 32);
 
-    //ri_log(LOG_INFO, "Rendering bucket region [%dx%d]", x, y);
+    ri_log(LOG_INFO, "Rendering bucket region [%dx%d]", x, y);
 
     for (v = y; v < y + h; v++) { 
         for (u = x; u < x + w; u++) {

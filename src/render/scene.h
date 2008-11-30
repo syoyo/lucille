@@ -34,9 +34,9 @@ typedef struct _ri_scene_t
     ri_list_t      *light_list;        /* lights in the scene               */
 
     /*
-     * background map(environment map)
+     * for IBL
      */
-    ri_texture_t   *background_map;
+    ri_light_t     *envmap_light;
 
     /*
      * Scene bounding box

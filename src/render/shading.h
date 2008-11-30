@@ -13,23 +13,27 @@
 extern "C" {
 #endif
 
-/* shade a point ray.org. */
-extern void ri_shade(ri_vector_t *radiance,
-		     const ri_vector_t *eye,
-		     const ri_ray_t *ray,
-		     ri_intersection_state_t *state);
+/* shade a point. */
+extern void ri_shade(
+    ri_vector_t             *Lo,        /* [out] */
+    const ri_vector_t       *eye,
+    const ri_ray_t          *ray,
+    ri_intersection_state_t *state);
 
-extern void ri_shade_indirect(ri_vector_t *power,	
-		  	      const ri_ray_t *v,
-		  	      int nsample,
-			      float gather_radius,
-			      int gather_num,
-			      int fixicache, int forcecalc);
+#if 0
+extern void ri_shade_indirect(
+    ri_vector_t *power,    
+    const ri_ray_t *v,
+    int nsample,
+    float gather_radius,
+    int gather_num,
+    int fixicache, int forcecalc);
+#endif
 
 extern void ri_shade_statistics();
 
 #ifdef __cplusplus
-}	/* extern "C" */
+}    /* extern "C" */
 #endif
 
 #endif

@@ -18,13 +18,11 @@ mc.c
 noise.c
 polygon.c
 qmc.c
-quadric.c
 raster.c
 ray.c
 raytrace.c
 reflection.c
 render.c
-sampler.c
 scene.c
 shader.c
 shading.c
@@ -43,10 +41,19 @@ zorder2d.c
 
 Import('env')
 
+# if env['enable_muda']:
+#   srcs.append(['muda/rayaabb.c'])
+
 incPath=['../base', '../imageio', '../transport', '../display', '../render', '../ri', '../../include']
+
+if env['enable_muda']:
+  incPath.append('./muda')
+  incPath.append(env['CPPPATH'])
+
 libName='rirender'
 
 l = env.Library(libName, srcs, CPPPATH=incPath)
+
 
 if env['PREFIX'] == None:
   # install locally

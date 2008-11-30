@@ -36,7 +36,7 @@ ri_triangle_isect(
     if (fabs(a) > eps) {
         inva = 1.0 / a;
     } else {
-        return 0;
+        return 0;   /* the ray is parallel to the triangle. */
     }
 
     vsub( s, rayorg, v0 );
@@ -54,7 +54,7 @@ ri_triangle_isect(
         return 0;
     }
 
-    if ( (t < 0.0) || (t > (*t_inout)) ) {
+    if ( (t < eps) || (t > (*t_inout)) ) {
         return 0;
     }
 

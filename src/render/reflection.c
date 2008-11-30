@@ -71,12 +71,12 @@ ri_refract(
     ri_vector_t       refract_out,
     const ri_vector_t in,
     const ri_vector_t n,
-    float             eta)
+    ri_float_t        eta)
 {
-    float cos1;
-    float coeff;
+    double      cos1;
+    double      coeff;
     ri_vector_t N;
-    float e = 1.0f / eta;
+    double      e = 1.0 / eta;
 
     /*
      * k = 1 - eta * eta * (1 - (in.n)^2)
@@ -98,6 +98,9 @@ ri_refract(
     cos1 = ri_vector_dot(in, n);
     if (cos1 < 0.0) {
         cos1 = -cos1;
+        N[0] = n[0];
+        N[1] = n[1];
+        N[2] = n[2];
     } else {
         e = eta;
         N[0] = -(n[0]);
@@ -109,6 +112,7 @@ ri_refract(
     if (coeff <= 0.0) {
         /* total internal reflection */
         ri_reflect(refract_out, in, n);
+        ri_vector_normalize(refract_out);
         return 1;
     }
 
@@ -117,6 +121,8 @@ ri_refract(
     refract_out[0] = coeff * N[0] + e * in[0];
     refract_out[1] = coeff * N[1] + e * in[1];
     refract_out[2] = coeff * N[2] + e * in[2];
+
+    ri_vector_normalize(refract_out);
 
     return 0;
 }

@@ -171,7 +171,7 @@ ri_texture_load(const char *filename)
                                  ri_render_get()->context->option,
                                  filename)) {
             ri_log(LOG_FATAL, "Can't find textue file \"%s\"", filename);
-            ri_log(LOG_FATAL, "Searched following pathes.");
+            ri_log(LOG_FATAL, "Searched from following path.");
             ri_option_show_searchpath(ri_render_get()->context->option);
             exit(-1);
         }
