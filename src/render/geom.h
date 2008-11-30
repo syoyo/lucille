@@ -74,7 +74,7 @@ typedef struct _ri_geom_drv_t {
 
 extern ri_geom_t *  ri_geom_new();
 
-extern void         ri_geom_delete(
+extern void         ri_geom_free(
     ri_geom_t           *geom );
 
 extern void         ri_geom_add_positions(
