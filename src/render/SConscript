@@ -31,6 +31,7 @@ shading.c
 specrend.c
 spectrum.c
 spiral.c
+sss.c
 subdivision.c
 sunsky.c
 texture.c
