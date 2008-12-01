@@ -1,5 +1,5 @@
 all:
-	ghc -o slc --make Main.hs
+	ghc -o lslc --make Main.hs
 
 
 clean:

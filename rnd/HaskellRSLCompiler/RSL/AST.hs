@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 ---- |
----- Module      :  RSLAST
+---- Module      :  RSL.AST
 ---- Copyright   :  (c) Syoyo Fujita
 ---- License     :  BSD-style
 ----
@@ -11,30 +11,50 @@
 ---- RSLParser   :  Data structure for RSL Abstract Syntax Tree.
 ----
 -------------------------------------------------------------------------------
-module RSLAST where
+module RSL.AST where
 
-data RSLType =
+data Type =
     TyVoid
+  | TyString
+  | TyFloat
   | TyVector
   | TyColor
-  | TyString
+  | TyPoint
+  | TyMatrix
     deriving (Show, Eq)
 
+data ShaderType =
+    Surface
+  | Light
+  | Volume
+  | Displacement
+  | Imager
+    deriving (Show, Eq)
 
-data RSLConst =
-    I Int
+data Const =
+    I Int             -- optinal?
   | F Double
   | S String
-  | V [Double]       -- vector
-  | M [Double]       -- matrix
+  | V [Double]        -- vector
+  | M [Double]        -- matrix
     deriving (Show, Eq)
 
 --
 -- We define typed AST.
 --
 data Expr =
-    Const   RSLConst
-  | Var     RSLType String
-  | Assign  RSLType Expr Expr
+    Const   Const
+  | Var     Type String
+  | Assign  Type Expr Expr
     deriving (Show, Eq)
   
+
+data Func = 
+    ShaderFunc ShaderType String (Maybe [FormalDecl])
+  | UserFunc Type String
+    deriving (Show, Eq)
+
+
+data FormalDecl =
+    FormalDecl Type String (Maybe Const)
+    deriving (Show, Eq)
