@@ -27,9 +27,11 @@ import RSL.AST
 -- Topmost rule
 --
 program               =     many1 definition
+                      <?>   "program"
 
-definition            =    try  shaderDefinition
-                      <|>       functionDefinition
+definition            =   shaderDefinition
+                      <|> functionDefinition
+                      <?>   "definition"
 
 shaderDefinition      = do  { ty    <- shaderType
                             ; name  <- identifier
@@ -37,9 +39,11 @@ shaderDefinition      = do  { ty    <- shaderType
                             ; formals <- formalDecls
                             ; symbol ")"
                             ; symbol "{"
+                            ; stms <- statements
                             ; symbol "}"
-                            ; return (ShaderFunc ty name formals)
+                            ; return (ShaderFunc ty name formals stms)
                             } 
+                      <?> "shader definition"
   
 functionDefinition    = do  { ty    <- option (TyVoid) rslType
                             ; name  <- identifier
@@ -54,16 +58,68 @@ functionDefinition    = do  { ty    <- option (TyVoid) rslType
 -- TODO: support multiple var def, e.g., float ka = 1, kb = 1;
 -- 
 formalDecls           = do  { decls <- sepEndBy formalDecl (symbol ";")
-                            ; if length decls > 0 then return (Just decls)
-                                                  else return Nothing
+                            ; return decls
                             }
-                      <?> "formal decl"
+                      <?> "formal declarations"
 
-formalDecl            = do  { ty  <- rslType
-                            ; name <- identifier
-                            ; expr <- initFormalDeclExpr
+formalDecl            = do  { ty    <- rslType
+                            ; name  <- identifier
+                            ; expr  <- maybeInitFormalDeclExpr
                             ; return (FormalDecl ty name expr)
                             }
+
+statements :: Parser [Expr]
+statements =  many statement
+
+statement =   varDefStmt
+          <|> assignStmt
+          <|> exprStmt
+          <?> "statement"
+
+
+exprStmt = do { e <- expr
+              ; symbol ";"
+              ; return e
+              }
+
+--
+-- | Variable definition
+--
+varDefStmt  = do  { ty    <- rslType
+                  ; name  <- identifier
+                  ; initE <- try maybeInitExpr
+                  ; symbol ";"
+                  ; return (Def ty name initE)
+                  }
+            <?> "variable definition"
+
+assignStmt  = do  { lvalue <- identifier
+                  ; symbol "="
+                  ; rexpr <- expr
+                  ; symbol ";"  <?> "semicolon"
+                  ; return (Assign TyUndef (Var TyUndef lvalue) rexpr)
+                  }
+            <?> "assign stetement"
+
+procedureCall = do  { name <- identifier
+                    ; symbol "("
+                    ; args <- try procArguments
+                    ; symbol ")"
+                    ; return (Call TyUndef name args)
+                    }
+
+procArguments = sepBy expr (symbol ",") 
+                    
+-- expr        = choice [
+--                   try procedureCall
+--                 , varRef 
+--                 ]
+
+
+varRef      = do  { name <- identifier
+                  ; return (Var TyUndef name)
+                  }
+
 
 mkInt :: String -> Int
 mkInt s = read s
@@ -94,24 +150,35 @@ parseFloat = do { sign  <- parseSign
 
                   readDouble = read
 
-initFormalDeclExpr    = do  { symbol "="
-                            ; val <- parseFloat
-                            ; return (Just (F val)) -- FIXME
-                            }
-                      <|>   return Nothing
+
+maybeInitExpr           = do  { symbol "="
+                              ; e <- expr
+                              ; return (Just e)
+                              }
+                        <|>   return Nothing
                                
 
-shaderType            =   (symbol "light"         >> return Light       )
-                      <|> (symbol "surface"       >> return Surface     )
-                      <|> (symbol "volume"        >> return Volume      )
-                      <|> (symbol "displacement"  >> return Displacement)
-                      <|> (symbol "imager"        >> return Imager      )
+maybeInitFormalDeclExpr = do  { symbol "="
+                              ; val <- parseFloat
+                              ; return (Just (F val)) -- FIXME
+                              }
+                        <|>   return Nothing
+                               
 
-rslType               =   (symbol "float"         >> return TyFloat     )
-                      <|> (symbol "string"        >> return TyString    )
-                      <|> (symbol "color"         >> return TyColor     )
-                      <|> (symbol "point"         >> return TyPoint     )
-                      <|> (symbol "vector"        >> return TyVector    )
+shaderType            =   (reserved "light"         >> return Light       )
+                      <|> (reserved "surface"       >> return Surface     )
+                      <|> (reserved "volume"        >> return Volume      )
+                      <|> (reserved "displacement"  >> return Displacement)
+                      <|> (reserved "imager"        >> return Imager      )
+                      <?> "RenderMan shader type"
+
+rslType               =   (reserved "float"         >> return TyFloat     )
+                      <|> (reserved "string"        >> return TyString    )
+                      <|> (reserved "color"         >> return TyColor     )
+                      <|> (reserved "point"         >> return TyPoint     )
+                      <|> (reserved "vector"        >> return TyVector    )
+                      <|> (reserved "normal"        >> return TyNormal    )
+                      <?> "RenderMan type"
                       
 
 
@@ -167,9 +234,11 @@ run p name proc =
 
 runLex :: Parser [Func] -> FilePath -> ([Func] -> IO ()) -> IO ()
 runLex p name proc =
-  run (do whiteSpace
-          x <- p
-          return x
+  run (do { whiteSpace
+          ; x <- p
+          ; eof
+          ; return x
+          }
       ) name proc
 
 lexer       = P.makeTokenParser rslDef
@@ -185,9 +254,30 @@ identifier  = P.identifier lexer
 reserved    = P.reserved lexer
 reservedOp  = P.reservedOp lexer
 
+expr        ::  Parser Expr
+expr        =   buildExpressionParser table primary
+           <?> "expression"
+-- expr = primary
+
+primary     =   try procedureCall
+            <|> parens expr
+            <|> varRef
+
+table       =  [  [binOp "*" OpMul AssocLeft, binOp "/" OpDiv AssocLeft]
+               ,  [binOp "+" OpAdd AssocLeft, binOp "-" OpSub AssocLeft]
+               ]
+
+              where
+
+                binOp s f assoc
+                  = Infix ( do { reservedOp s
+                               ; return (\x y -> BinOp TyUndef f [x, y])
+                               } ) assoc
+
 rslDef = javaStyle
   { reservedNames = [ "const"
                     , "break", "for", "if", "else"
+                    , "surface", "volume", "displacement", "imager"
                     ]
   , reservedOpNames = ["+", "-", "*", "/"]
   }

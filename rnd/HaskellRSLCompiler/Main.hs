@@ -4,8 +4,10 @@ import System
 
 import RSL.Parser
 import RSL.PPrint
+import RSL.Typer
 
-debugPrinter = putStrLn . show
+debugPrinter ast = do putStrLn $ "// [AST] = " ++ show ast
+                      putStrLn $ pprint 0 ast   -- 0 = initial indent level
 
 main = do args <- getArgs
           if length args > 0 then runLex program (args !! 0) debugPrinter

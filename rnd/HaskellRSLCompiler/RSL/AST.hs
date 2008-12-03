@@ -13,13 +13,22 @@
 -------------------------------------------------------------------------------
 module RSL.AST where
 
+data Op =
+    OpAdd
+  | OpSub
+  | OpMul
+  | OpDiv
+    deriving (Show, Eq)
+  
 data Type =
-    TyVoid
+    TyUndef
+  | TyVoid
   | TyString
   | TyFloat
   | TyVector
   | TyColor
   | TyPoint
+  | TyNormal
   | TyMatrix
     deriving (Show, Eq)
 
@@ -46,11 +55,18 @@ data Expr =
     Const   Const
   | Var     Type String
   | Assign  Type Expr Expr
+  | Def     Type String (Maybe Expr)
+  | BinOp   Type    -- Type of this operator
+            Op      -- Operator
+            [Expr]  -- Left & Right
+  | Call    Type    -- Return type
+            String  -- Name of procedure
+            [Expr]  -- Arguments
     deriving (Show, Eq)
   
 
 data Func = 
-    ShaderFunc ShaderType String (Maybe [FormalDecl])
+    ShaderFunc ShaderType String [FormalDecl] [Expr]
   | UserFunc Type String
     deriving (Show, Eq)
 
