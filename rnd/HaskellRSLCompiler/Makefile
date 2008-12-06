@@ -5,3 +5,6 @@ all:
 clean:
 	rm -rf *.hi *.o
 	rm -rf slc
+
+doc:
+	haddoc

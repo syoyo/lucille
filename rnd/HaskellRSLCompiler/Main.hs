@@ -6,7 +6,7 @@ import RSL.Parser
 import RSL.PPrint
 import RSL.Typer
 
-debugPrinter ast = do putStrLn $ "// [AST] = " ++ show ast
+debugPrinter ast = do putStrLn $ "// [AST] = " ++ show ast ++ "\n"
                       putStrLn $ pprint 0 ast   -- 0 = initial indent level
 
 main = do args <- getArgs

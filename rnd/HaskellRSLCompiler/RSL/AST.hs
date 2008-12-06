@@ -13,15 +13,15 @@
 -------------------------------------------------------------------------------
 module RSL.AST where
 
-data Op =
-    OpAdd
+data Op
+  = OpAdd
   | OpSub
   | OpMul
   | OpDiv
     deriving (Show, Eq)
   
-data Type =
-    TyUndef
+data Type
+  = TyUnknown
   | TyVoid
   | TyString
   | TyFloat
@@ -32,28 +32,53 @@ data Type =
   | TyMatrix
     deriving (Show, Eq)
 
-data ShaderType =
-    Surface
+data StorageClass
+  = Uniform
+  | Varying
+  | Vertex            -- Not in RI Spec3.2
+  | FaceVarying       -- Not in RI Spec3.2
+  | FaceVertex        -- Not in RI Spec3.2
+    deriving (Show, Eq)
+
+data ShaderType 
+  = Surface
   | Light
   | Volume
   | Displacement
   | Imager
     deriving (Show, Eq)
 
-data Const =
-    I Int             -- optinal?
+data Const 
+  = I Int             -- optinal?
   | F Double
   | S String
   | V [Double]        -- vector
   | M [Double]        -- matrix
     deriving (Show, Eq)
 
+data Kind
+  = KindVariable
+  | KindFunction
+    deriving (Show, Eq)
+
+data Symbol
+  = Symbol  String            -- name of the symbol
+            Type              -- type of the symbol
+            StorageClass      -- storage class of the symbol
+            Kind              -- kind of the symbol
+
+    deriving (Show, Eq)
+
+type SymbolTable
+  = [(String, [Symbol])]
+
+
 --
 -- We define typed AST.
 --
-data Expr =
-    Const   Const
-  | Var     Type String
+data Expr 
+  = Const   Const
+  | Var     Symbol
   | Assign  Type Expr Expr
   | Def     Type String (Maybe Expr)
   | BinOp   Type    -- Type of this operator
@@ -65,12 +90,12 @@ data Expr =
     deriving (Show, Eq)
   
 
-data Func = 
-    ShaderFunc ShaderType String [FormalDecl] [Expr]
+data Func 
+  = ShaderFunc ShaderType String [FormalDecl] [Expr]
   | UserFunc Type String
     deriving (Show, Eq)
 
 
-data FormalDecl =
-    FormalDecl Type String (Maybe Const)
+data FormalDecl 
+  = FormalDecl Type String (Maybe Const)
     deriving (Show, Eq)

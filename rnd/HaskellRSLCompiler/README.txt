@@ -1,7 +1,7 @@
 Haskell + parsec version of RSL compiler.
 =========================================
 
-  Dec 4th, 2008
+  Dec 5th, 2008
 
 What is this?
 -------------
@@ -13,7 +13,7 @@ The compiler will be merged with lucille core and be used as a practical RSL sha
 Compilation phases
 ------------------
 
- * Parse RSL program source with parsec and built Untyped AST(Abstract Syntax Tree)
+ * Parse RSL program source with parsec and build untyped AST(Abstract Syntax Tree)
  * Apply syntax fixing, semantic checking and typing for Untyped AST and build a Typed, verified AST.
  * (Optional) Do some symbolic optimization(e.g. SPMD -> SIMD)
  * Emit LLVM IR code from the AST.
@@ -33,6 +33,14 @@ Structure of source codes
     Parser.hs         RSL parser with Parsec.
     PPrint.hs         Pretty printer for AST. 
     Typer.hs          Typer for RSL AST.
+
+TODO
+----
+
+ * C preprocessor. Use mcpp?
+ * LLVM IR codegen
+ * Syntax fixing
+ * Typer
 
 References
 ----------

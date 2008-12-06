@@ -46,7 +46,7 @@ instance AST Type where
 
   pprint n ty = case ty of
 
-    TyUndef       -> "undef"
+    TyUnknown     -> "uknown"
     TyVoid        -> "void"
     TyFloat       -> "float"
     TyVector      -> "vector"
@@ -65,13 +65,13 @@ instance AST Expr where
   
   pprint n expr = case expr of
 
-    Const  const          -> "const"
+    Const  const                -> "const"
 
 
-    Var    ty val         -> val
+    Var    (Symbol name _ _ _)  -> name
 
-    BinOp  ty op exprs    -> concat [
-        "( "
+    BinOp  ty op exprs          -> concat
+      [ "( "
       , pprint 0 (exprs !! 0) -- left
       , " " ++ emitOp op ++ " "
       , pprint 0 (exprs !! 1) -- right
@@ -79,14 +79,14 @@ instance AST Expr where
       ]
 
 
-    Def    ty val Nothing -> concat [
-        indent n
+    Def    ty val Nothing -> concat 
+      [ indent n
       , pprint 0 ty ++ " " ++ val ++ ";\n"
       ]
 
 
-    Def    ty val (Just initExpr)  -> concat [
-        indent n
+    Def    ty val (Just initExpr)  -> concat 
+      [ indent n
       , pprint 0 ty ++ " " ++ val
       , " = "
       , pprint 0 initExpr
@@ -94,8 +94,8 @@ instance AST Expr where
       ]
 
 
-    Assign ty lexpr rexpr -> concat [
-        indent n
+    Assign ty lexpr rexpr -> concat 
+      [ indent n
       , pprint 0 lexpr
       , " = "
       , pprint 0 rexpr
@@ -103,8 +103,8 @@ instance AST Expr where
       ]
 
 
-    Call retTy name args  -> concat [
-        name
+    Call retTy name args  -> concat 
+      [ name
       , "("
       , pprintArgs args
       , ")"
@@ -133,8 +133,8 @@ instance AST Func where
 
   pprint n f = case f of
 
-    ShaderFunc ty name decls stms -> concat [
-        pprint n ty
+    ShaderFunc ty name decls stms -> concat 
+      [ pprint n ty
       , " " ++ name
       , "("
       , pprint n decls

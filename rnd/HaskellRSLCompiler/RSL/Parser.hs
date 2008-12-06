@@ -12,6 +12,7 @@
 ----
 -------------------------------------------------------------------------------
 
+-- |RenderMan Shading Languager parser.
 module RSL.Parser where
 
 import Text.ParserCombinators.Parsec
@@ -20,14 +21,64 @@ import Text.ParserCombinators.Parsec.Expr
 import Text.ParserCombinators.Parsec.Language
 
 import Control.Monad.State
+import Debug.Trace
 
 import RSL.AST
+import RSL.Sema
+
+-- | RSL parser state
+data RSLState = RSLState  { symbolTable :: SymbolTable }
+
+
+-- | RSL parser having RSL parser state
+type RSLParser a = GenParser Char RSLState a 
+
+
+-- | Initial state of shader env.
+--   Builtin variables are added in global scope.
+initRSLState :: RSLState
+initRSLState = RSLState { symbolTable = [("global", builtinShaderVariables)] }
+  
+
+-- | Push scope into the symbol table
+pushScope :: String -> [Symbol] -> RSLState -> RSLState
+pushScope scope xs st =
+  st { symbolTable = newTable }
+
+    where
+    
+      -- Add new scope to the first elem of the list.
+      newTable = [(scope, xs)] ++ (symbolTable st)
+
+-- | Pop scope from the symbol table
+popScope :: RSLState -> RSLState
+popScope st =
+  st { symbolTable = newTable }
+
+    where
+
+      -- Pop first scope from the scope chain
+      newTable = tail (symbolTable st)
+
+-- | Add the symbol to the first scope in the symbol list.
+addSymbol :: Symbol -> RSLState -> RSLState
+addSymbol sym st = trace (show sym) $ 
+  st { symbolTable = newTable }
+
+    where
+
+      newTable = case (symbolTable st) of
+        [(scope, xs)]     -> [(scope, [sym] ++ xs)]
+        ((scope, xs):xxs) -> [(scope, [sym] ++ xs)] ++ xxs
 
 --
--- Topmost rule
+-- Topmost parsing rule
 --
-program               =     many1 definition
-                      <?>   "program"
+program               = do  { ast <- many1 definition
+                            ; return ast
+                            }
+                       <?>   "program"
+
 
 definition            =   shaderDefinition
                       <|> functionDefinition
@@ -39,12 +90,21 @@ shaderDefinition      = do  { ty    <- shaderType
                             ; formals <- formalDecls
                             ; symbol ")"
                             ; symbol "{"
+
+                            -- push scope
+                            ; updateState (pushScope name [])
+
                             ; stms <- statements
                             ; symbol "}"
+
+                            -- pop scope
+                            ; updateState (popScope)
+
                             ; return (ShaderFunc ty name formals stms)
                             } 
                       <?> "shader definition"
   
+
 functionDefinition    = do  { ty    <- option (TyVoid) rslType
                             ; name  <- identifier
                             ; symbol "("
@@ -65,16 +125,16 @@ formalDecls           = do  { decls <- sepEndBy formalDecl (symbol ";")
 formalDecl            = do  { ty    <- rslType
                             ; name  <- identifier
                             ; expr  <- maybeInitFormalDeclExpr
+                            ; updateState (addSymbol (Symbol name ty Uniform KindVariable))
                             ; return (FormalDecl ty name expr)
                             }
 
-statements :: Parser [Expr]
-statements =  many statement
+statements            =  many statement
 
-statement =   varDefStmt
-          <|> assignStmt
-          <|> exprStmt
-          <?> "statement"
+statement             =   varDefStmt
+                      <|> assignStmt
+                      <|> exprStmt
+                      <?> "statement"
 
 
 exprStmt = do { e <- expr
@@ -89,6 +149,7 @@ varDefStmt  = do  { ty    <- rslType
                   ; name  <- identifier
                   ; initE <- try maybeInitExpr
                   ; symbol ";"
+                  ; updateState (addSymbol (Symbol name ty Uniform KindVariable))
                   ; return (Def ty name initE)
                   }
             <?> "variable definition"
@@ -97,7 +158,7 @@ assignStmt  = do  { lvalue <- identifier
                   ; symbol "="
                   ; rexpr <- expr
                   ; symbol ";"  <?> "semicolon"
-                  ; return (Assign TyUndef (Var TyUndef lvalue) rexpr)
+                  ; return (Assign TyUnknown (Var (Symbol lvalue TyUnknown Uniform KindVariable)) rexpr)
                   }
             <?> "assign stetement"
 
@@ -105,19 +166,58 @@ procedureCall = do  { name <- identifier
                     ; symbol "("
                     ; args <- try procArguments
                     ; symbol ")"
-                    ; return (Call TyUndef name args)
+                    ; return (Call TyUnknown name args)
                     }
 
 procArguments = sepBy expr (symbol ",") 
                     
--- expr        = choice [
---                   try procedureCall
---                 , varRef 
---                 ]
+
+isDefinedInScope :: (String, [Symbol]) -> String -> (Maybe Bool)
+isDefinedInScope (scope, syms) name = scan syms
+
+  where
+    
+    scan []     = Nothing
+    scan (x:xs) = case (compare symName name) of
+                    EQ -> (Just True)
+                    _  -> scan xs
+
+                    where
+        
+                      symName = case x of
+                        (Symbol name _ _ _ ) -> name
 
 
-varRef      = do  { name <- identifier
-                  ; return (Var TyUndef name)
+isDefinedInScopeChain :: SymbolTable -> String -> (Maybe Bool)
+isDefinedInScopeChain []     name = Nothing
+isDefinedInScopeChain [x]    name = isDefinedInScope x name
+isDefinedInScopeChain (x:xs) name = isDefinedInScope x name `mplus` isDefinedInScopeChain xs name
+
+
+isDefined :: SymbolTable -> String -> Bool
+isDefined table name = case  isDefinedInScopeChain table name of
+  Nothing  -> False
+  (Just _) -> True
+
+
+--
+-- | Check if the identifier trying to parse is defined previously.
+--   If the identifier isn't defined in the scope chain, exit with fail.
+--
+defined = lexeme $ try $
+  do  { state <- getState
+      ; name  <- identifier
+      ; if (isDefined (symbolTable state) name)
+          then return name
+          else unexpected ("undefined symbol " ++ show name)
+      } 
+
+
+--
+-- | Expecting identifier and its defined previously.
+--
+varRef      = do  { name <- defined
+                  ; return (Var (Symbol name TyUnknown Uniform KindVariable))
                   }
 
 
@@ -127,28 +227,31 @@ mkInt s = read s
 mkFloat :: String -> Double
 mkFloat s = read s
 
-parseSign :: Parser Char
+parseSign :: RSLParser Char
 parseSign =   do  try (char '-')
           <|> do  optional (char '+')
                   return '+'
 
 --
--- TODO: Support more fp value string(e.g. 1.0e+5f)
+-- TODO: Support parising more fp value string(e.g. 1.0e+5f)
 --
-parseFloat :: Parser Double
+parseFloat :: RSLParser Double
 parseFloat = do { sign  <- parseSign
                 ; whole <- many1 digit 
                 ; char '.'
                 ; fract <- many1 digit
-                ; return $ mkFloatVal whole fract
+                ; return $ applySign sign $ mkFloatVal whole fract
                 }
         
                 where
 
                   mkFloatVal :: String -> String -> Double
                   mkFloatVal whole fract = readDouble $ whole ++ "." ++ fract
-
+                  
                   readDouble = read
+
+                  applySign sign val | sign == '+' = val
+                                     | otherwise   = negate val
 
 
 maybeInitExpr           = do  { symbol "="
@@ -165,22 +268,27 @@ maybeInitFormalDeclExpr = do  { symbol "="
                         <|>   return Nothing
                                
 
-shaderType            =   (reserved "light"         >> return Light       )
-                      <|> (reserved "surface"       >> return Surface     )
-                      <|> (reserved "volume"        >> return Volume      )
-                      <|> (reserved "displacement"  >> return Displacement)
-                      <|> (reserved "imager"        >> return Imager      )
-                      <?> "RenderMan shader type"
+shaderType              =   (reserved "light"         >> return Light       )
+                        <|> (reserved "surface"       >> return Surface     )
+                        <|> (reserved "volume"        >> return Volume      )
+                        <|> (reserved "displacement"  >> return Displacement)
+                        <|> (reserved "imager"        >> return Imager      )
+                        <?> "RenderMan shader type"
 
-rslType               =   (reserved "float"         >> return TyFloat     )
-                      <|> (reserved "string"        >> return TyString    )
-                      <|> (reserved "color"         >> return TyColor     )
-                      <|> (reserved "point"         >> return TyPoint     )
-                      <|> (reserved "vector"        >> return TyVector    )
-                      <|> (reserved "normal"        >> return TyNormal    )
-                      <?> "RenderMan type"
+rslType                 =   (reserved "float"         >> return TyFloat     )
+                        <|> (reserved "string"        >> return TyString    )
+                        <|> (reserved "color"         >> return TyColor     )
+                        <|> (reserved "point"         >> return TyPoint     )
+                        <|> (reserved "vector"        >> return TyVector    )
+                        <|> (reserved "normal"        >> return TyNormal    )
+                        <?> "RenderMan type"
                       
 
+--
+--
+--
+initShaderEnv :: SymbolTable
+initShaderEnv = [("global", [])]
 
 
 --
@@ -216,12 +324,20 @@ showLine name n m =
               }
 
 
+
 --
 -- Parser interface
 --
-run :: Parser [Func] -> FilePath -> ([Func] -> IO ()) -> IO ()
+parseRSLFromFile :: RSLParser a -> SourceName -> IO (Either ParseError a)
+parseRSLFromFile p fname =
+  do { input <- readFile fname
+     ; return (runParser p initRSLState fname input)
+     }
+
+
+run :: RSLParser [Func] -> FilePath -> ([Func] -> IO ()) -> IO ()
 run p name proc =
-  do  { result <- parseFromFile p name
+  do  { result <- parseRSLFromFile p name
       ; case (result) of
           Left err -> do  { putStrLn "Parse err:"
                           ; showLine name (sourceLine (errorPos err)) (sourceColumn (errorPos err))
@@ -232,15 +348,17 @@ run p name proc =
       }
 
 
-runLex :: Parser [Func] -> FilePath -> ([Func] -> IO ()) -> IO ()
+runLex :: RSLParser [Func] -> FilePath -> ([Func] -> IO ()) -> IO ()
 runLex p name proc =
-  run (do { whiteSpace
-          ; x <- p
+  run (do { x <- p
           ; eof
           ; return x
           }
       ) name proc
 
+--
+-- Useful parsing tools
+--
 lexer       = P.makeTokenParser rslDef
 
 whiteSpace  = P.whiteSpace lexer
@@ -254,12 +372,11 @@ identifier  = P.identifier lexer
 reserved    = P.reserved lexer
 reservedOp  = P.reservedOp lexer
 
-expr        ::  Parser Expr
+expr        ::  RSLParser Expr
 expr        =   buildExpressionParser table primary
            <?> "expression"
--- expr = primary
 
-primary     =   try procedureCall
+primary     =   try procedureCall   -- Do I really need "try"?
             <|> parens expr
             <|> varRef
 
@@ -271,14 +388,15 @@ table       =  [  [binOp "*" OpMul AssocLeft, binOp "/" OpDiv AssocLeft]
 
                 binOp s f assoc
                   = Infix ( do { reservedOp s
-                               ; return (\x y -> BinOp TyUndef f [x, y])
+                               ; return (\x y -> BinOp TyUnknown f [x, y])
                                } ) assoc
 
 rslDef = javaStyle
   { reservedNames = [ "const"
                     , "break", "for", "if", "else"
                     , "surface", "volume", "displacement", "imager"
+                    -- More is TODO
                     ]
-  , reservedOpNames = ["+", "-", "*", "/"]
+  , reservedOpNames = ["+", "-", "*", "/"] -- More is TODO
   }
 
