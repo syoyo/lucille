@@ -790,8 +790,8 @@ subsample( pixelinfo_t * pixinfo, int x, int y, int threadid )
             /* HACK */
             //ri_transport_sample( ri_render_get(  ),
             //                     &ray, &result );
-            //ri_transport_ambientocclusion(ri_render_get(), &ray, &result);
-            ri_transport_whitted(ri_render_get(), &ray, &result);
+            ri_transport_ambientocclusion(ri_render_get(), &ray, &result);
+            //ri_transport_whitted(ri_render_get(), &ray, &result);
 
             ri_vector_add( accumrad, accumrad, result.radiance );
 
