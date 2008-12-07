@@ -153,6 +153,8 @@ ri_camera_new()
 
     camera->fov               = 90.0f;
 
+    camera->is_rh             = 0;
+
     camera->use_glcamera      = 0;
     ri_vector_setzero( camera->cam_pos );
     ri_vector_setzero( camera->cam_at );
@@ -215,27 +217,29 @@ ri_camera_setup(ri_camera_t *camera)
 
     camera->flength = 1.0 / tan( ( camera->fov * 3.141592 / 180.0 ) * 0.5 );
 
-        /*
+    /*
      * build orientation matrix
      */
-        ri_matrix_identity( &orientation );
-        if ( strcmp(ri_render_get()->context->option->orientation,
-            RI_RH ) == 0 ) {
-                orientation.f[2][2] = -orientation.f[2][2];
-        }
+    ri_matrix_identity( &orientation );
+    if ( strcmp(ri_render_get()->context->option->orientation,
+        RI_RH ) == 0 ) {
+            orientation.f[2][2] = -orientation.f[2][2];
 
-        /*
+        camera->is_rh = 1;
+    }
+
+    /*
      * compute camera to world matrix
      */
-        if ( camera->use_glcamera ) {
-                ri_camera_get_glmatrix( &m, camera );
-        } else {
-                ri_matrix_copy( &m,
-                                &( ri_render_get(  )->context->
-                                   world_to_camera ) );
-                ri_matrix_inverse( &m );
-        }
-        ri_matrix_mul( &camera->camera_to_world, &m, &orientation );
+    if ( camera->use_glcamera ) {
+            ri_camera_get_glmatrix( &m, camera );
+    } else {
+            ri_matrix_copy( &m,
+                            &( ri_render_get(  )->context->
+                               world_to_camera ) );
+            ri_matrix_inverse( &m );
+    }
+    ri_matrix_mul( &camera->camera_to_world, &m, &orientation );
 
 }
 
@@ -261,9 +265,11 @@ ri_camera_get_pos_and_dir(
     w = camera->horizontal_resolution;
     h = camera->vertical_resolution;
 
+    float sign = camera->is_rh ? -1.0 : 1.0;
+
     v[0] = ( 2.0f * x - w ) / w;
     v[1] = ( 2.0f * y - h ) / h;
-    v[2] = flength;
+    v[2] = sign * flength;
     v[3] = 1.0;
 
     ortho = ( camera->camera_projection == RI_ORTHOGRAPHIC ) ? 1 : 0;
@@ -285,7 +291,7 @@ ri_camera_get_pos_and_dir(
 
             dirpos[0] = v[0];
             dirpos[1] = v[1];
-            dirpos[2] = 1.0;
+            dirpos[2] = sign * 1.0;
             dirpos[3] = 1.0;
 
             ri_vector_transform( pos   , pos   , c2w );

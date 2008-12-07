@@ -85,6 +85,8 @@ typedef struct _ri_camera_t {
 
 	ri_float_t  flength;
 
+    int         is_rh;
+
 } ri_camera_t;
 
 extern ri_camera_t *ri_camera_new();
