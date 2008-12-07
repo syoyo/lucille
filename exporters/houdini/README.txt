@@ -17,7 +17,8 @@ Usage
 Put htol.py into $HOME/houdini9.5/scripts/python.
 (If the directory is not exist on your system, mkdir it)
 
-In houdini, open Python Shell, enter ::
+In houdini, setup your scene to be exported.
+Then open *Python Shell* window, enter ::
   
   >>> execfile("$HOME/houdini9.5/scripts/python/htol.py")
 
@@ -26,7 +27,9 @@ $HOME should be expanded to your home directoly, for example::
   >>> execfile("/home/syoyo/houdini9.5/scripts/python/htol.py")
   
 RIB file will be generated on your $HOME directry with name ``untitled.rib``
-   
+
+Render ``untitled.rib`` with lucille. 
+
 
 Limitation
 ==========
@@ -53,7 +56,7 @@ Question from the author
 Contribution and Bug report
 ===========================
 
-If you found bugs, or encounter problems, want to add function to the exporter,
+If you found bugs or want to add function to the exporter,
 let me know at,
 
 https://redmine.s21g.com/projects/show/lucille

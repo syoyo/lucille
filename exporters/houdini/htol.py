@@ -34,7 +34,8 @@ def emit_footer():
 
 def visit_camera(cam):
 
-    print cam.path()
+    print "  ==> Exporining camera : ", cam.path()
+    # print cam.path()
 
     """
     Camera matrix should be inverted, and should apply rh -> lh conversion.
@@ -52,7 +53,7 @@ def visit_camera(cam):
     fov = 45.0  # FIXME: calculate fov from camera object.
 
     s  = ""
-    s += "PixelSamples 1 1\n"
+    s += "PixelSamples 2 2\n"
     s += "Shutter 0.0 1.0\n"
     s += "Projection \"perspective\" \"fov\" [" + str(fov) + "]\n"
     s += "Orientation \"rh\"\n"     # Houdini employs reft hand coord.
@@ -63,7 +64,7 @@ def visit_camera(cam):
 
     s += "]\n"
 
-    print s
+    # print s
 
     return s
 
@@ -106,7 +107,7 @@ def visit_object(object):
     # emit face
     for (fid, prim) in enumerate(geo.prims()):
         if not isinstance(prim, hou.Polygon):
-            print "[htol] Err: [%s] is not a polygonal object, skipping export" % object.path()
+            print "[htol] Warn: [%s] is not a polygonal object, skipping export" % object.path()
             return
 
         s += "%d " % prim.numVertices()
@@ -157,7 +158,7 @@ def visit_object(object):
 
     s += "\nAttributeEnd\n"
 
-    print s
+    # print s
 
     return s
 
