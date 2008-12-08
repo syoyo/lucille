@@ -73,7 +73,7 @@ def visit_object(object):
     print "[htol]  ==> Exporing ", object.path()
 
     if object.displayNode() is None:
-        print "[htol] TODO: Skip object ", object
+        print "[htol] Skip object ", object
         return
 
     xform = object.parmTransform()
@@ -106,6 +106,10 @@ def visit_object(object):
 
     # emit face
     for (fid, prim) in enumerate(geo.prims()):
+
+        if prim.type() == hou.primType.Mesh:
+            continue    # skip
+
         if not isinstance(prim, hou.Polygon):
             print "[htol] Warn: [%s] is not a polygonal object, skipping export" % object.path()
             return
@@ -114,10 +118,12 @@ def visit_object(object):
 
     s += " ] [ "
 
+    # Extract polygonal primitives.
+    polyPrims = [prim for prim in geo.prims() if prim.type() == hou.primType.Polygon]
 
     # emit face idx
     vsum = 0
-    for (fid, prim) in enumerate(geo.prims()):
+    for (fid, prim) in enumerate(polyPrims):
         for vid in xrange(prim.numVertices()):    
             s += "%d " % (vsum + vid)
         vsum += prim.numVertices()
@@ -125,7 +131,7 @@ def visit_object(object):
     s += "] \"P\" [ "
 
     # emit positions
-    for (fid, prim) in enumerate(geo.prims()):
+    for (fid, prim) in enumerate(polyPrims):
         for vid in xrange(prim.numVertices()):    
 
             # get vertex 
@@ -144,7 +150,7 @@ def visit_object(object):
         s += " \"N\" ["
 
         # emit positions
-        for (fid, prim) in enumerate(geo.prims()):
+        for (fid, prim) in enumerate(polyPrims):
             for vid in xrange(prim.numVertices()):    
 
                 # get vertex 
@@ -159,6 +165,8 @@ def visit_object(object):
     s += "\nAttributeEnd\n"
 
     # print s
+    
+    print "      Exported %d vertices." % vsum
 
     return s
 
