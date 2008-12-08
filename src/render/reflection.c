@@ -221,11 +221,11 @@ int
 ri_fresnel(
     ri_vector_t        r_out,       /* reclected vector             */
     ri_vector_t        t_out,       /* transmitted vector           */
-    float             *kr_out,      /* the reflection coeff         */
-    float             *kt_out,      /* the refraction coeff         */
+    ri_float_t        *kr_out,      /* the reflection coeff         */
+    ri_float_t        *kt_out,      /* the refraction coeff         */
     const ri_vector_t  in,
     const ri_vector_t  n,
-    float              eta)         /* relative index of refraction */
+    ri_float_t         eta)         /* relative index of refraction */
 {
     double dot;
     double inv_eta;
@@ -244,10 +244,10 @@ ri_fresnel(
      *       r    \   |   /  in
      *             \  | |/
      *   ----------------------
-     *               -
-     *             --
-     *           --  
-     *        <-     t
+     *               _-
+     *             _-
+     *           _-  
+     *         <-    t
      *
      */
 
@@ -272,8 +272,12 @@ ri_fresnel(
     ri_reflect(r_out, in, n);
 
     if (tir) {
+
+        /* Total internal reflection */
+
         (*kr_out) = 1.0;
         (*kt_out) = 0.0;
+
         return 1;
     }
 
