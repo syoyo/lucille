@@ -47,9 +47,9 @@ Import('env')
 
 incPath=['../base', '../imageio', '../transport', '../display', '../render', '../ri', '../../include']
 
-if env['enable_muda']:
-  incPath.append('./muda')
-  incPath.append(env['CPPPATH'])
+#if env['enable_muda']:
+#  incPath.append('./muda')
+#  incPath.append(env['CPPPATH'])
 
 libName='rirender'
 
