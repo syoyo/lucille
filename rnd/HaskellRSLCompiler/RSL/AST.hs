@@ -19,6 +19,11 @@ data Op
   | OpMul
   | OpDiv
     deriving (Show, Eq)
+
+-- | Type qualifier
+data Qual
+  = Output
+    deriving (Show, Eq) 
   
 data Type
   = TyUnknown
@@ -30,6 +35,7 @@ data Type
   | TyPoint
   | TyNormal
   | TyMatrix
+  | TyQualified Qual Type
     deriving (Show, Eq)
 
 data StorageClass
@@ -61,13 +67,24 @@ data Kind
   | KindFunction
     deriving (Show, Eq)
 
+
 data Symbol
-  = Symbol  String            -- name of the symbol
+  = SymVar  String            -- name of the symbol
             Type              -- type of the symbol
             StorageClass      -- storage class of the symbol
             Kind              -- kind of the symbol
 
+  | SymFunc String            -- name of the function
+            Type              -- return type of the function
+            [Type]            -- arguments of the function         
+            [Type]            -- optional arguments
+
     deriving (Show, Eq)
+
+getName (SymVar  name _ _ _) = name
+getName (SymFunc name _ _ _) = name
+getTy   (SymVar  _ ty _ _)   = ty
+getTy   (SymFunc _ ty _ _)   = ty
 
 type SymbolTable
   = [(String, [Symbol])]
@@ -79,13 +96,11 @@ type SymbolTable
 data Expr 
   = Const   Const
   | Var     Symbol
-  | Assign  Type Expr Expr
+  | Assign  Expr Expr
   | Def     Type String (Maybe Expr)
-  | BinOp   Type    -- Type of this operator
-            Op      -- Operator
+  | BinOp   Op      -- Operator
             [Expr]  -- Left & Right
-  | Call    Type    -- Return type
-            String  -- Name of procedure
+  | Call    Symbol  -- Function signature
             [Expr]  -- Arguments
     deriving (Show, Eq)
   

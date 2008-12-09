@@ -22,27 +22,40 @@ import RSL.AST
 --
 builtinShaderVariables :: [Symbol]
 builtinShaderVariables =
-  [ (Symbol "Ci" TyColor  Varying KindVariable)
-  , (Symbol "Oi" TyColor  Varying KindVariable)
-  , (Symbol "Cs" TyColor  Varying KindVariable)
-  , (Symbol "Os" TyColor  Varying KindVariable)
-  , (Symbol "P"  TyPoint  Varying KindVariable)
-  , (Symbol "I"  TyVector Varying KindVariable)
-  , (Symbol "E"  TyPoint  Uniform KindVariable)
-  , (Symbol "N"  TyNormal Varying KindVariable)
-  , (Symbol "Ng" TyNormal Varying KindVariable)
-  , (Symbol "Cl" TyColor  Varying KindVariable)
-  , (Symbol "Ol" TyColor  Varying KindVariable)
+  [ (SymVar "Ci" TyColor  Varying KindVariable)
+  , (SymVar "Oi" TyColor  Varying KindVariable)
+  , (SymVar "Cs" TyColor  Varying KindVariable)
+  , (SymVar "Os" TyColor  Varying KindVariable)
+  , (SymVar "P"  TyPoint  Varying KindVariable)
+  , (SymVar "I"  TyVector Varying KindVariable)
+  , (SymVar "E"  TyPoint  Uniform KindVariable)
+  , (SymVar "N"  TyNormal Varying KindVariable)
+  , (SymVar "Ng" TyNormal Varying KindVariable)
+  , (SymVar "Cl" TyColor  Varying KindVariable)
+  , (SymVar "Ol" TyColor  Varying KindVariable)
   ] -- More is TODO
   
 
-{-
 builtinShaderFunctions :: [Symbol]
 builtinShaderFunctions =
-  [ (Symbol "faceforward" TyVector Varying KindVariable)
+  [ 
+  -- 15.2 Geometric Functions
+    (SymFunc "length"      f [v]    [])
+  , (SymFunc "normalize"   v [v]    [])
+  , (SymFunc "distance"    f [p, p] [])
+  , (SymFunc "faceforward" v [v, v] [])
+
+  -- 15.6 Shading and Lighting Functions
+  , (SymFunc "ambient"     c []     [])
+  , (SymFunc "diffuse"     c []     [])
+
   ] -- More is TODO
--}
 
+  where
 
+    f = TyFloat
+    c = TyColor
+    v = TyVector
+    p = TyPoint
 
 

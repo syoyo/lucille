@@ -37,7 +37,8 @@ type RSLParser a = GenParser Char RSLState a
 -- | Initial state of shader env.
 --   Builtin variables are added in global scope.
 initRSLState :: RSLState
-initRSLState = RSLState { symbolTable = [("global", builtinShaderVariables)] }
+initRSLState = RSLState {
+  symbolTable = [("global", builtinShaderVariables ++ builtinShaderFunctions)] }
   
 
 -- | Push scope into the symbol table
@@ -62,7 +63,7 @@ popScope st =
 
 -- | Add the symbol to the first scope in the symbol list.
 addSymbol :: Symbol -> RSLState -> RSLState
-addSymbol sym st = trace (show sym) $ 
+addSymbol sym st = trace ("// Add " ++ (show sym)) $ 
   st { symbolTable = newTable }
 
     where
@@ -125,7 +126,7 @@ formalDecls           = do  { decls <- sepEndBy formalDecl (symbol ";")
 formalDecl            = do  { ty    <- rslType
                             ; name  <- identifier
                             ; expr  <- maybeInitFormalDeclExpr
-                            ; updateState (addSymbol (Symbol name ty Uniform KindVariable))
+                            ; updateState (addSymbol (SymVar name ty Uniform KindVariable))
                             ; return (FormalDecl ty name expr)
                             }
 
@@ -149,55 +150,55 @@ varDefStmt  = do  { ty    <- rslType
                   ; name  <- identifier
                   ; initE <- try maybeInitExpr
                   ; symbol ";"
-                  ; updateState (addSymbol (Symbol name ty Uniform KindVariable))
+                  ; updateState (addSymbol (SymVar name ty Uniform KindVariable))
                   ; return (Def ty name initE)
                   }
             <?> "variable definition"
 
-assignStmt  = do  { lvalue <- identifier
+assignStmt  = do  { var <- defined
                   ; symbol "="
                   ; rexpr <- expr
                   ; symbol ";"  <?> "semicolon"
-                  ; return (Assign TyUnknown (Var (Symbol lvalue TyUnknown Uniform KindVariable)) rexpr)
+                  ; return (Assign (Var var) rexpr)
                   }
             <?> "assign stetement"
 
-procedureCall = do  { name <- identifier
+procedureCall = do  { var <- defined
                     ; symbol "("
                     ; args <- try procArguments
                     ; symbol ")"
-                    ; return (Call TyUnknown name args)
+                    ; return (Call var args)
                     }
+              <?> "procedure call"
 
 procArguments = sepBy expr (symbol ",") 
                     
 
-isDefinedInScope :: (String, [Symbol]) -> String -> (Maybe Bool)
-isDefinedInScope (scope, syms) name = scan syms
+maybeDefinedInScope :: (String, [Symbol]) -> String -> (Maybe Symbol)
+maybeDefinedInScope (scope, syms) name = scan syms
 
   where
     
     scan []     = Nothing
     scan (x:xs) = case (compare symName name) of
-                    EQ -> (Just True)
+                    EQ -> (Just x)
                     _  -> scan xs
 
                     where
         
                       symName = case x of
-                        (Symbol name _ _ _ ) -> name
+                        (SymVar  name _ _ _ ) -> name
+                        (SymFunc name _ _ _ ) -> name
 
 
-isDefinedInScopeChain :: SymbolTable -> String -> (Maybe Bool)
-isDefinedInScopeChain []     name = Nothing
-isDefinedInScopeChain [x]    name = isDefinedInScope x name
-isDefinedInScopeChain (x:xs) name = isDefinedInScope x name `mplus` isDefinedInScopeChain xs name
+maybeDefinedInScopeChain :: SymbolTable -> String -> (Maybe Symbol)
+maybeDefinedInScopeChain []     name = Nothing
+maybeDefinedInScopeChain [x]    name = maybeDefinedInScope x name
+maybeDefinedInScopeChain (x:xs) name = maybeDefinedInScope x name `mplus` maybeDefinedInScopeChain xs name
 
 
-isDefined :: SymbolTable -> String -> Bool
-isDefined table name = case  isDefinedInScopeChain table name of
-  Nothing  -> False
-  (Just _) -> True
+maybeDefined :: SymbolTable -> String -> (Maybe Symbol)
+maybeDefined table name = maybeDefinedInScopeChain table name
 
 
 --
@@ -207,17 +208,17 @@ isDefined table name = case  isDefinedInScopeChain table name of
 defined = lexeme $ try $
   do  { state <- getState
       ; name  <- identifier
-      ; if (isDefined (symbolTable state) name)
-          then return name
-          else unexpected ("undefined symbol " ++ show name)
+      ; case (maybeDefined (symbolTable state) name) of
+          (Just sym) -> return sym
+          Nothing    -> unexpected ("undefined symbol " ++ show name)
       } 
 
 
 --
 -- | Expecting identifier and its defined previously.
 --
-varRef      = do  { name <- defined
-                  ; return (Var (Symbol name TyUnknown Uniform KindVariable))
+varRef      = do  { var <- defined
+                  ; return (Var var)
                   }
 
 
@@ -388,7 +389,7 @@ table       =  [  [binOp "*" OpMul AssocLeft, binOp "/" OpDiv AssocLeft]
 
                 binOp s f assoc
                   = Infix ( do { reservedOp s
-                               ; return (\x y -> BinOp TyUnknown f [x, y])
+                               ; return (\x y -> BinOp f [x, y])
                                } ) assoc
 
 rslDef = javaStyle

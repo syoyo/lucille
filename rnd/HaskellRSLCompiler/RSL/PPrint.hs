@@ -68,9 +68,9 @@ instance AST Expr where
     Const  const                -> "const"
 
 
-    Var    (Symbol name _ _ _)  -> name
+    Var    (SymVar name _ _ _)  -> name
 
-    BinOp  ty op exprs          -> concat
+    BinOp  op exprs             -> concat
       [ "( "
       , pprint 0 (exprs !! 0) -- left
       , " " ++ emitOp op ++ " "
@@ -94,7 +94,7 @@ instance AST Expr where
       ]
 
 
-    Assign ty lexpr rexpr -> concat 
+    Assign lexpr rexpr -> concat 
       [ indent n
       , pprint 0 lexpr
       , " = "
@@ -103,7 +103,7 @@ instance AST Expr where
       ]
 
 
-    Call retTy name args  -> concat 
+    Call (SymFunc name ty _ _) args  -> concat 
       [ name
       , "("
       , pprintArgs args
