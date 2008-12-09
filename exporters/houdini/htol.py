@@ -34,7 +34,7 @@ def emit_footer():
 
 def visit_camera(cam):
 
-    print "  ==> Exporining camera : ", cam.path()
+    print "[htol] ==> Exporining camera : ", cam.path()
     # print cam.path()
 
     """
@@ -68,16 +68,30 @@ def visit_camera(cam):
 
     return s
 
-def visit_object(object):
+def visit_object(obj):
 
-    print "[htol]  ==> Exporing ", object.path()
+    print "[htol] ==> Exporing ", obj.path()
 
-    if object.displayNode() is None:
-        print "[htol] Skip object ", object
+    #
+    # Filter out non-geometry node.
+    #
+    if not hasattr(obj, "displayNode"):
+        print "[htol]     Skipped object ", obj
         return
 
-    xform = object.parmTransform()
-    geo = object.displayNode().geometry()
+    if obj.displayNode() is None:
+        print "[htol]     Skipped object ", obj
+        return
+
+    # obj node has parmTransform method?
+    xform = None
+    if hasattr(obj, "parmTransform"):
+        xform = obj.parmTransform()
+    else:
+        print "[htol]     Skipped object ", obj
+        return
+
+    geo = obj.displayNode().geometry()
     assert geo is not None
 
     hasP = True     # This should be always true
@@ -111,7 +125,7 @@ def visit_object(object):
             continue    # skip
 
         if not isinstance(prim, hou.Polygon):
-            print "[htol] Warn: [%s] is not a polygonal object, skipping export" % object.path()
+            print "[htol] Warn: [%s] is not a polygonal object, skipping export" % obj.path()
             return
 
         s += "%d " % prim.numVertices()
@@ -194,10 +208,12 @@ def walk_tree(node, indent=0):
             # camera node?
             if (cam_re.match(child.name())):
                 s = visit_camera(child)
-                ribnodelist["camera"] = s
+                if s is not None:
+                    ribnodelist["camera"] = s
             else:
                 s = visit_object(child)
-                ribnodelist[child.name()] = s
+                if s is not None:
+                    ribnodelist[child.name()] = s
 
         # print " " * indent + child.name() + " (" + str(type(child)) + ")"
 
