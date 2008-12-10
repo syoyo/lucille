@@ -38,11 +38,11 @@ RtToken   *rib_param_tokens      = NULL;
 RtPointer *rib_param_args        = NULL;
 RtInt     *rib_param_arg_size    = NULL;
 
-static const int    max_unknown_commands = 1000;
-static int        nunknown_commands = 0;
+static const int    max_unknown_commands = 30;
+static int          nunknown_commands = 0;
 
 void yyerror( char *str ) {
-    printf( "parse error near line[%d]: %s\n", line_num, str );
+    ri_log(LOG_FATAL, "parse error near line[%d]: %s\n", line_num, str );
 }
 
 static void numptrfree(void *data)
@@ -296,10 +296,10 @@ param_lists: param_list_entry param_lists
 
 param_list_entry: STRING param_array
 {
-    unsigned long i;
-    unsigned long n;
-    RtPointer arg;
-    RtToken   tag;
+    unsigned long   i;
+    unsigned long   n;
+    RtPointer       arg = NULL;
+    RtToken         tag;
 
     ri_ptr_array_t *t;
 
@@ -307,10 +307,15 @@ param_list_entry: STRING param_array
     t = $2;
 
     n = $2->nelems;
-    if (array_type == NUM_ARRAY) {
-        arg = ri_mem_alloc(n * sizeof(RtFloat));
-    } else { /* STRING_ARRAY */
-        arg = ri_mem_alloc(n * sizeof(RtToken));
+    if (n == 0) {
+        printf("arg = NULL\n");
+        arg = NULL;
+    } else {
+        if (array_type == NUM_ARRAY) {
+            arg = ri_mem_alloc(n * sizeof(RtFloat));
+        } else { /* STRING_ARRAY */
+            arg = ri_mem_alloc(n * sizeof(RtToken));
+        }
     }
 
     for (i = 0; i < n; i++) {
@@ -569,21 +574,25 @@ protocol: ribversion NUM
 {
     int             i;
     int             have_p = 0;
-    RtInt           npolys, *nverts, *verts;
-    ri_ptr_array_t *p;
+    RtInt           npolys, *nverts = NULL, *verts = NULL;
+    ri_ptr_array_t *p = NULL;
 
     p = $2;
     npolys = p->nelems;
     
-    nverts = (RtInt *)ri_mem_alloc(sizeof(RtInt) * (p->nelems));
-    for (i = 0; i < (int)p->nelems; i++) {
-        nverts[i] = (RtInt)(*((RtFloat *)ri_ptr_array_at(p, i)));
+    if (npolys > 0) {
+        nverts = (RtInt *)ri_mem_alloc(sizeof(RtInt) * npolys);
+        for (i = 0; i < (int)p->nelems; i++) {
+            nverts[i] = (RtInt)(*((RtFloat *)ri_ptr_array_at(p, i)));
+        }
     }
 
     p = $3;
-    verts  = (RtInt *)ri_mem_alloc(sizeof(RtInt) * (p->nelems));
-    for (i = 0; i < (int)p->nelems; i++) {
-        verts[i] = (RtInt)(*((RtFloat *)ri_ptr_array_at(p, i)));
+    if (p->nelems > 0) {
+        verts  = (RtInt *)ri_mem_alloc(sizeof(RtInt) * p->nelems);
+        for (i = 0; i < (int)p->nelems; i++) {
+            verts[i] = (RtInt)(*((RtFloat *)ri_ptr_array_at(p, i)));
+        }
     }
 
     for (i = 0; i < rib_param_num; i++) {
@@ -682,7 +691,7 @@ protocol: ribversion NUM
                         nvertices = rib_param_arg_size[i];
 
                         if (nvertices % 3 != 0) {
-                                printf("RI_N array must be 3*n in length.");
+                                ri_log(LOG_WARN, "RI_N array must be 3*n in length.");
                                 nvertices = 0;
                         } else {
                                 nvertices /= 3;
@@ -769,13 +778,13 @@ protocol: ribversion NUM
     } 
 
     if (!have_p) {
-        printf("PointsPolygons without RI_P parameter.\n");
+        ri_log(LOG_WARN, "PointsPolygons without RI_P parameter.\n");
         docall = 0;
     }
 
     for (i = 0; i < nfaces; i++) {
         if (nverts[i] != 4 && !face_warn) {
-            printf("Currently, only quad face are supported\n");
+            ri_log(LOG_WARN, "Currently, only quad face are supported\n");
             docall = 0;
             face_warn = 1;    /* prevent multiple warning. */
         }
@@ -846,7 +855,7 @@ protocol: ribversion NUM
 | UNKNOWN
 {
     enter_mode_skip();
-    printf("[RIB parse] Unknown command: %s at line %d\n", yylval.string, line_num);
+    ri_log(LOG_WARN, "Unknown RIB command: %s at line %d\n", yylval.string, line_num);
     nunknown_commands++;
     if (nunknown_commands > max_unknown_commands) {
         printf("[RIB parse] Too many unknown commands. Give up parsing.\n");

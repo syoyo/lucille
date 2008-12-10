@@ -57,6 +57,8 @@ ri_polygon_parse(RtInt nverts, RtInt n, RtToken tokens[], RtPointer params[])
     int             has_color = 0;
     int             nv;
 
+    if (nverts == 0) return NULL;
+
     p = ri_geom_new();
 
     if (strcmp(ri_render_get()->context->option->orientation, RI_RH) == 0) {
@@ -361,6 +363,8 @@ ri_pointspolygons_parse(RtInt npolys, RtInt nverts[], RtInt verts[],
     int             order[6];
     int             has_color = 0;
     int             poly_warn = 0;
+
+    if (npolys == 0) return NULL;
 
     p = ri_geom_new();
 
@@ -702,6 +706,8 @@ ri_api_polygon(RtInt nverts, RtInt n, RtToken tokens[], RtPointer params[])
 
     ri_timer_end(ri_render_get()->context->timer, "Geom | Polygon");
 
+    if (geom == NULL) return;
+
     if (ri_render_get()->context->arealight_block) {
         arealight = (ri_light_t *)
                 ri_list_last(ri_render_get()->scene->light_list)->data;
@@ -741,6 +747,8 @@ ri_api_pointspolygons(RtInt npolys, RtInt nverts[], RtInt verts[],
                        n, tokens, params);
 
     ri_timer_end(ri_render_get()->context->timer, "Geom | PointsPolygons");
+
+    if (geom == NULL) return;
 
     if (ri_render_get()->context->arealight_block) {
         arealight = (ri_light_t *)

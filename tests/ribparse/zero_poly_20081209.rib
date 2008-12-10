@@ -1,0 +1,24 @@
+# RenderMan RIB-Structure 1.1
+# Exported by htol, Houdini to lucille RIB exporter by Syoyo Fujita
+Display "untitled.hdr" "framebuffer" "rgb"
+
+PixelSamples 2 2
+Shutter 0.0 1.0
+Projection "perspective" "fov" [45.0]
+Orientation "rh"
+ConcatTransform [0.656984 0.260552 -0.707450 0.000000 0.011884 0.934685 0.355278 0.000000 0.753811 -0.241820 0.610976 0.000000 -0.304380 -1.008375 -9.629872 1.000000 ]
+
+WorldBegin
+AttributeBegin
+Transform [ 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000  ]
+PointsPolygons [ ] [ ] "P" [ ]
+AttributeEnd
+
+AttributeBegin
+Transform [ 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 1.000000  ]
+PointsPolygons [ ] [ ] "P" [ ]
+AttributeEnd
+
+WorldEnd
+# RIB End
+
