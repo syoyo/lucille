@@ -48,7 +48,7 @@ body = concat
 
 muda :: State LLVMState String
 muda = do { x <- get
-          ; return "bora"
+          ; return "CodeGenLLVM: TODO"
           }
 
 codeGenLLVM :: (String, LLVMState)

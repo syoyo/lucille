@@ -18,6 +18,8 @@ data Op
   | OpSub
   | OpMul
   | OpDiv
+  | OpDot       -- .
+  | OpNeg       -- !
   | OpGe        -- >=
   | OpGt        -- >
   | OpLe        -- <=
@@ -100,37 +102,43 @@ getTy   (SymFunc _ ty _ _)   = ty
 type SymbolTable
   = [(String, [Symbol])]
 
+type Statement = [Expr]
 
 --
 -- We define typed AST.
 --
 data Expr 
   = Const     Const
-  | TypeCast  Type    -- toType
-              String  -- spaceType if any
-              Expr    -- fromExpr
+  | TypeCast  Type                        -- toType
+              String                      -- spaceType if any
+              Expr                        -- fromExpr
   | Var       Symbol
-  | Assign    Op      -- operator
-              Expr    -- lhs
-              Expr    -- rhs
+  | Assign    Op                          -- operator
+              Expr                        -- lhs
+              Expr                        -- rhs
   | Def       Type String (Maybe Expr)
-  | UnaryOp   Op      -- Operator
-              Expr    
-  | BinOp     Op      -- Operator
-              [Expr]  -- Left & Right
-  | Call      Symbol  -- Function signature
-              [Expr]  -- Arguments
+  | UnaryOp   Op                          -- Operator
+              Expr                        
+  | BinOp     Op                          -- Operator
+              [Expr]                      -- Left & Right
+  | Call      Symbol                      -- Function signature
+              [Expr]                      -- Arguments
 
-  | Triple    [Expr]  -- length(expr) == 3
-  | While     Expr    -- condition
-              [Expr]  -- statement
-  | Nil               -- null expr
+  | Triple    [Expr]                       -- length(expr) == 3
+
+  -- Stmt
+  | If        Expr                        -- condition
+              [Expr]                      -- statement
+              (Maybe [Expr])              -- else statement
+  | While     Expr                        -- condition
+              [Expr]                      -- statement
+  | Nil                                   -- null expr
     deriving (Show, Eq)
   
 
 data Func 
   = ShaderFunc ShaderType String [FormalDecl] [Expr]
-  | UserFunc Type String
+  | UserFunc   Type       String
     deriving (Show, Eq)
 
 

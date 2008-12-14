@@ -60,6 +60,8 @@ emitOp op = case op of
   OpSub       -> "-"
   OpMul       -> "*"
   OpDiv       -> "/"
+  OpDot       -> "."
+  OpNeg       -> "!"
   OpLe        -> "<="
   OpLt        -> "<"
   OpGe        -> ">="
@@ -152,13 +154,24 @@ instance AST Expr where
       , " )"
       ]
 
-    While expr stms                   -> concat
+    While cond stms                   -> concat
       [ indent n
       , "while ( "
-      , pprint 0 expr                 -- cond
+      , pprint 0 cond
       , " ) {\n"
       , pprint (n+1) stms
       , "\n" ++ indent n ++ "}"
+      ]
+
+    If cond thenStms (Just elseStms)  -> concat
+      [ indent n
+      , "if ( "
+      , pprint 0 cond 
+      , " ) {\n"
+      , pprint (n+1) thenStms
+      , indent n ++ "} else {\n"
+      , pprint (n+1) elseStms
+      , indent n ++ "}"
       ]
 
     Nil                               -> "null"

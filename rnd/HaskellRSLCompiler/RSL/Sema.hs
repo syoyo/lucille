@@ -69,6 +69,11 @@ builtinShaderFunctions =
   -- float, point, vector, normal, color
   , (SymFunc "mix"            f [f, f, f] [])
   -- TODO...
+  , (SymFunc "random"         f []        [])
+  , (SymFunc "random"         c []        [])
+  , (SymFunc "random"         p []        [])
+  , (SymFunc "noise"          f [f]       [])
+  -- TODO...
 
   -- 15.2 Geometric Functions
   , (SymFunc "xcomp"          f [v]       [])

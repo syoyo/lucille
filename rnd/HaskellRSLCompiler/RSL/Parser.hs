@@ -152,6 +152,7 @@ statement             =   varDefsStmt
                       <|> do { stm <- assignStmt; return [stm] }
                       <|> do { stm <- exprStmt  ; return [stm] }
                       <|> do { stm <- whileStmt ; return [stm] }
+                      <|> do { stm <- ifStmt    ; return [stm] }
                       <?> "statement"
 
 
@@ -222,10 +223,25 @@ whileStmt             = do  { reserved "while"
                             ; symbol "{"
                             ; stms <- statements
                             ; symbol "}"
-                            ; symbol ";"
+                            ; optional (symbol ";")
                             ; return (While cond stms)
                             }
 
+-- If not having else clause is TODO
+ifStmt                = do  { reserved "if"
+                            ; symbol "("
+                            ; cond <- expr      -- TODO: allow cond expr only.
+                            ; symbol ")"
+                            ; symbol "{"
+                            ; thenStmts <- statements
+                            ; symbol "}"
+                            ; reserved "else"
+                            ; symbol "{"
+                            ; elseStmts <- statements
+                            ; symbol "}"
+                            ; optional (symbol ";")
+                            ; return (If cond thenStmts (Just elseStmts))
+                            }
 
 --
 -- Expression
@@ -244,7 +260,9 @@ procArguments = sepBy expr (symbol ",")
               <?> "invalid argument"
 
 
-triple        = do  { symbol "("
+triple        = do  { try (symbol "(")        -- try is added to remove
+                                              -- ambiciusness with 
+                                              -- 'parens expr'
                     ; e0 <- expr
                     ; symbol ","
                     ; e1 <- expr
@@ -412,7 +430,6 @@ rslType                 =   (reserved "float"         >> return TyFloat     )
 
 typeCastExpr            =   do  { ty  <- rslType
                                 ; spacety <- option "" stringLiteral
-                                -- ; e   <- triple
                                 ; e   <- expr
                                 ; return (TypeCast ty spacety e)
                                 }
@@ -514,7 +531,8 @@ expr        =   buildExpressionParser table primary
            <?> "expression"
 
 primary     =   typeCastExpr
-            <|> parens expr
+            <|> try (parens expr)
+            <|> triple
             <|> procedureCall   -- Do I really need "try"?
             <|> varRef
             -- <|> procedureCall   -- Do I really need "try"?
@@ -522,7 +540,12 @@ primary     =   typeCastExpr
             <|> constString
             <?> "primary"
 
-table       =  [  [prefix "-" OpSub]
+table       =  [
+               -- unary
+                  [prefix "-" OpSub, prefix "!" OpNeg]
+
+               -- binop
+               ,  [binOp "."  OpDot AssocLeft]
                ,  [binOp "*"  OpMul AssocLeft, binOp "/"  OpDiv AssocLeft]
                ,  [binOp "+"  OpAdd AssocLeft, binOp "-"  OpSub AssocLeft]
                ,  [binOp ">=" OpGe  AssocLeft, binOp ">"  OpGt  AssocLeft]
