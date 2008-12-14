@@ -62,6 +62,7 @@ popScope st =
       newTable = tail (symbolTable st)
 
 -- | Add the symbol to the first scope in the symbol list.
+--   TODO: Check duplication of the symbol.
 addSymbol :: Symbol -> RSLState -> RSLState
 addSymbol sym st = trace ("// Add " ++ (show sym)) $ 
   st { symbolTable = newTable }
@@ -119,22 +120,38 @@ functionDefinition    = do  { ty    <- option (TyVoid) rslType
 -- TODO: support multiple var def, e.g., float ka = 1, kb = 1;
 -- 
 formalDecls           = do  { decls <- sepEndBy formalDecl (symbol ";")
-                            ; return decls
+                            ; return $ concat decls --  [[a]] -> [a]
                             }
                       <?> "formal declarations"
 
-formalDecl            = do  { ty    <- rslType
-                            ; name  <- identifier
+formalDef             = do  { name  <- identifier
                             ; expr  <- maybeInitFormalDeclExpr
-                            ; updateState (addSymbol (SymVar name ty Uniform KindVariable))
-                            ; return (FormalDecl ty name expr)
+                            ; return (name, expr)
                             }
 
-statements            =  many statement
+formalDecl            = do  { ty    <- rslType
+                            ; defs  <- sepBy1 formalDef (symbol ",")
+                            ; mapM (updateState . addSymbol) (genSyms ty defs)
+                            ; return (genDecls ty defs)
+                            }
 
-statement             =   varDefStmt
-                      <|> assignStmt
-                      <|> exprStmt
+                            where
+                      
+                              -- float a, b, c -> [float a, float b, float c]
+                              genSyms ty [(name, expr)]   = [(SymVar name ty Uniform KindVariable)]
+                              genSyms ty ((name, expr):x) = [(SymVar name ty Uniform KindVariable)] ++ genSyms ty x
+                              genDecls ty [(name, expr)]   = [(FormalDecl ty name expr)]
+                              genDecls ty ((name, expr):x) = [(FormalDecl ty name expr)] ++ genDecls ty x
+
+statements            =  do { stms <- many statement    -- [[]]
+                            ; return $ concat stms      -- []
+                            }
+
+statement :: RSLParser [Expr]
+statement             =   varDefsStmt
+                      <|> do { stm <- assignStmt; return [stm] }
+                      <|> do { stm <- exprStmt  ; return [stm] }
+                      <|> do { stm <- whileStmt ; return [stm] }
                       <?> "statement"
 
 
@@ -146,33 +163,98 @@ exprStmt = do { e <- expr
 --
 -- | Variable definition
 --
-varDefStmt  = do  { ty    <- rslType
-                  ; name  <- identifier
-                  ; initE <- try maybeInitExpr
-                  ; symbol ";"
-                  ; updateState (addSymbol (SymVar name ty Uniform KindVariable))
-                  ; return (Def ty name initE)
-                  }
-            <?> "variable definition"
+varDef                = do  { name  <- identifier
+                            ; expr  <- maybeInitExpr
+                            ; return (name, expr)
+                            }
 
-assignStmt  = do  { var <- defined
-                  ; symbol "="
-                  ; rexpr <- expr
-                  ; symbol ";"  <?> "semicolon"
-                  ; return (Assign (Var var) rexpr)
-                  }
-            <?> "assign stetement"
+{-
+varDefStmt            = do  { ty    <- rslType
+                            ; name  <- identifier
+                            ; initE <- try maybeInitExpr
+                            ; symbol ";"
+                            ; updateState (addSymbol (SymVar name ty Uniform KindVariable))
+                            ; return (Def ty name initE)
+                            }
+                      <?> "variable definition"
+-}
 
-procedureCall = do  { var <- defined
+varDefsStmt           = do  { ty    <- rslType
+                            ; defs  <- sepBy1 varDef (symbol ",")
+                            ; symbol ";"
+                            ; mapM (updateState . addSymbol) (genSyms ty defs)
+                            ; return (genDefs ty defs)
+                            }
+
+                            where
+
+                              -- float a, b, c -> [float a, float b, float c]
+                              genSyms ty [(name, expr)]   = [(SymVar name ty Uniform KindVariable)]
+                              genSyms ty ((name, expr):x) = [(SymVar name ty Uniform KindVariable)] ++ genSyms ty x
+                              genDefs ty [(name, expr)]   = [(Def ty name expr)]
+                              genDefs ty ((name, expr):x) = [(Def ty name expr)] ++ genDefs ty x
+
+
+--
+-- Assign statement
+--
+assignOp              =   (reserved "="  >> return OpAssign)
+                      <|> (reserved "+=" >> return OpAddAssign)
+                      <|> (reserved "-=" >> return OpSubAssign)
+                      <|> (reserved "*=" >> return OpMulAssign)
+                      <|> (reserved "/=" >> return OpDivAssign)
+
+assignStmt            = do  { var <- definedSym
+                            ; op <- assignOp
+                            ; rexpr <- expr
+                            ; symbol ";"  <?> "semicolon"
+                            ; return (Assign op (Var var) rexpr)
+                            }
+                      <?> "assign stetement"
+
+--
+-- Condition statement
+--
+whileStmt             = do  { reserved "while"
+                            ; symbol "("
+                            ; cond <- expr      -- TODO: allow cond expr only.
+                            ; symbol ")"
+                            ; symbol "{"
+                            ; stms <- statements
+                            ; symbol "}"
+                            ; symbol ";"
+                            ; return (While cond stms)
+                            }
+
+
+--
+-- Expression
+--
+
+procedureCall = do  { var <- try definedFunc    -- try is inserted to remove
+                                                -- ambiciousness with 'varRef'
                     ; symbol "("
-                    ; args <- try procArguments
+                    ; args <- procArguments
                     ; symbol ")"
                     ; return (Call var args)
                     }
               <?> "procedure call"
 
 procArguments = sepBy expr (symbol ",") 
+              <?> "invalid argument"
+
+
+triple        = do  { symbol "("
+                    ; e0 <- expr
+                    ; symbol ","
+                    ; e1 <- expr
+                    ; symbol ","
+                    ; e2 <- expr
+                    ; symbol ")"
+                    ; return (Triple [e0, e1, e2])    
+                    }
                     
+
 
 maybeDefinedInScope :: (String, [Symbol]) -> String -> (Maybe Symbol)
 maybeDefinedInScope (scope, syms) name = scan syms
@@ -205,25 +287,42 @@ maybeDefined table name = maybeDefinedInScopeChain table name
 -- | Check if the identifier trying to parse is defined previously.
 --   If the identifier isn't defined in the scope chain, exit with fail.
 --
-defined = lexeme $ try $
-  do  { state <- getState
-      ; name  <- identifier
-      ; case (maybeDefined (symbolTable state) name) of
-          (Just sym) -> return sym
-          Nothing    -> unexpected ("undefined symbol " ++ show name)
-      } 
+--defined = lexeme $ try $
+--  do  { state <- getState
+--      ; name  <- identifier
+--      ; case (maybeDefined (symbolTable state) name) of
+--          (Just sym) -> return sym
+--          Nothing    -> unexpected ("undefined symbol " ++ show name)
+--      } 
+--  <?> "defined symbol"
+definedSym          = do  { state <- getState
+                          ; name  <- try identifier
+                          ; case (maybeDefined (symbolTable state) name) of
+                              (Just sym@(SymVar _ _ _ _ )) -> return sym
+                              _    -> unexpected ("undefined symbol " ++ show name)
+                          } 
+                      <?> "defined symbol"
+
+definedFunc         = do  { state <- getState
+                          ; name  <- try identifier
+                          ; case (maybeDefined (symbolTable state) name) of
+                              (Just sym@(SymFunc _ _ _ _ )) -> return sym
+                              _                             -> unexpected ("undefined symbol " ++ show name)
+                          } 
+                    <?> "defined symbol"
 
 
 --
 -- | Expecting identifier and its defined previously.
 --
-varRef      = do  { var <- defined
-                  ; return (Var var)
-                  }
+varRef      =   do  { var <- try definedSym
+                    ; return (Var var)
+                    }
+            <?> "defined symbol"
 
 
 mkInt :: String -> Int
-mkInt s = read s
+mkInt s   = read s
 
 mkFloat :: String -> Double
 mkFloat s = read s
@@ -233,15 +332,31 @@ parseSign =   do  try (char '-')
           <|> do  optional (char '+')
                   return '+'
 
+fractValue :: RSLParser Double
+fractValue              =   do  { char '.'
+                                ; fract <- many1 digit
+                                ; return $ read ("0." ++ fract)
+                                }
+
+toDouble :: Real a => a -> Double
+toDouble = fromRational . toRational
+
+floatValue              =   do  { num  <- naturalOrFloat
+                                ; return (case num of
+                                          Right x -> x
+                                          Left  x -> (toDouble x)
+                                         )
+                                }
+                        <|> fractValue
+
 --
--- TODO: Support parising more fp value string(e.g. 1.0e+5f)
+-- TODO: Parse more fp value string(e.g. 1.0e+5f)
 --
+
 parseFloat :: RSLParser Double
 parseFloat = do { sign  <- parseSign
-                ; whole <- many1 digit 
-                ; char '.'
-                ; fract <- many1 digit
-                ; return $ applySign sign $ mkFloatVal whole fract
+                ; fval  <- floatValue
+                ; return $ applySign sign fval 
                 }
         
                 where
@@ -255,6 +370,15 @@ parseFloat = do { sign  <- parseSign
                                      | otherwise   = negate val
 
 
+constString             = do  { s   <- stringLiteral 
+                              ; return (Const (S s))
+                              }
+
+-- Number are float value in RSL.
+number                  = do  { val <- parseFloat
+                              ; return (Const (F val))
+                              }
+
 maybeInitExpr           = do  { symbol "="
                               ; e <- expr
                               ; return (Just e)
@@ -263,8 +387,8 @@ maybeInitExpr           = do  { symbol "="
                                
 
 maybeInitFormalDeclExpr = do  { symbol "="
-                              ; val <- parseFloat
-                              ; return (Just (F val)) -- FIXME
+                              ; e <- expr
+                              ; return (Just e)
                               }
                         <|>   return Nothing
                                
@@ -282,8 +406,17 @@ rslType                 =   (reserved "float"         >> return TyFloat     )
                         <|> (reserved "point"         >> return TyPoint     )
                         <|> (reserved "vector"        >> return TyVector    )
                         <|> (reserved "normal"        >> return TyNormal    )
+                        <|> (reserved "matrix"        >> return TyMatrix    )
                         <?> "RenderMan type"
                       
+
+typeCastExpr            =   do  { ty  <- rslType
+                                ; spacety <- option "" stringLiteral
+                                -- ; e   <- triple
+                                ; e   <- expr
+                                ; return (TypeCast ty spacety e)
+                                }
+                 
 
 --
 --
@@ -360,47 +493,65 @@ runLex p name proc =
 --
 -- Useful parsing tools
 --
-lexer       = P.makeTokenParser rslDef
+lexer           = P.makeTokenParser rslDef
 
-whiteSpace  = P.whiteSpace lexer
-lexeme      = P.lexeme lexer
-symbol      = P.symbol lexer
-natural     = P.natural lexer
-parens      = P.parens lexer
-semi        = P.semi lexer
-commaSep    = P.commaSep lexer
-identifier  = P.identifier lexer
-reserved    = P.reserved lexer
-reservedOp  = P.reservedOp lexer
+whiteSpace      = P.whiteSpace lexer
+lexeme          = P.lexeme lexer
+symbol          = P.symbol lexer
+natural         = P.natural lexer
+naturalOrFloat  = P.naturalOrFloat lexer
+stringLiteral   = P.stringLiteral lexer
+float           = P.float lexer
+parens          = P.parens lexer
+semi            = P.semi lexer
+commaSep        = P.commaSep lexer
+identifier      = P.identifier lexer
+reserved        = P.reserved lexer
+reservedOp      = P.reservedOp lexer
 
 expr        ::  RSLParser Expr
 expr        =   buildExpressionParser table primary
            <?> "expression"
 
-primary     =   try procedureCall   -- Do I really need "try"?
+primary     =   typeCastExpr
             <|> parens expr
+            <|> procedureCall   -- Do I really need "try"?
             <|> varRef
+            -- <|> procedureCall   -- Do I really need "try"?
+            <|> number
+            <|> constString
+            <?> "primary"
 
-table       =  [  [binOp "*" OpMul AssocLeft, binOp "/" OpDiv AssocLeft]
-               ,  [binOp "+" OpAdd AssocLeft, binOp "-" OpSub AssocLeft]
+table       =  [  [prefix "-" OpSub]
+               ,  [binOp "*"  OpMul AssocLeft, binOp "/"  OpDiv AssocLeft]
+               ,  [binOp "+"  OpAdd AssocLeft, binOp "-"  OpSub AssocLeft]
+               ,  [binOp ">=" OpGe  AssocLeft, binOp ">"  OpGt  AssocLeft]
+               ,  [binOp "<=" OpLe  AssocLeft, binOp "<"  OpLt  AssocLeft]
+               ,  [binOp "==" OpEq  AssocLeft, binOp "!=" OpNeq AssocLeft]
                ]
 
               where
 
-                binOp s f assoc
-                  = Infix ( do { reservedOp s
-                               ; return (\x y -> BinOp f [x, y])
-                               } ) assoc
+                prefix name f
+                  = Prefix ( do { reservedOp name
+                                ; return (\x -> UnaryOp f x)
+                                } )
+
+                binOp name f assoc
+                  = Infix  ( do { reservedOp name
+                                ; return (\x y -> BinOp f [x, y])
+                                } ) assoc
 
 rslDef = javaStyle
   { reservedNames = [ "const"
-                    , "break", "continue",
-                    , "while", "for", "solar", "illuminate", "illuminance"
+                    , "break", "continue"
+                    , "while", "if", "for", "solar", "illuminate", "illuminance"
                     , "surface", "volume", "displacement", "imager"
                     , "varying", "uniform", "facevarygin", "facevertex"
                     , "output"
                     , "extern"
                     , "texture", "environment", "shadow"
+                    , "color", "vector", "normal", "matrix", "point", "void"
                     -- More is TODO
                     ]
   , reservedOpNames = ["+", "-", "*", "/"] -- More is TODO

@@ -56,19 +56,45 @@ instance AST Type where
     TyMatrix      -> "matrix"
 
 emitOp op = case op of
-  OpAdd -> "+"
-  OpSub -> "-"
-  OpMul -> "*"
-  OpDiv -> "/"
+  OpAdd       -> "+"
+  OpSub       -> "-"
+  OpMul       -> "*"
+  OpDiv       -> "/"
+  OpLe        -> "<="
+  OpLt        -> "<"
+  OpGe        -> ">="
+  OpGt        -> ">"
+  OpEq        -> "=="
+  OpNeq       -> "!="
+  OpAssign    -> "="
+  OpAddAssign -> "+="
+  OpSubAssign -> "-="
+  OpMulAssign -> "*="
+  OpDivAssign -> "/="
 
 instance AST Expr where
   
   pprint n expr = case expr of
 
-    Const  const                -> "const"
+    TypeCast ty space expr      -> concat
+      [ "( ("
+      , pprint 0 ty ++ " \"" ++ space ++ "\" "
+      , ") "
+      , pprint 0 expr
+      , " )"
+      ]
+
+    Const  (F val)              -> show val
 
 
     Var    (SymVar name _ _ _)  -> name
+
+    UnaryOp op expr             -> concat
+      [ "( "
+      , emitOp op ++ " "
+      , pprint 0 expr
+      , " )"
+      ]
 
     BinOp  op exprs             -> concat
       [ "( "
@@ -94,10 +120,10 @@ instance AST Expr where
       ]
 
 
-    Assign lexpr rexpr -> concat 
+    Assign op lexpr rexpr -> concat 
       [ indent n
       , pprint 0 lexpr
-      , " = "
+      , " " ++ emitOp op ++ " "
       , pprint 0 rexpr
       , ";\n"
       ]
@@ -116,6 +142,26 @@ instance AST Expr where
         pprintArgs [x]    = pprint 0 x
         pprintArgs (x:xs) = pprint 0 x ++ ", " ++ pprintArgs xs
 
+    Triple exprs                      -> concat
+      [ "( "
+      , pprint 0 (exprs !! 0)
+      , ", "
+      , pprint 1 (exprs !! 1)
+      , ", "
+      , pprint 2 (exprs !! 2)
+      , " )"
+      ]
+
+    While expr stms                   -> concat
+      [ indent n
+      , "while ( "
+      , pprint 0 expr                 -- cond
+      , " ) {\n"
+      , pprint (n+1) stms
+      , "\n" ++ indent n ++ "}"
+      ]
+
+    Nil                               -> "null"
 
 instance AST FormalDecl where
 

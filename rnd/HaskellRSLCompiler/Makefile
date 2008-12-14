@@ -1,3 +1,5 @@
+.PHONY: test
+
 all:
 	ghc -o lslc --make Main.hs
 
@@ -8,3 +10,6 @@ clean:
 
 doc:
 	haddoc
+
+t:
+	(cd test; make)

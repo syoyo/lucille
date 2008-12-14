@@ -18,6 +18,17 @@ data Op
   | OpSub
   | OpMul
   | OpDiv
+  | OpGe        -- >=
+  | OpGt        -- >
+  | OpLe        -- <=
+  | OpLt        -- <
+  | OpEq        -- ==
+  | OpNeq       -- !=
+  | OpAssign    -- =
+  | OpAddAssign -- +=
+  | OpSubAssign -- -=
+  | OpMulAssign -- *=
+  | OpDivAssign -- /=
     deriving (Show, Eq)
 
 -- | Type qualifier
@@ -94,14 +105,26 @@ type SymbolTable
 -- We define typed AST.
 --
 data Expr 
-  = Const   Const
-  | Var     Symbol
-  | Assign  Expr Expr
-  | Def     Type String (Maybe Expr)
-  | BinOp   Op      -- Operator
-            [Expr]  -- Left & Right
-  | Call    Symbol  -- Function signature
-            [Expr]  -- Arguments
+  = Const     Const
+  | TypeCast  Type    -- toType
+              String  -- spaceType if any
+              Expr    -- fromExpr
+  | Var       Symbol
+  | Assign    Op      -- operator
+              Expr    -- lhs
+              Expr    -- rhs
+  | Def       Type String (Maybe Expr)
+  | UnaryOp   Op      -- Operator
+              Expr    
+  | BinOp     Op      -- Operator
+              [Expr]  -- Left & Right
+  | Call      Symbol  -- Function signature
+              [Expr]  -- Arguments
+
+  | Triple    [Expr]  -- length(expr) == 3
+  | While     Expr    -- condition
+              [Expr]  -- statement
+  | Nil               -- null expr
     deriving (Show, Eq)
   
 
@@ -112,5 +135,5 @@ data Func
 
 
 data FormalDecl 
-  = FormalDecl Type String (Maybe Const)
+  = FormalDecl Type String (Maybe Expr)     -- TODO: Allow const expression
     deriving (Show, Eq)

@@ -41,7 +41,6 @@ instance AST a => AST [a] where
   gen = genList
 
 
-{- Sandbox codes
 body = concat
   [ "define void @muda() {"
   , "}"
@@ -54,4 +53,3 @@ muda = do { x <- get
 
 codeGenLLVM :: (String, LLVMState)
 codeGenLLVM = runState muda initLLVMState
--}
