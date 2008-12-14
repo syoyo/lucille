@@ -394,8 +394,13 @@ table       =  [  [binOp "*" OpMul AssocLeft, binOp "/" OpDiv AssocLeft]
 
 rslDef = javaStyle
   { reservedNames = [ "const"
-                    , "break", "for", "if", "else"
+                    , "break", "continue",
+                    , "while", "for", "solar", "illuminate", "illuminance"
                     , "surface", "volume", "displacement", "imager"
+                    , "varying", "uniform", "facevarygin", "facevertex"
+                    , "output"
+                    , "extern"
+                    , "texture", "environment", "shadow"
                     -- More is TODO
                     ]
   , reservedOpNames = ["+", "-", "*", "/"] -- More is TODO
