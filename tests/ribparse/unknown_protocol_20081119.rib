@@ -1,2 +1,2 @@
-#| ./expected.py "Unknown command: TheWorld"
+#| ./expected.py "Unknown RIB command: TheWorld"
 TheWorld

@@ -1,6 +1,6 @@
 # RenderMan RIB-Structure 1.1
 # Exported by htol, Houdini to lucille RIB exporter by Syoyo Fujita
-Display "untitled.hdr" "framebuffer" "rgb"
+Display "untitled.hdr" "file" "rgb"
 
 PixelSamples 2 2
 Shutter 0.0 1.0
