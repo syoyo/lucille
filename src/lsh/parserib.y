@@ -32,11 +32,11 @@ unsigned int    curr_array_count = 0;
 
 int             array_type;
 
-long      rib_param_num         = 0;
-long      rib_param_num_alloced = 0;
-RtToken   *rib_param_tokens      = NULL;
-RtPointer *rib_param_args        = NULL;
-RtInt     *rib_param_arg_size    = NULL;
+long            rib_param_num         = 0;
+long            rib_param_num_alloced = 0;
+RtToken        *rib_param_tokens      = NULL;
+RtPointer      *rib_param_args        = NULL;
+RtInt          *rib_param_arg_size    = NULL;
 
 static const int    max_unknown_commands = 30;
 static int          nunknown_commands = 0;
@@ -575,6 +575,8 @@ protocol: ribversion NUM
     int             i;
     int             have_p = 0;
     RtInt           npolys, *nverts = NULL, *verts = NULL;
+    RtInt           ntotalverts = 0;
+    RtInt           vertnum = 0;
     ri_ptr_array_t *p = NULL;
 
     p = $2;
@@ -584,13 +586,15 @@ protocol: ribversion NUM
         nverts = (RtInt *)ri_mem_alloc(sizeof(RtInt) * npolys);
         for (i = 0; i < (int)p->nelems; i++) {
             nverts[i] = (RtInt)(*((RtFloat *)ri_ptr_array_at(p, i)));
+            ntotalverts += nverts[i];
         }
     }
 
     p = $3;
     if (p->nelems > 0) {
-        verts  = (RtInt *)ri_mem_alloc(sizeof(RtInt) * p->nelems);
-        for (i = 0; i < (int)p->nelems; i++) {
+        vertnum = p->nelems;
+        verts  = (RtInt *)ri_mem_alloc(sizeof(RtInt) * vertnum);
+        for (i = 0; i < vertnum; i++) {
             verts[i] = (RtInt)(*((RtFloat *)ri_ptr_array_at(p, i)));
         }
     }
@@ -612,8 +616,15 @@ protocol: ribversion NUM
     }
     ri_ptr_array_free(p);
 
-    RiPointsPolygonsV(npolys, nverts, verts,
-              rib_param_num, rib_param_tokens, rib_param_args);
+    // ntotalverts should be equal to vertnum;
+    if (ntotalverts != vertnum) {
+        ri_log(LOG_WARN, "Invalid format of PointsPolygons: insufficient vertex indices is provided. expected %d but got %d. line = %d\n", ntotalverts, vertnum, line_num);
+         
+    } else {
+
+        RiPointsPolygonsV(npolys, nverts, verts,
+                  rib_param_num, rib_param_tokens, rib_param_args);
+    }
 
 }
 | pointsgeneralpolygons param_num_array param_num_array param_num_array param_list
