@@ -94,10 +94,10 @@ data Symbol
 
     deriving (Show, Eq)
 
-getName (SymVar  name _ _ _) = name
-getName (SymFunc name _ _ _) = name
-getTy   (SymVar  _ ty _ _)   = ty
-getTy   (SymFunc _ ty _ _)   = ty
+getNameOfSym (SymVar  name _ _ _) = name
+getNameOfSym (SymFunc name _ _ _) = name
+getTyOfSym   (SymVar  _ ty _ _)   = ty
+getTyOfSym   (SymFunc _ ty _ _)   = ty
 
 type SymbolTable
   = [(String, [Symbol])]
@@ -105,23 +105,28 @@ type SymbolTable
 type Statement = [Expr]
 
 --
--- We define typed AST.
+-- We define 3-address form of AST.
 --
 data Expr 
-  = Const     Const
+  = Const     (Maybe Symbol)
+              Const
   | TypeCast  Type                        -- toType
               String                      -- spaceType if any
               Expr                        -- fromExpr
   | Var       Symbol
-  | Assign    Op                          -- operator
+  | Assign    (Maybe Symbol)
+              Op                          -- operator
               Expr                        -- lhs
               Expr                        -- rhs
   | Def       Type String (Maybe Expr)
-  | UnaryOp   Op                          -- Operator
+  | UnaryOp   (Maybe Symbol)
+              Op                          -- Operator
               Expr                        
-  | BinOp     Op                          -- Operator
+  | BinOp     (Maybe Symbol)
+              Op                          -- Operator
               [Expr]                      -- Left & Right
-  | Call      Symbol                      -- Function signature
+  | Call      (Maybe Symbol)
+              Symbol                      -- Function signature
               [Expr]                      -- Arguments
 
   | Triple    [Expr]                       -- length(expr) == 3

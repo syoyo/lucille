@@ -86,19 +86,19 @@ instance AST Expr where
       , " )"
       ]
 
-    Const  (F val)              -> show val
+    Const _ (F val)             -> show val
 
 
     Var    (SymVar name _ _ _)  -> name
 
-    UnaryOp op expr             -> concat
+    UnaryOp _ op expr           -> concat
       [ "( "
       , emitOp op ++ " "
       , pprint 0 expr
       , " )"
       ]
 
-    BinOp  op exprs             -> concat
+    BinOp _ op exprs            -> concat
       [ "( "
       , pprint 0 (exprs !! 0) -- left
       , " " ++ emitOp op ++ " "
@@ -122,7 +122,7 @@ instance AST Expr where
       ]
 
 
-    Assign op lexpr rexpr -> concat 
+    Assign _ op lexpr rexpr -> concat 
       [ indent n
       , pprint 0 lexpr
       , " " ++ emitOp op ++ " "
@@ -131,7 +131,7 @@ instance AST Expr where
       ]
 
 
-    Call (SymFunc name ty _ _) args  -> concat 
+    Call _ (SymFunc name ty _ _) args  -> concat 
       [ name
       , "("
       , pprintArgs args

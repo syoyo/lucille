@@ -25,6 +25,7 @@ import Debug.Trace
 
 import RSL.AST
 import RSL.Sema
+import RSL.Typer
 
 -- | RSL parser state
 data RSLState = RSLState  { symbolTable :: SymbolTable }
@@ -209,7 +210,7 @@ assignStmt            = do  { var <- definedSym
                             ; op <- assignOp
                             ; rexpr <- expr
                             ; symbol ";"  <?> "semicolon"
-                            ; return (Assign op (Var var) rexpr)
+                            ; return (Assign Nothing op (Var var) rexpr)
                             }
                       <?> "assign stetement"
 
@@ -252,7 +253,7 @@ procedureCall = do  { var <- try definedFunc    -- try is inserted to remove
                     ; symbol "("
                     ; args <- procArguments
                     ; symbol ")"
-                    ; return (Call var args)
+                    ; return (Call Nothing var args)
                     }
               <?> "procedure call"
 
@@ -389,12 +390,12 @@ parseFloat = do { sign  <- parseSign
 
 
 constString             = do  { s   <- stringLiteral 
-                              ; return (Const (S s))
+                              ; return (Const Nothing (S s))
                               }
 
 -- Number are float value in RSL.
 number                  = do  { val <- parseFloat
-                              ; return (Const (F val))
+                              ; return (Const Nothing (F val))
                               }
 
 maybeInitExpr           = do  { symbol "="
@@ -494,7 +495,7 @@ run p name proc =
                           ; showLine name (sourceLine (errorPos err)) (sourceColumn (errorPos err))
                           ; print err
                           }
-          Right x  -> do  { proc x
+          Right x  -> do  { proc $ typingAST x
                           }
       }
 
@@ -557,12 +558,12 @@ table       =  [
 
                 prefix name f
                   = Prefix ( do { reservedOp name
-                                ; return (\x -> UnaryOp f x)
+                                ; return (\x -> UnaryOp Nothing f x)
                                 } )
 
                 binOp name f assoc
                   = Infix  ( do { reservedOp name
-                                ; return (\x y -> BinOp f [x, y])
+                                ; return (\x y -> BinOp Nothing f [x, y])
                                 } ) assoc
 
 rslDef = javaStyle
