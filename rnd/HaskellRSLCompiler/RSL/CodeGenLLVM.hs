@@ -15,8 +15,38 @@
 module RSL.CodeGenLLVM where
 
 import Control.Monad.State
+import Numeric
+import Foreign
+import Foreign.C.Types
+import Data.IORef
+import System.IO.Unsafe           -- A magical module ;-)
 
 import RSL.AST
+import RSL.Sema
+
+--
+-- Routine to generate unique identifier.
+--
+
+theCounterGen :: IORef Int
+theCounterGen = unsafePerformIO $ do newIORef 0
+
+setCounterGen :: Int -> IO ()
+setCounterGen n = writeIORef theCounterGen n
+
+getCounterGen :: IO Int
+getCounterGen = readIORef theCounterGen
+
+getCounter :: IO Int
+getCounter = do
+    n <- getCounterGen
+    let n' = n + 1
+    setCounterGen n'
+    return n'
+
+genUniqueReg :: String
+genUniqueReg = "%reg" ++ (show $ unsafePerformIO getCounter)
+
 
 indent :: Int -> String
 indent n = concat $ replicate (4 * n) " "
@@ -60,6 +90,42 @@ instance AST ShaderType where
     Displacement  -> "displacement"
     Imager        -> "imager"
 
+-- LLVM IR requires 64bit hex value for 32bit floating point value to exactly
+-- express floating point value in LLVM IR.
+-- i.e., hex((double)(float)val)
+
+doubleAsULLong :: Ptr CDouble -> IO CULLong
+doubleAsULLong p = do
+  ull <- peek (castPtr p)
+  return ull
+
+floatAsUInt :: Ptr CFloat -> IO CUInt
+floatAsUInt p = do
+  ui <- peek (castPtr p)
+  return ui
+
+bitcastFloatToUInt :: CFloat -> CUInt
+bitcastFloatToUInt f = unsafePerformIO $ do
+  r <- with f floatAsUInt
+  return r
+
+bitcastDoubleToULLong :: CDouble -> CULLong
+bitcastDoubleToULLong d = unsafePerformIO $ do
+  r <- with d doubleAsULLong
+  return r
+
+showHexReplOfFloat  f = "0x" ++ showHex (bitcastFloatToUInt    f) ""
+showHexReplOfDouble d = "0x" ++ showHex (bitcastDoubleToULLong d) ""
+
+doubleToCFloat :: Double -> CFloat
+doubleToCFloat d = realToFrac d
+
+cfloatToCDouble :: CFloat -> CDouble
+cfloatToCDouble f = realToFrac f
+
+emitLLVMFloatString :: Double -> String
+emitLLVMFloatString f = showHexReplOfDouble $ cfloatToCDouble $ doubleToCFloat f
+
 
 emitOp op = case op of
   OpAdd       -> "add"
@@ -80,20 +146,43 @@ emitOp op = case op of
   OpMulAssign -> "*="
   OpDivAssign -> "/="
 
+getLLNameOfSym :: Symbol -> String
+getLLNameOfSym (SymVar name ty _ KindBuiltinVariable) = "@" ++ name
+getLLNameOfSym (SymVar name _ _ _)                    = "%" ++ name
+
 getReg :: Expr -> String
 getReg expr = case expr of
-  Const (Just sym) _              -> "%" ++ (getNameOfSym sym)
-  Var   sym                       -> "%" ++ (getNameOfSym sym)
-  UnaryOp (Just sym) _ _          -> "%" ++ (getNameOfSym sym)
-  BinOp (Just sym) _ _            -> "%" ++ (getNameOfSym sym)
+  Const (Just sym) _              -> getLLNameOfSym sym
+  Var (Just sym) _                -> getLLNameOfSym sym
+  UnaryOp (Just sym) _ _          -> getLLNameOfSym sym
+  BinOp (Just sym) _ _ _          -> getLLNameOfSym sym
+  Call (Just sym) _ _             -> getLLNameOfSym sym
+  _                               -> error $ "getReg, TODO:" ++ show expr
 
-getTyOfExpr :: Expr -> Type
-getTyOfExpr expr = case expr of
-  Const (Just sym) _              -> getTyOfSym sym
-  Var   sym                       -> getTyOfSym sym
-  UnaryOp (Just sym) _ _          -> getTyOfSym sym
-  BinOp (Just sym) _ _            -> getTyOfSym sym
 
+emitLoadFromFormalVariable :: Symbol -> Symbol -> String
+emitLoadFromFormalVariable dst src = concat
+  [ dstReg ++ " = " ++ "load " ++ emitTy (getTyOfSym dst) ++ "* "
+  , srcReg ++ ".addr"
+  , ";\n"
+  ]
+ 
+  where
+
+    dstReg = "%" ++ getNameOfSym dst
+    srcReg = "%" ++ getNameOfSym src
+
+emitLoadFromVariable :: Symbol -> Symbol -> String
+emitLoadFromVariable dst src = concat
+  [ dstReg ++ " = " ++ "load " ++ emitTy (getTyOfSym dst) ++ "* " ++ srcReg
+  , ";\n"
+  ]
+ 
+  where
+
+    dstReg = "%" ++ getNameOfSym dst
+    srcReg = "%" ++ getNameOfSym src
+  
 instance AST Expr where
   
   gen n expr = case expr of
@@ -103,29 +192,59 @@ instance AST Expr where
       ]
 
     Const (Just sym) (F val)    -> concat
-      [ indent n ++ dst ++ " = "
+
+      -- %tmp.buf = alloca ty
+      -- store ty val, ty* %tmp.buf
+      -- %dst = load ty* %tmp.buf
+      
+      [ indent n ++ tmpReg ++ " = "
       , "alloca "
       , ty ++ ";\n"
       --
       , indent n ++ "store "
       , ty ++ " "
-      , (show val) ++ " "
+      , emitLLVMFloatString val ++ " "
       , ", " ++ ty ++ "* "
-      , dst ++ ";\n"
+      , tmpReg ++ ";\n"
+      --
+      , indent n ++ dst ++ " = " ++ "load " ++ ty ++ "* " ++ tmpReg
+      , ";\n"
       ]
 
         where
-          dst = "%" ++ getNameOfSym sym
-          ty = emitTy (getTyOfSym sym)
+          dst     = "%" ++ getNameOfSym sym
+          ty      = emitTy (getTyOfSym sym)
+          tmpReg  = genUniqueReg ++ ".addr"
 
-    Var    (SymVar name _ _ _)  -> "%" ++ name
 
-    UnaryOp _ op expr           -> concat
-      [ "Unary"
+    Var (Just dstSym) srcSym -> case srcSym of
+
+      (SymVar name _ _ KindFormalVariable)  -> concat
+        [ indent n ++ emitLoadFromFormalVariable dstSym srcSym ]
+
+      (SymVar name _ _ KindBuiltinVariable) -> ""
+
+      _                                     -> concat
+        [ indent n ++ emitLoadFromVariable dstSym srcSym ]
+
+
+    UnaryOp (Just sym) op expr           -> concat
+      [ gen n expr
+      , indent n ++ "%" ++ getNameOfSym sym ++ " = "
+      , emitOp op ++ " "
+      , emitTy (getTyOfSym sym) ++ " zeroinitializer , "
+      , emitTy (getTyOfSym sym) ++ " " ++ getReg expr
+      , ";\n"
       ]
 
-    BinOp _ op exprs            -> concat
-      [ "Bin"
+    BinOp (Just sym) op e0 e1            -> concat
+      [ gen n e0
+      , gen n e1
+      , indent n ++ "%" ++ getNameOfSym sym ++ " = "
+      , emitOp op ++ " "
+      , emitTy (getTyOfSym sym) ++ " " ++ getReg e0 ++ " , "
+      , emitTy (getTyOfSym sym) ++ " " ++ getReg e1
+      , ";\n"
       ]
 
 
@@ -146,28 +265,34 @@ instance AST Expr where
       , "alloca "
       , emitTy ty
       , ";\n"
-      , concat [ gen n initExpr ]
+      , gen n initExpr
+      --
+      , indent n ++ "store "
+      , emitTy (getTyOfExpr initExpr) ++ " " ++ (getReg initExpr) ++ " , "
+      , emitTy (getTyOfExpr initExpr) ++ "* " ++ "%" ++ name
+      , ";\n"
       ]
 
 
     -- a = b
     -- -> store b, a
-    Assign _ op lexpr rexpr -> concat 
+    Assign _ op (Var _ sym) rexpr -> concat 
       [ gen n rexpr
       , indent n
       , "store "
-      , emitTy (getTyOfExpr lexpr) ++ " "
+      , emitTy (getTyOfExpr rexpr) ++ " "
       , getReg rexpr ++ ", "
-      , emitTy (getTyOfExpr lexpr) ++ "* "
-      , getReg lexpr ++ " "
+      , emitTy (getTyOfExpr rexpr) ++ "* "
+      , getLLNameOfSym sym
       , ";\n"
       ]
 
 
-    Call _ (SymFunc name ty _ _) args  -> concat 
-      [ name
-      , "call("
-      , ")"
+    Call (Just dst) (SymFunc name ty _ _) args  -> concat 
+      [ gen n args
+      , indent n ++ "%" ++ (getNameOfSym dst) ++ " = "
+      , "call " ++ "@" ++ name ++ "()"
+      , ";\n"
       ]
 
       where
@@ -222,6 +347,30 @@ instance AST FormalDecl where
   genList n [x]    = gen n x
   genList n (x:xs) = gen n x ++ ", " ++ gen n xs
 
+
+emitStoreFormalVariableToBuffer :: Int -> FormalDecl -> String
+emitStoreFormalVariableToBuffer n (FormalDecl ty name _) = concat
+  -- %var.addr = alloca ty
+  -- store %var, %var.addr
+  [ indent n ++ buf ++ " = " ++ "alloca " ++ tyStr ++ ";\n"
+  , indent n ++ "store " ++ tyStr ++ " " ++ src ++ " , " ++ tyStr ++ "* " ++ buf
+  , ";\n"
+  ]
+
+  where
+
+    tyStr  = emitTy ty
+    buf = "%" ++ name ++ ".addr"
+    src = "%" ++ name
+
+
+emitBuiltinVariableDef :: Symbol -> String
+emitBuiltinVariableDef (SymVar name ty _ _) =
+  "@" ++ name ++ " = " ++ "external global " ++ emitTy ty ++ ";\n"
+
+genHeader = 
+  concatMap (emitBuiltinVariableDef) builtinShaderVariables
+
 instance AST Func where
 
   gen n f = case f of
@@ -232,6 +381,7 @@ instance AST Func where
       , "("
       , gen n decls
       , ") {\n"
+      , concatMap (emitStoreFormalVariableToBuffer (n+1)) decls
       , gen (n+1) stms
       , "\n" ++ indent (n+1) ++ "ret void;\n"
       , "\n}\n"

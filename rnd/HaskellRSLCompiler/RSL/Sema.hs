@@ -22,19 +22,19 @@ import RSL.AST
 --
 builtinShaderVariables :: [Symbol]
 builtinShaderVariables =
-  [ (SymVar "Ci" TyColor  Varying KindVariable)
-  , (SymVar "Oi" TyColor  Varying KindVariable)
-  , (SymVar "Cs" TyColor  Varying KindVariable)
-  , (SymVar "Os" TyColor  Varying KindVariable)
-  , (SymVar "P"  TyPoint  Varying KindVariable)
-  , (SymVar "I"  TyVector Varying KindVariable)
-  , (SymVar "E"  TyPoint  Uniform KindVariable)
-  , (SymVar "N"  TyNormal Varying KindVariable)
-  , (SymVar "Ng" TyNormal Varying KindVariable)
-  , (SymVar "Cl" TyColor  Varying KindVariable)
-  , (SymVar "Ol" TyColor  Varying KindVariable)
-  , (SymVar "s"  TyFloat  Varying KindVariable)
-  , (SymVar "t"  TyFloat  Varying KindVariable)
+  [ (SymVar "Ci" TyColor  Varying KindBuiltinVariable)
+  , (SymVar "Oi" TyColor  Varying KindBuiltinVariable)
+  , (SymVar "Cs" TyColor  Varying KindBuiltinVariable)
+  , (SymVar "Os" TyColor  Varying KindBuiltinVariable)
+  , (SymVar "P"  TyPoint  Varying KindBuiltinVariable)
+  , (SymVar "I"  TyVector Varying KindBuiltinVariable)
+  , (SymVar "E"  TyPoint  Uniform KindBuiltinVariable)
+  , (SymVar "N"  TyNormal Varying KindBuiltinVariable)
+  , (SymVar "Ng" TyNormal Varying KindBuiltinVariable)
+  , (SymVar "Cl" TyColor  Varying KindBuiltinVariable)
+  , (SymVar "Ol" TyColor  Varying KindBuiltinVariable)
+  , (SymVar "s"  TyFloat  Varying KindBuiltinVariable)
+  , (SymVar "t"  TyFloat  Varying KindBuiltinVariable)
   ] -- More is TODO
   
 
@@ -136,3 +136,8 @@ builtinShaderFunctions =
     void = TyVoid
 
 
+lookupVariable :: [Symbol] -> String -> [Symbol]
+lookupVariable syms name = filter (\(SymVar sname _ _ _) -> sname == name) syms
+
+lookupFunc :: [Symbol] -> String -> [Symbol]
+lookupFunc syms name = filter (\(SymFunc fname _ _ _) -> fname == name) syms

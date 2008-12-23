@@ -1,6 +1,7 @@
 module Main where
 
 import System
+import System.FilePath
 
 import RSL.Parser
 import RSL.PPrint
@@ -11,7 +12,12 @@ debugPrinter ast = do putStrLn $ "// [AST] = " ++ show ast ++ "\n"
                       putStrLn $ pprint 0 ast   -- 0 = initial indent level
                         
                       putStrLn $ "========= LLVM IR ===========" 
-                      putStrLn $ gen 0 ast
+
+                      let codeString = gen 0 ast
+                      putStrLn codeString
+                      -- Also write to file.
+                      let headerString = genHeader  -- from CodeGenLLVM
+                      writeFile "output.ll" (headerString ++ "\n" ++ codeString)
 
 
 main = do args <- getArgs

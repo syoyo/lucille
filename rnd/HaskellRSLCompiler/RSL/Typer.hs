@@ -15,7 +15,9 @@
 module RSL.Typer where
 
 import Control.Monad.State
+
 import RSL.AST
+import RSL.Sema
 
 getUniqueName :: State Int String
 getUniqueName = do  { n <- get
@@ -27,24 +29,55 @@ getUniqueName = do  { n <- get
 class Typer a where
   typing :: a -> State Int a
 
+getReturnTypeOfFunc :: String -> (Maybe Type)
+getReturnTypeOfFunc name = case (lookupFunc builtinShaderFunctions name) of
+  []  -> Nothing
+  [x] -> (Just (getTyOfSym x))
+  xs  -> Nothing          -- TODO
 
 instance Typer Expr where
   typing e = case e of
-    Var sym ->
-      do { return (Var sym) }
+    Var _ sym ->
+      do { tmpName <- getUniqueName
+         ; let ty = getTyOfSym sym
+         ; return (Var (Just (SymVar tmpName ty Uniform KindVariable)) sym)
+         }
 
     Const _ (F fval) ->
       do { tmpName <- getUniqueName
          ; return (Const (Just (SymVar tmpName TyFloat Uniform KindVariable)) (F fval))
          }
+
+    UnaryOp _ op e ->
+      do  { e' <- typing e
+          ; tmpName <- getUniqueName
+          ; let ty  = getTyOfExpr e'
+          ; let sym = (SymVar tmpName ty Uniform KindVariable)
+          ; return (UnaryOp (Just sym) op e')
+          }
     
-    BinOp _ op (e0:e1) ->
-      do { return (BinOp Nothing op (e0:e1)) }
+    BinOp _ op e0 e1 ->
+      do  { e0' <- typing e0
+          ; e1' <- typing e1
+          ; tmpName <- getUniqueName
+          ; let ty  = getTyOfExpr e0'
+          ; let sym = (SymVar tmpName ty Uniform KindVariable)
+          ; return (BinOp (Just sym) op e0' e1')
+          }
 
     Assign _ op lhs rhs ->
       do  { rhs' <- typing rhs
           ; lhs' <- typing lhs
           ; return (Assign Nothing op lhs' rhs')
+          }
+
+    Call _ sym exprs   ->
+      do  { exprs' <- mapM typing exprs
+          ; tmpName <- getUniqueName
+          ; case getReturnTypeOfFunc (getNameOfSym sym) of
+              Nothing   -> error $ "TODO" ++ (show e)
+              (Just ty) -> let sym' = (SymVar tmpName ty Uniform KindVariable) in
+                           return (Call (Just sym') sym exprs')
           }
 
     Def ty name Nothing -> 

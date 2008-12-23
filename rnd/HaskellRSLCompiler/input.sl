@@ -1,8 +1,9 @@
 surface
-matte(float Ka = 1.0; float Kd = 1;)
+matte(vector Ka; float Kd = 1;)
 {
 	//float m = mod(Ka * Kd, 1), k;
 
+	I = Ka;
 	//normal Nf = faceforward(normalize(N), I);
 	//Oi = (-Os) - Os;
 	//Ci = Os * Cs * (Ka * ambient() + Kd * diffuse(Nf));
@@ -13,8 +14,7 @@ matte(float Ka = 1.0; float Kd = 1;)
 
 	//float k = float "bora" mod(Ka);
 
-	float a;
-	a = 1.0;
+	//float a = 1.0;
 
 	//if (1) {
 	//	k = 2;

@@ -89,7 +89,7 @@ instance AST Expr where
     Const _ (F val)             -> show val
 
 
-    Var    (SymVar name _ _ _)  -> name
+    Var _  (SymVar name _ _ _)  -> name
 
     UnaryOp _ op expr           -> concat
       [ "( "
@@ -98,11 +98,11 @@ instance AST Expr where
       , " )"
       ]
 
-    BinOp _ op exprs            -> concat
+    BinOp _ op e0 e1            -> concat
       [ "( "
-      , pprint 0 (exprs !! 0) -- left
+      , pprint 0 e0 -- left
       , " " ++ emitOp op ++ " "
-      , pprint 0 (exprs !! 1) -- right
+      , pprint 0 e1 -- right
       , " )"
       ]
 

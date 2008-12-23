@@ -77,6 +77,8 @@ data Const
 
 data Kind
   = KindVariable
+  | KindFormalVariable
+  | KindBuiltinVariable
   | KindFunction
     deriving (Show, Eq)
 
@@ -99,6 +101,15 @@ getNameOfSym (SymFunc name _ _ _) = name
 getTyOfSym   (SymVar  _ ty _ _)   = ty
 getTyOfSym   (SymFunc _ ty _ _)   = ty
 
+getTyOfExpr :: Expr -> Type
+getTyOfExpr expr = case expr of
+  Const (Just sym) _              -> getTyOfSym sym
+  Var   (Just sym) _              -> getTyOfSym sym
+  UnaryOp (Just sym) _ _          -> getTyOfSym sym
+  BinOp (Just sym) _ _ _          -> getTyOfSym sym
+  Call (Just sym) _ _             -> getTyOfSym sym
+  _                               -> error $ "getTyOfExpr: TODO: " ++ (show expr)
+
 type SymbolTable
   = [(String, [Symbol])]
 
@@ -113,7 +124,8 @@ data Expr
   | TypeCast  Type                        -- toType
               String                      -- spaceType if any
               Expr                        -- fromExpr
-  | Var       Symbol
+  | Var       (Maybe Symbol)
+              Symbol
   | Assign    (Maybe Symbol)
               Op                          -- operator
               Expr                        -- lhs
@@ -124,7 +136,8 @@ data Expr
               Expr                        
   | BinOp     (Maybe Symbol)
               Op                          -- Operator
-              [Expr]                      -- Left & Right
+              Expr                        -- Left
+              Expr                        -- Right
   | Call      (Maybe Symbol)
               Symbol                      -- Function signature
               [Expr]                      -- Arguments

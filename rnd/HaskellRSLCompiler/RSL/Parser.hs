@@ -139,8 +139,8 @@ formalDecl            = do  { ty    <- rslType
                             where
                       
                               -- float a, b, c -> [float a, float b, float c]
-                              genSyms ty [(name, expr)]   = [(SymVar name ty Uniform KindVariable)]
-                              genSyms ty ((name, expr):x) = [(SymVar name ty Uniform KindVariable)] ++ genSyms ty x
+                              genSyms ty [(name, expr)]   = [(SymVar name ty Uniform KindFormalVariable)]
+                              genSyms ty ((name, expr):x) = [(SymVar name ty Uniform KindFormalVariable)] ++ genSyms ty x
                               genDecls ty [(name, expr)]   = [(FormalDecl ty name expr)]
                               genDecls ty ((name, expr):x) = [(FormalDecl ty name expr)] ++ genDecls ty x
 
@@ -210,7 +210,7 @@ assignStmt            = do  { var <- definedSym
                             ; op <- assignOp
                             ; rexpr <- expr
                             ; symbol ";"  <?> "semicolon"
-                            ; return (Assign Nothing op (Var var) rexpr)
+                            ; return (Assign Nothing op (Var Nothing var) rexpr)
                             }
                       <?> "assign stetement"
 
@@ -335,7 +335,7 @@ definedFunc         = do  { state <- getState
 -- | Expecting identifier and its defined previously.
 --
 varRef      =   do  { var <- try definedSym
-                    ; return (Var var)
+                    ; return (Var Nothing var)
                     }
             <?> "defined symbol"
 
@@ -563,7 +563,7 @@ table       =  [
 
                 binOp name f assoc
                   = Infix  ( do { reservedOp name
-                                ; return (\x y -> BinOp Nothing f [x, y])
+                                ; return (\x y -> BinOp Nothing f x y)
                                 } ) assoc
 
 rslDef = javaStyle
