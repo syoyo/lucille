@@ -182,6 +182,17 @@ emitLoadFromVariable dst src = concat
 
     dstReg = "%" ++ getNameOfSym dst
     srcReg = "%" ++ getNameOfSym src
+
+emitLoadFromBuiltinVariable :: Symbol -> Symbol -> String
+emitLoadFromBuiltinVariable dst src = concat
+  [ dstReg ++ " = " ++ "call " ++ emitTy (getTyOfSym dst) ++ " "
+  , "@get" ++ (getNameOfSym src) ++ "()"
+  , ";\n"
+  ]
+ 
+  where
+
+    dstReg = "%" ++ getNameOfSym dst
   
 instance AST Expr where
   
@@ -222,7 +233,8 @@ instance AST Expr where
       (SymVar name _ _ KindFormalVariable)  -> concat
         [ indent n ++ emitLoadFromFormalVariable dstSym srcSym ]
 
-      (SymVar name _ _ KindBuiltinVariable) -> ""
+      (SymVar name _ _ KindBuiltinVariable) -> concat
+        [ indent n ++ emitLoadFromBuiltinVariable dstSym srcSym ]
 
       _                                     -> concat
         [ indent n ++ emitLoadFromVariable dstSym srcSym ]
@@ -274,18 +286,37 @@ instance AST Expr where
       ]
 
 
+    -- shadervar(var) = b
+    -- -> call @setVar(b)
+    -- 
     -- a = b
     -- -> store b, a
-    Assign _ op (Var _ sym) rexpr -> concat 
-      [ gen n rexpr
-      , indent n
-      , "store "
-      , emitTy (getTyOfExpr rexpr) ++ " "
-      , getReg rexpr ++ ", "
-      , emitTy (getTyOfExpr rexpr) ++ "* "
-      , getLLNameOfSym sym
-      , ";\n"
-      ]
+    
+    Assign _ op (Var _ sym) rexpr -> case sym of
+
+      (SymVar _ _ _ KindBuiltinVariable) -> concat
+
+        [ gen n rexpr
+        , indent n
+        , "call void "
+        , "@set" ++ getNameOfSym sym ++ "( "
+        , emitTy (getTyOfExpr rexpr) ++ " "
+        , getReg rexpr ++ " "
+        , ");\n"
+        ]
+
+
+      _ -> concat
+
+        [ gen n rexpr
+        , indent n
+        , "store "
+        , emitTy (getTyOfExpr rexpr) ++ " "
+        , getReg rexpr ++ ", "
+        , emitTy (getTyOfExpr rexpr) ++ "* "
+        , getLLNameOfSym sym
+        , ";\n"
+        ]
 
 
     Call (Just dst) (SymFunc name ty _ _) args  -> concat 
@@ -364,12 +395,24 @@ emitStoreFormalVariableToBuffer n (FormalDecl ty name _) = concat
     src = "%" ++ name
 
 
-emitBuiltinVariableDef :: Symbol -> String
-emitBuiltinVariableDef (SymVar name ty _ _) =
-  "@" ++ name ++ " = " ++ "external global " ++ emitTy ty ++ ";\n"
+emitBuiltinVariableSetter :: Symbol -> String
+emitBuiltinVariableSetter (SymVar name ty _ _) =
+  "declare void @set" ++ name ++ "(" ++ tyStr ++ ")\n"
 
-genHeader = 
-  concatMap (emitBuiltinVariableDef) builtinShaderVariables
+  where
+
+    tyStr = emitTy ty
+
+emitBuiltinVariableGetter :: Symbol -> String
+emitBuiltinVariableGetter (SymVar name ty _ _) =
+  "declare " ++ tyStr ++ " @get" ++ name ++ "()\n"
+  
+  where
+
+    tyStr = emitTy ty
+
+genHeader = concatMap (emitBuiltinVariableGetter) builtinShaderVariables ++
+            concatMap (emitBuiltinVariableSetter) builtinOutputShaderVariables
 
 instance AST Func where
 

@@ -38,6 +38,12 @@ builtinShaderVariables =
   ] -- More is TODO
   
 
+builtinOutputShaderVariables :: [Symbol]
+builtinOutputShaderVariables =
+  [ (SymVar "Ci" TyColor  Varying KindBuiltinVariable)
+  , (SymVar "Oi" TyColor  Varying KindBuiltinVariable)
+  ]
+
 builtinShaderFunctions :: [Symbol]
 builtinShaderFunctions =
   [ 
