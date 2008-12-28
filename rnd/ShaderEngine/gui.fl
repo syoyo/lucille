@@ -1,0 +1,91 @@
+# data file for the Fltk User Interface Designer (fluid)
+version 1.0107 
+header_name {.h} 
+code_name {.cxx}
+decl {\#include <stdio.h>} {} 
+
+decl {\#include <stdlib.h>} {} 
+
+decl {\#include "callbacks.h"} {} 
+
+Function {makeRenderWindow()} {open
+} {
+  Fl_Window renderWindow {open
+    xywh {360 143 405 320} type Double visible
+  } {
+    Fl_Menu_Bar {} {open
+      xywh {0 0 565 25}
+    } {
+      Submenu {} {
+        label File open
+        xywh {0 0 100 20}
+      } {
+        MenuItem {} {
+          label {Open RSL}
+          callback {handleOpenRSL();}
+          xywh {0 0 100 20} shortcut 0x6f
+        }
+        MenuItem {} {
+          label Quit
+          callback {exit(1);}
+          xywh {0 0 100 20} shortcut 0x71
+        }
+      }
+    }
+    Fl_Group {} {open
+      xywh {5 30 555 425}
+    } {
+      Fl_Box GLWindow {
+        label GLWindow
+        xywh {5 30 256 256}
+        code0 {\#include "MyGLWindow.h"}
+        class MyGLWindow
+      }
+    }
+  }
+} 
+
+Function {makeShaderWindow()} {open
+} {
+  Fl_Window shaderWindow {open
+    xywh {472 54 550 425} type Double visible
+  } {
+    Fl_Tabs {} {open
+      xywh {5 5 540 415}
+    } {
+      Fl_Group {} {
+        label RSL open
+        xywh {5 35 540 385}
+      } {
+        Fl_Text_Display rslTextDisplay {
+          xywh {10 40 530 375} labelfont 13 labelsize 9 textfont 13 textsize 12
+        }
+      }
+      Fl_Group {} {
+        label {LLVM IR} open
+        xywh {5 35 540 385} hide
+      } {
+        Fl_Text_Display llvmTextDisplay {
+          xywh {10 40 530 375}
+        }
+      }
+      Fl_Group {} {
+        label {JIT-ted Assembler} open
+        xywh {5 35 540 385} hide
+      } {
+        Fl_Text_Display jitTextDisplay {
+          xywh {10 40 530 375}
+        }
+      }
+    }
+  }
+} 
+
+decl {Fl_Text_Buffer *rslTextBuf;} {public
+} 
+
+decl {Fl_Text_Buffer *llvmTextBuf;} {public
+} 
+
+decl {Fl_Text_Buffer *jitTextBuf;} {selected public
+} 

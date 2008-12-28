@@ -1,0 +1,5 @@
+surface
+matte()
+{
+	Ci = N;
+}

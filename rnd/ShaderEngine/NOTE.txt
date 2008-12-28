@@ -1,0 +1,7 @@
+Notes
+=====
+
+``shader_env.h`` is a C side interface.
+``shader_env.ll`` is a LLVM side interface(shader program compiled for LLVM IR)
+
+LLVM IR shader should be compiled with shader_env.ll to resolve external symbols.
