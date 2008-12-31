@@ -6,10 +6,12 @@ import subprocess
 # config
 LLVM_AS                 = "llvm-as" 
 LLVM_LINLK              = "llvm-link" 
+LLVM_OPT                = "opt"
 RSL2LLVM                = "../../HaskellRSLCompiler/lslc" 
 OUTPUT_SHADER_MODULE    = "shader.bc"
 SHADER_LL               = "output.ll"
 SHADERENV_LL            = "shader_env.ll"
+SHADERLIB_BC            = "shaderlib.bc"
 
 def get_bc_name(fname):
 
@@ -53,10 +55,24 @@ def compile(fname):
     cmd += " -o " + outname
     cmd += " " + get_bc_name(SHADERENV_LL)
     cmd += " " + get_bc_name(SHADER_LL)
+    cmd += " " + SHADERLIB_BC
 
     print "Linking shader modules..." 
     print cmd
     ret = subprocess.call(cmd, shell=True)
+
+    # Opt
+    outname = basename + ".bc"
+    cmd  = LLVM_OPT
+    cmd += " -f "
+    cmd += " -std-compile-opts "
+    cmd += " -o " + outname
+    cmd += " " + outname
+
+    print "Optimizing shader modules..." 
+    print cmd
+    ret = subprocess.call(cmd, shell=True)
+
 
 def usage():
     print "slc.py <input.sl>"
