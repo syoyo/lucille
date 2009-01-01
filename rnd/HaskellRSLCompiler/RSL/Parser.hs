@@ -288,8 +288,9 @@ maybeDefinedInScope (scope, syms) name = scan syms
                     where
         
                       symName = case x of
-                        (SymVar  name _ _ _ ) -> name
-                        (SymFunc name _ _ _ ) -> name
+                        (SymVar         name _ _ _ ) -> name
+                        (SymFunc        name _ _ _ ) -> name
+                        (SymBuiltinFunc name _ _ _ ) -> name
 
 
 maybeDefinedInScopeChain :: SymbolTable -> String -> (Maybe Symbol)
@@ -325,8 +326,9 @@ definedSym          = do  { state <- getState
 definedFunc         = do  { state <- getState
                           ; name  <- try identifier
                           ; case (maybeDefined (symbolTable state) name) of
-                              (Just sym@(SymFunc _ _ _ _ )) -> return sym
-                              _                             -> unexpected ("undefined symbol " ++ show name)
+                              (Just sym@(SymBuiltinFunc _ _ _ _ )) -> return sym
+                              (Just sym@(SymFunc _ _ _ _ ))        -> return sym
+                              _                                    -> unexpected ("undefined symbol " ++ show name)
                           } 
                     <?> "defined symbol"
 

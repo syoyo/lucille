@@ -30,7 +30,7 @@ class Typer a where
   typing :: a -> State Int a
 
 getReturnTypeOfFunc :: String -> (Maybe Type)
-getReturnTypeOfFunc name = case (lookupFunc builtinShaderFunctions name) of
+getReturnTypeOfFunc name = case (lookupBuiltinFunc builtinShaderFunctions name) of
   []  -> Nothing
   [x] -> (Just (getTyOfSym x))
   xs  -> Nothing          -- TODO

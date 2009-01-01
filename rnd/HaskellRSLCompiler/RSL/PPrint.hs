@@ -144,6 +144,19 @@ instance AST Expr where
         pprintArgs [x]    = pprint 0 x
         pprintArgs (x:xs) = pprint 0 x ++ ", " ++ pprintArgs xs
 
+    Call _ (SymBuiltinFunc name ty _ _) args  -> concat 
+      [ name
+      , "("
+      , pprintArgs args
+      , ")"
+      ]
+
+      where
+
+        pprintArgs []     = ""
+        pprintArgs [x]    = pprint 0 x
+        pprintArgs (x:xs) = pprint 0 x ++ ", " ++ pprintArgs xs
+
     Triple exprs                      -> concat
       [ "( "
       , pprint 0 (exprs !! 0)

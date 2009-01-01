@@ -62,7 +62,7 @@ initLLVMState = LLVMState   { globals = []
 
 emitTy ty = case ty of
   TyVoid    -> "void"
-  TyString  -> "string"
+  TyString  -> "i8*"
   TyFloat   -> "float"
   TyVector  -> "<4xfloat>"
   TyColor   -> "<4xfloat>"
@@ -255,7 +255,7 @@ instance AST Expr where
       , indent n ++ "%" ++ getNameOfSym sym ++ " = "
       , emitOp op ++ " "
       , emitTy (getTyOfSym sym) ++ " " ++ getReg e0 ++ " , "
-      , emitTy (getTyOfSym sym) ++ " " ++ getReg e1
+      , getReg e1
       , ";\n"
       ]
 
@@ -318,6 +318,38 @@ instance AST Expr where
         , ";\n"
         ]
 
+
+    -- Call builtin function requires special treatment.
+    -- 
+    -- e.g.,
+    --
+    -- ambient()
+    --
+    -- ->
+    --
+    -- %a.buf = alloca color
+    -- call void @ambient_c(%a.buf)
+    -- %dst = load color, %a.buf
+    --
+    Call (Just dst) (SymBuiltinFunc name retTy argTys _) args  -> concat 
+      [ gen n args
+      , indent n ++ tmpReg ++ " = alloca " ++ (emitTy retTy) ++ ";\n" -- TODO: consider void case
+      , indent n ++ "call void @" ++ name ++ "_" ++ getFunctionSuffix retTy argTys ++ "("
+      , genArgForRet ++ (if (length args) > 0 then ", " else "") ++ genArgs args
+      , ");\n"
+      , indent n ++ "%" ++ (getNameOfSym dst) ++ " = "
+      , "load " ++ emitTy (getTyOfSym dst) ++ "* " ++ tmpReg
+      , ";\n"
+      ]
+
+      where
+
+        genArgForRet = if (retTy == TyVoid) then "" else (emitTy retTy) ++ "* " ++ tmpReg
+        genArgs []     = ""
+        genArgs [x]    = emitTy (getTyOfExpr x) ++ " " ++ getReg x
+        genArgs (x:xs) = emitTy (getTyOfExpr x) ++ " " ++ getReg x ++ ", " ++ genArgs xs
+
+        tmpReg         = "%" ++ getNameOfSym dst ++ ".buf"
 
     Call (Just dst) (SymFunc name ty _ _) args  -> concat 
       [ gen n args
@@ -411,8 +443,42 @@ emitBuiltinVariableGetter (SymVar name ty _ _) =
 
     tyStr = emitTy ty
 
+getSuffix :: Type -> String
+getSuffix ty = case ty of
+  TyVector -> "v"
+  TyVoid   -> ""      -- no suffix letter
+  TyFloat  -> "f"
+  TyNormal -> "n"
+  TyColor  -> "c"
+  TyPoint  -> "p"
+  TyString -> "s"
+  TyMatrix -> "m"
+
+getFunctionSuffix :: Type -> [Type] -> String
+getFunctionSuffix retTy argTys = getSuffix retTy ++ concatMap getSuffix argTys
+
+-- TODO: emit signature for optional argument.
+emitBuiltinFunctionDef :: Symbol -> String
+emitBuiltinFunctionDef (SymBuiltinFunc name retTy argTys _) = concat
+  [ "declare void " ++ "@" ++ name ++ "_" ++ getFunctionSuffix retTy argTys ++ "("
+  , retArgSig
+  , if (length argTys) > 0 then ", " else ""
+  , argSigs argTys
+  , ")"
+  , ";\n"
+  ]
+
+  where
+
+    retArgSig  = if retTy == TyVoid then "" else (emitTy retTy) ++ "*"
+    argSigs []     = ""
+    argSigs [x]    = emitTy x
+    argSigs (x:xs) = emitTy x ++ ", " ++ argSigs xs
+  
+
 genHeader = concatMap (emitBuiltinVariableGetter) builtinShaderVariables ++
-            concatMap (emitBuiltinVariableSetter) builtinOutputShaderVariables
+            concatMap (emitBuiltinVariableSetter) builtinOutputShaderVariables ++
+            concatMap (emitBuiltinFunctionDef) builtinShaderFunctions
 
 instance AST Func where
 

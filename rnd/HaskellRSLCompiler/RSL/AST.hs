@@ -79,7 +79,6 @@ data Kind
   = KindVariable
   | KindFormalVariable
   | KindBuiltinVariable
-  | KindFunction
     deriving (Show, Eq)
 
 
@@ -94,12 +93,20 @@ data Symbol
             [Type]            -- arguments of the function         
             [Type]            -- optional arguments
 
+  | SymBuiltinFunc 
+            String            -- name of the function
+            Type              -- return type of the function
+            [Type]            -- arguments of the function         
+            [Type]            -- optional arguments
+
     deriving (Show, Eq)
 
 getNameOfSym (SymVar  name _ _ _) = name
 getNameOfSym (SymFunc name _ _ _) = name
+getNameOfSym (SymBuiltinFunc name _ _ _) = name
 getTyOfSym   (SymVar  _ ty _ _)   = ty
 getTyOfSym   (SymFunc _ ty _ _)   = ty
+getTyOfSym   (SymBuiltinFunc _ ty _ _)   = ty
 
 getTyOfExpr :: Expr -> Type
 getTyOfExpr expr = case expr of
@@ -150,6 +157,9 @@ data Expr
               (Maybe [Expr])              -- else statement
   | While     Expr                        -- condition
               [Expr]                      -- statement
+  | Extract  (Maybe Symbol)
+              Char                        -- x, y, z, or w
+              Expr                        -- Should be vector expr.
   | Nil                                   -- null expr
     deriving (Show, Eq)
   
