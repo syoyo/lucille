@@ -9,11 +9,14 @@ c_header_filename = "shader_env.h"
 
 shader_env_def = [
   #  Type    , Name,  Output?
-    ("vector", "I" ,  False)
-  , ("normal", "N" ,  False)
-  , ("color" , "Cs",  False)
-  , ("color" , "Ci",  True )
+    ("color" , "Ci",  True )
   , ("color" , "Oi",  True )
+  , ("color" , "Cs",  False)
+  , ("vector", "I" ,  False)
+  , ("normal", "N" ,  False)
+  , ("normal", "Ng",  False)
+  , ("vector", "E" ,  False)
+  , ("vector", "P" ,  False)
   ]
 
 def gen_llvm_code(fname):
