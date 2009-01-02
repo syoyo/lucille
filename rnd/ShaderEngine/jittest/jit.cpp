@@ -1,7 +1,12 @@
 #include <stdio.h>
 #include <math.h>
 #include <SDL.h>
+
+#ifdef __APPLE__
+#include <OpenGL/gl.h>
+#else
 #include <GL/gl.h>
+#endif
 
 #include "llvm/Module.h"
 #include "llvm/Constants.h"
@@ -89,17 +94,12 @@ void
 init_shader_env()
 {
     memset(&genv, 0, sizeof(ri_shader_env_t)); 
-    genv.N[0] = 0.0f;
-    genv.N[1] = 1.0f;
-    genv.N[2] = 2.0f;
-    genv.N[3] = 3.0f;
 
 }
 
 void
 dump_shader_env()
 {
-    printf("N  = %f, %f, %f\n", genv.N[0] , genv.N[1] , genv.N[2] );
     printf("Ci = %f, %f, %f\n", genv.Ci[0], genv.Ci[1], genv.Ci[2]);
 }
 
@@ -115,6 +115,21 @@ void *customSymbolResolver(const std::string &name)
     return NULL;    // fail
 }
 
+void *malloc32(size_t sz)
+{
+    void *p;
+    void *p32;
+    
+    size_t sz32 = (sz + 31) & (~31);
+    if (sz32 == 0) sz32 = 32;
+    
+    p = malloc(sz32 + 32);
+
+    p32 = (void *)(((uintptr_t)p + 31U) & (~31U));
+
+    return p32;
+}
+
 void
 dummy_render(int width, int height)
 {
@@ -122,7 +137,9 @@ dummy_render(int width, int height)
     mytimer_t   start_time, end_time;
     double      elap;
 
-    ri_shader_env_t ret_env;    // FIXME: check align.
+    ri_shader_env_t *ret_env;    // FIXME: check align.
+
+    ret_env = (ri_shader_env_t *)malloc32(sizeof(ri_shader_env_t));
 
     get_time(&start_time);
 
@@ -131,14 +148,16 @@ dummy_render(int width, int height)
 
             genv.Cs[0] = (x / (float)width);
             genv.Cs[1] = (y / (float)height);
+            genv.N[0] = (x / (float)width);
+            genv.N[1] = (y / (float)height);
 
             g_shader_jit.shader_env_set(&genv);
-            //g_shader_jit.shader_fun();
+            g_shader_jit.shader_fun();
             g_shader_jit.shader_env_get(&genv);
 
-            //img[3 * (y * width + x) + 0] = clamp(genv.Ci[0]);
-            //img[3 * (y * width + x) + 1] = clamp(genv.Ci[1]);
-            //img[3 * (y * width + x) + 2] = 255;
+            img[3 * (y * width + x) + 0] = clamp(genv.Ci[0]);
+            img[3 * (y * width + x) + 1] = clamp(genv.Ci[1]);
+            img[3 * (y * width + x) + 2] = 255;
 
         }
     }
