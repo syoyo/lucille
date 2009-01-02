@@ -2,7 +2,10 @@ Requirements
 ============
 
  * LLVM
+ * clang(from LLVM project)
  * llvm-gcc
+ * SDL
+ * python
 
 Procedure
 =========
