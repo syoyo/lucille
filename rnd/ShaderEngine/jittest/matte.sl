@@ -1,13 +1,12 @@
 surface
 matte()
 {
-	normal Nf = faceforward(normalize(N), I);
+	float roughness = 0.01;
+	float Kd = 0.75;
+	color cKd = color Kd;
 
-	//color a = ambient();
-	//color d = diffuse(N);
-	//Ci = N + a + d;
-	//color c = Cs;
-	//Ci = Cs + Nf;
-	normal Nf = faceforward(normalize(N));
-	Ci = Nf;
+	normal Nf = faceforward(normalize(N), I);
+	//Ci = texture("muda") * (diffuse(Nf) + ambient());
+	vector V = -normalize(I);
+	Ci = texture("muda") * (cKd * diffuse(Nf) + ambient() + specular(Nf, V, roughness));
 }

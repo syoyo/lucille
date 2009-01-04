@@ -24,10 +24,10 @@ ifeq ($(ARCH), Darwin)
     GL_LIBS     = -framework OpenGL
 endif
 
-SRCS = jit.cpp timer.cpp
+SRCS = jit.cpp timer.cpp texture.cpp render.cpp
 OBJS = ${SRCS:.cpp=.o}
 
-MY_CXXFLAGS  = -O2 -g -I$(LLVM_INCDIR)
+MY_CXXFLAGS  = -g -O2 -I$(LLVM_INCDIR)
 MY_LDFLAGS   = -L$(LLVM_LIBDIR) 
 MY_LIBS      = $(LLVM_LIBS) $(SDL_LIBS) -pthread -ldl -lm $(GL_LIBS) -lstdc++
 
@@ -39,7 +39,7 @@ $(TARGET): $(OBJS)
 	gcc -o $(TARGET) $(OBJS) $(MY_LDFLAGS) $(LDFLAGS) $(MY_LIBS)
 
 gen:
-	clang -emit-llvm-bc shaderlib.c
+	clang -emit-llvm-bc shaderlib.c noise.c
 	cp ../shader_env.ll .
 	cp ../shader_env.h .
 

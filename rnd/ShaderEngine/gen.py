@@ -17,6 +17,13 @@ shader_env_def = [
   , ("normal", "Ng",  False)
   , ("vector", "E" ,  False)
   , ("vector", "P" ,  False)
+  , ("float" , "u" ,  False)
+  , ("float" , "v" ,  False)
+  , ("float" , "s" ,  False)
+  , ("float" , "t" ,  False)
+  , ("vector", "L" ,  False)        # Hack
+  , ("color" , "Cl",  False)
+  , ("color" , "Ol",  False)
   ]
 
 def gen_llvm_code(fname):
@@ -25,6 +32,7 @@ def gen_llvm_code(fname):
         "vector" : "<4xfloat>"
       , "normal" : "<4xfloat>"
       , "color"  : "<4xfloat>"
+      , "float"  : "float"
     }
 
     # emit struct def
@@ -53,7 +61,7 @@ def gen_llvm_code(fname):
         d["name"] = name
 
         ss = """
-define ${ty} @get${name}() nounwind {
+define ${ty} @rsl_get${name}() nounwind {
     %tmp = getelementptr %struct.ri_shader_env_t* @genv, i32 0, i32 ${n}
     %tmp1 = load ${ty}* %tmp
     ret ${ty} %tmp1
@@ -65,7 +73,7 @@ define ${ty} @get${name}() nounwind {
         if isoutput:
 
             ss = """
-define void @set${name}(${ty} %val) nounwind {
+define void @rsl_set${name}(${ty} %val) nounwind {
     %tmp = getelementptr %struct.ri_shader_env_t* @genv, i32 0, i32 ${n}
     store ${ty} %val, ${ty}* %tmp
     ret void
@@ -81,7 +89,7 @@ define void @set${name}(${ty} %val) nounwind {
 
         d = {}
         d["n"] = n
-        d["ty"]   = llty
+        d["ty"]   = ty_table[ty]
 
         ss = """
     %srcaddr${n} = getelementptr %struct.ri_shader_env_t* %env, i32 0, i32 ${n}
@@ -101,7 +109,7 @@ define void @set${name}(${ty} %val) nounwind {
 
         d = {}
         d["n"] = n
-        d["ty"]   = llty
+        d["ty"]   = ty_table[ty]
 
         ss = """
     %srcaddr${n} = getelementptr %struct.ri_shader_env_t* @genv, i32 0, i32 ${n}
@@ -124,6 +132,7 @@ def gen_c_header(fname):
         "vector" : "float4"
       , "normal" : "float4"
       , "color"  : "float4"
+      , "float"  : "float"
     }
 
     s = """

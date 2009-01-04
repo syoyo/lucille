@@ -17,6 +17,13 @@ typedef struct _ri_shader_env_t {
     float4 Ng;
     float4 E;
     float4 P;
+    float u;
+    float v;
+    float s;
+    float t;
+    float4 L;
+    float4 Cl;
+    float4 Ol;
 } ri_shader_env_t;
 
 

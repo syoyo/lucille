@@ -23,11 +23,15 @@
 #include "llvm/ExecutionEngine/Interpreter.h"
 #include "llvm/ExecutionEngine/GenericValue.h"
 
+// #include "llvm/System/Disassembler.h"
+
 #include "llvm/Bitcode/ReaderWriter.h"
 #include "llvm/Support/MemoryBuffer.h"
 
 #include "jit.h"
 #include "shader_env.h"
+#include "texture.h"
+#include "render.h"
 
 #include <iostream>
 #include "timer.h"
@@ -36,16 +40,30 @@
 #define WINDOW_HEIGHT 512
 SDL_Surface     *surface;
 unsigned char   *img;
+int              g_mouse_button;
+int              g_mouse_pressed = 0;
+int              g_mouse_x;
+int              g_mouse_y;
+float            g_offt_x;
+float            g_offt_y;
 
 using namespace llvm;
 
 static FunctionPassManager *TheFPM;
 
-ri_shader_env_t genv;
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+ri_shader_env_t genv;
+
+texture_t *gtex;
+
+texture_t *
+get_texture()
+{
+    return gtex;
+}
 
 extern void bora();
 
@@ -67,6 +85,7 @@ typedef struct _ri_shader_jit_t
 } ri_shader_jit_t;
 
 ri_shader_jit_t g_shader_jit;
+
 
 static unsigned char
 clamp(float f)
@@ -110,7 +129,9 @@ dump_shader_env()
 void *customSymbolResolver(const std::string &name)
 {
     cout << "Resolving " << name << "\n";
-    if (name == "bora") return (void *)bora;    // ptr to the function
+    if (name == "bora") return (void *)bora;
+    if (name == "get_texture") return (void *)get_texture;
+    if (name == "texture_map") return (void *)texture_map;
 
     return NULL;    // fail
 }
@@ -137,27 +158,98 @@ dummy_render(int width, int height)
     mytimer_t   start_time, end_time;
     double      elap;
 
+    float       rayorg[3];
+    float       raydir[3];
+    float       texcol[4];
+    sphere_t    sphere;
+    isect_t     isect;
+
     ri_shader_env_t *ret_env;    // FIXME: check align.
 
     ret_env = (ri_shader_env_t *)malloc32(sizeof(ri_shader_env_t));
 
+    sphere.center[0] = 0.0;
+    sphere.center[1] = 0.0;
+    sphere.center[2] = -2.0;
+
+    sphere.radius    = 0.75;
+
     get_time(&start_time);
+
+    raydir[0] = 0.0;
+    raydir[1] = 0.0;
+    raydir[2] = -1.0;
+
+    float theta, phi;
+    float tu, tv;
+
+    float u, v;
+    int   hit;
 
     for (y = 0; y < height; y++) {
         for (x = 0; x < width; x++) {
 
-            genv.Cs[0] = (x / (float)width);
-            genv.Cs[1] = (y / (float)height);
-            genv.N[0] = (x / (float)width);
-            genv.N[1] = (y / (float)height);
+            isect.t = 1.0e+30f;
+            
+            u = (x - 0.5f * width) / (float)(0.5f * width);
+            v = (y - 0.5f * height) / (float)(0.5f * height);
 
-            g_shader_jit.shader_env_set(&genv);
-            g_shader_jit.shader_fun();
-            g_shader_jit.shader_env_get(&genv);
+            rayorg[0] = u;
+            rayorg[1] = v;
+            rayorg[2] = 0.0;
 
-            img[3 * (y * width + x) + 0] = clamp(genv.Ci[0]);
-            img[3 * (y * width + x) + 1] = clamp(genv.Ci[1]);
-            img[3 * (y * width + x) + 2] = 255;
+            hit = sphere_isect(&isect, &sphere, rayorg, raydir);
+
+            if (hit) {
+
+                theta = acosf(isect.n[1]);
+                tv = theta / M_PI;
+
+                phi = atan2f(-isect.n[2], isect.n[0]);
+                tu = (phi + M_PI) / (2.0 * M_PI);
+
+                //texture_map(texcol, gtex, tu, tv);
+
+                genv.Cs[0] = (x / (float)width);
+                genv.Cs[1] = (y / (float)height);
+                genv.Cl[0] = 0.8f;
+                genv.Cl[1] = 1.0f;
+                genv.Cl[2] = 0.5f;
+                genv.N[0] = isect.n[0];
+                genv.N[1] = isect.n[1];
+                genv.N[2] = isect.n[2];
+                genv.L[0] = 1.0f + g_offt_x;
+                genv.L[1] = 1.0f + g_offt_y;
+                genv.L[2] = 1.0f;
+                genv.P[0] = isect.p[0];
+                genv.P[1] = isect.p[1];
+                genv.P[2] = isect.p[2];
+                genv.P[3] = 1.0f;
+                genv.I[0] = isect.p[0] - rayorg[0];
+                genv.I[1] = isect.p[1] - rayorg[1];
+                genv.I[2] = isect.p[2] - rayorg[2];
+                genv.I[3] = 1.0f;
+                genv.s = tu;
+                genv.t = tv;
+
+                g_shader_jit.shader_env_set(&genv);
+                g_shader_jit.shader_fun();
+                g_shader_jit.shader_env_get(&genv);
+
+                img[3 * (y * width + x) + 0] = clamp(genv.Ci[0]);
+                img[3 * (y * width + x) + 1] = clamp(genv.Ci[1]);
+                img[3 * (y * width + x) + 2] = clamp(genv.Ci[2]);
+                //img[3 * (y * width + x) + 0] = clamp(texcol[0]);
+                //img[3 * (y * width + x) + 1] = clamp(texcol[1]);
+                //img[3 * (y * width + x) + 2] = clamp(texcol[2]);
+
+            } else {
+
+                img[3 * (y * width + x) + 0] = 0;
+                img[3 * (y * width + x) + 1] = 0;
+                img[3 * (y * width + x) + 2] = 0; 
+
+            }
 
         }
     }
@@ -216,6 +308,11 @@ JITCompileFunction(ExecutionEngine *EE, Function *F)
     ptr = EE->getPointerToFunction(F);
     assert(ptr != NULL);
 
+    // Debug
+    //std::string s = sys::disassembleBuffer((uint8_t *)ptr, 128);
+    //cout << "========= Disassemble  ===================\n";
+    //cout << s << "\n";
+
     return ptr;
 }
 
@@ -244,6 +341,44 @@ display()
 }
 
 static void
+mouse_down(SDL_Event event)
+{
+    if (event.button.button == SDL_BUTTON_LEFT) {
+        g_mouse_button  = SDL_BUTTON_LEFT;
+        g_mouse_pressed = 1; 
+        g_mouse_x = event.button.x;
+        g_mouse_y = event.button.y;
+    }
+}
+
+static void
+mouse_up(SDL_Event event)
+{
+    if (event.button.button == SDL_BUTTON_LEFT) {
+        //g_mouse_button  = SDL_BUTTON_LEFT;
+        g_mouse_pressed = 0; 
+    }
+}
+
+static void
+mouse_motion(SDL_Event event)
+{
+
+    if (g_mouse_pressed) {
+
+        if (g_mouse_button == SDL_BUTTON_LEFT) {
+
+            g_offt_x += (event.button.x - g_mouse_x) / 50.0f;
+            g_offt_y += (event.button.y - g_mouse_y) / 50.0f;
+
+        }
+    }
+
+    g_mouse_x = event.button.x;
+    g_mouse_y = event.button.y;
+}
+
+static void
 gui_main()
 {
     SDL_Event event;
@@ -262,6 +397,18 @@ gui_main()
                  event.key.keysym.sym == SDLK_ESCAPE) {
                 goto quit_app;
             }
+
+            switch (event.type) {
+            case SDL_MOUSEBUTTONDOWN:
+                mouse_down(event);
+                break;
+            case SDL_MOUSEBUTTONUP:
+                mouse_up(event);
+                break;
+            case SDL_MOUSEMOTION:
+                mouse_motion(event);
+                break;
+            }
         }
 
         display();
@@ -272,6 +419,12 @@ quit_app:
 
     SDL_Quit();
 
+}
+
+void
+init_render()
+{
+    gtex = texture_load("muda512.ppm");
 }
 
 int
@@ -399,6 +552,8 @@ main(int argc, char **argv)
     }
 
     dump_shader_env();
+
+    init_render();
 
     gui_main();
 

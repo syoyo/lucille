@@ -4,6 +4,7 @@
 #include <float.h>
 
 #include "renderer.h"
+#include "jit.h"
 
 /*
  * Scene

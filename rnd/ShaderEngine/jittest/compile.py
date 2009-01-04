@@ -11,7 +11,7 @@ RSL2LLVM                = "../../HaskellRSLCompiler/lslc"
 OUTPUT_SHADER_MODULE    = "shader.bc"
 SHADER_LL               = "output.ll"
 SHADERENV_LL            = "shader_env.ll"
-SHADERLIB_BC            = "shaderlib.bc"
+SHADERLIB_BC            = "shaderlib.bc noise.bc"
 
 def get_bc_name(fname):
 
@@ -30,6 +30,7 @@ def compile(fname):
 
     print cmd
     ret = subprocess.call(cmd, shell=True)
+    print "comple ret = ", ret
 
     # Assemble IR into BC
     cmd  = LLVM_AS
