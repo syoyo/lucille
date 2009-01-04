@@ -297,7 +297,7 @@ instance AST Expr where
       , indent n ++ "%" ++ getNameOfSym sym ++ " = "
       , emitOp op ++ " "
       , emitTy (getTyOfSym sym) ++ " zeroinitializer , "
-      , emitTy (getTyOfSym sym) ++ " " ++ getReg expr
+      , getReg expr
       , ";\n"
       ]
 
