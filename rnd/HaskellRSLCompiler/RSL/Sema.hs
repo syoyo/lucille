@@ -2,7 +2,7 @@
 ---- |
 ---- Module      :  RSL.Sema
 ---- Copyright   :  (c) Syoyo Fujita
----- License     :  BSD-style
+---- License     :  Modified BSD
 ----
 ---- Maintainer  :  syoyo@lucillerender.org
 ---- Stability   :  experimental
@@ -78,7 +78,8 @@ builtinShaderFunctions =
   , (SymBuiltinFunc "random"         f []        [])
   , (SymBuiltinFunc "random"         c []        [])
   , (SymBuiltinFunc "random"         p []        [])
-  , (SymBuiltinFunc "noise"          f [f]       [])
+  , (SymBuiltinFunc "noise"          f [f, f]    [])
+  , (SymBuiltinFunc "noise"          f [p]       [])
   -- TODO...
 
   -- 15.2 Geometric Functions
@@ -96,6 +97,7 @@ builtinShaderFunctions =
   -- , (SymFunc "setzcomp"       f [n]    [])
   , (SymBuiltinFunc "length"         f [v]       [])
   , (SymBuiltinFunc "normalize"      v [v]       [])
+  , (SymBuiltinFunc "normalize"      v [n]       [])
   , (SymBuiltinFunc "distance"       f [p, p]    [])
   -- , (SymFunc "ptlined"    f [p, p] [])
   -- , (SymFunc "rotate"    f [p, p] [])
@@ -119,6 +121,11 @@ builtinShaderFunctions =
   , (SymBuiltinFunc "depth"          f [p]       []) 
   , (SymBuiltinFunc "depth"          f [p]       []) 
 
+  -- 15.3 Color Functions
+  , (SymBuiltinFunc "comp"           f [c, f]    []) 
+  -- , (SymBuiltinFunc "setcomp"        void [c, f, f]    []) 
+  , (SymBuiltinFunc "mix"            c [c, c, f] []) 
+
   -- 15.6 Shading and Lighting Functions
   , (SymBuiltinFunc "ambient"        c []        [])
   , (SymBuiltinFunc "diffuse"        c [n]       [])
@@ -126,6 +133,9 @@ builtinShaderFunctions =
   , (SymBuiltinFunc "specularbrdf"   c [v, n, v, f] [])
   , (SymBuiltinFunc "phong"          c [n, v, f] [])
   , (SymBuiltinFunc "trace"          c [p, p]    [])
+
+  -- 15.7 Texture Mapping Functions
+  , (SymBuiltinFunc "texture"        c [s]       [])
 
 
   ] -- More is TODO
@@ -147,3 +157,7 @@ lookupVariable syms name = filter (\(SymVar sname _ _ _) -> sname == name) syms
 
 lookupBuiltinFunc :: [Symbol] -> String -> [Symbol]
 lookupBuiltinFunc syms name = filter (\(SymBuiltinFunc fname _ _ _) -> fname == name) syms
+
+lookupBuiltinFuncWithArgumentSignature :: [Symbol] -> String -> [Type] -> [Symbol]
+lookupBuiltinFuncWithArgumentSignature syms name argTys = 
+  filter (\(SymBuiltinFunc fname _ tys _) -> (fname == name) && (tys == argTys) ) syms

@@ -1,0 +1,12 @@
+Name:              RSL
+Version:           0.1
+Description:       RenderMan Shading Language compiler written in Haskell.
+License:           BSD3
+License-file:      LICENSE
+Author:            Syoyo Fujita
+Maintainer:        syoyo@lucillerender.org
+Build-Depends:     base, haskell98, mtl, containers, parsec, regex-compat, array, filepath
+
+Executable:        lslc
+Main-is:           Main.hs
+ghc-options:       -O

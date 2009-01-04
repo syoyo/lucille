@@ -2,7 +2,7 @@
 ---- |
 ---- Module      :  RSL.PPrint
 ---- Copyright   :  (c) Syoyo Fujita
----- License     :  BSD-style
+---- License     :  Modified BSD
 ----
 ---- Maintainer  :  syoyo@lucillerender.org
 ---- Stability   :  experimental
@@ -78,7 +78,7 @@ instance AST Expr where
   
   pprint n expr = case expr of
 
-    TypeCast ty space expr      -> concat
+    TypeCast _ ty space expr      -> concat
       [ "( ("
       , pprint 0 ty ++ " \"" ++ space ++ "\" "
       , ") "
@@ -88,6 +88,7 @@ instance AST Expr where
 
     Const _ (F val)             -> show val
 
+    Const _ (S val)             -> val
 
     Var _  (SymVar name _ _ _)  -> name
 

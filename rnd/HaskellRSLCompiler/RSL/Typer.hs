@@ -2,7 +2,7 @@
 ---- |
 ---- Module      :  RSL.Typer
 ---- Copyright   :  (c) Syoyo Fujita
----- License     :  BSD-style
+---- License     :  Modified BSD
 ----
 ---- Maintainer  :  syoyo@lucillerender.org
 ---- Stability   :  experimental
@@ -15,6 +15,7 @@
 module RSL.Typer where
 
 import Control.Monad.State
+import Debug.Trace
 
 import RSL.AST
 import RSL.Sema
@@ -33,10 +34,21 @@ getReturnTypeOfFunc :: String -> (Maybe Type)
 getReturnTypeOfFunc name = case (lookupBuiltinFunc builtinShaderFunctions name) of
   []  -> Nothing
   [x] -> (Just (getTyOfSym x))
-  xs  -> Nothing          -- TODO
+  xs  -> Nothing          -- TODO: Polymorphic function
+
+getReturnTypeOfFuncWithArgumentSignature :: String -> [Type] -> (Maybe Symbol)
+getReturnTypeOfFuncWithArgumentSignature name argTys = trace (show argTys) $ case (lookupBuiltinFuncWithArgumentSignature builtinShaderFunctions name argTys) of
+  []  -> Nothing
+  [x] -> (Just x)         -- Rewrite funcall with proper function signature.
+  xs  -> Nothing          -- TODO: Polymorphic function
+
+getArgumentTypeSignature :: [Expr] -> [Type]
+getArgumentTypeSignature exprs = map getTyOfExpr exprs
+
 
 instance Typer Expr where
   typing e = case e of
+
     Var _ sym ->
       do { tmpName <- getUniqueName
          ; let ty = getTyOfSym sym
@@ -46,6 +58,17 @@ instance Typer Expr where
     Const _ (F fval) ->
       do { tmpName <- getUniqueName
          ; return (Const (Just (SymVar tmpName TyFloat Uniform KindVariable)) (F fval))
+         }
+
+    Const _ (S sval) ->
+      do { tmpName <- getUniqueName
+         ; return (Const (Just (SymVar tmpName TyString Uniform KindVariable)) (S sval))
+         }
+
+    TypeCast _ toTy space e ->
+      do { e' <- typing e
+         ; tmpName <- getUniqueName
+         ; return (TypeCast (Just (SymVar tmpName toTy Uniform KindVariable)) toTy space e')
          }
 
     UnaryOp _ op e ->
@@ -74,10 +97,10 @@ instance Typer Expr where
     Call _ sym exprs   ->
       do  { exprs' <- mapM typing exprs
           ; tmpName <- getUniqueName
-          ; case getReturnTypeOfFunc (getNameOfSym sym) of
-              Nothing   -> error $ "TODO" ++ (show e)
-              (Just ty) -> let sym' = (SymVar tmpName ty Uniform KindVariable) in
-                           return (Call (Just sym') sym exprs')
+          ; case getReturnTypeOfFuncWithArgumentSignature (getNameOfSym sym) (getArgumentTypeSignature exprs') of
+              Nothing       -> error $ "[Typer] TODO: " ++ (show e)
+              (Just funSym) -> let sym' = (SymVar tmpName (getTyOfSym funSym) Uniform KindVariable) in
+                               return (Call (Just sym') funSym exprs')  -- rewrite sym with funSym
           }
 
     Def ty name Nothing -> 

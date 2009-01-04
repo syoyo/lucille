@@ -2,7 +2,7 @@
 ---- |
 ---- Module      :  RSL.AST
 ---- Copyright   :  (c) Syoyo Fujita
----- License     :  BSD-style
+---- License     :  Modified BSD
 ----
 ---- Maintainer  :  syoyo@lucillerender.org
 ---- Stability   :  experimental
@@ -111,6 +111,7 @@ getTyOfSym   (SymBuiltinFunc _ ty _ _)   = ty
 getTyOfExpr :: Expr -> Type
 getTyOfExpr expr = case expr of
   Const (Just sym) _              -> getTyOfSym sym
+  TypeCast (Just sym) _ _ _       -> getTyOfSym sym
   Var   (Just sym) _              -> getTyOfSym sym
   UnaryOp (Just sym) _ _          -> getTyOfSym sym
   BinOp (Just sym) _ _ _          -> getTyOfSym sym
@@ -128,7 +129,8 @@ type Statement = [Expr]
 data Expr 
   = Const     (Maybe Symbol)
               Const
-  | TypeCast  Type                        -- toType
+  | TypeCast  (Maybe Symbol)
+              Type                        -- toType
               String                      -- spaceType if any
               Expr                        -- fromExpr
   | Var       (Maybe Symbol)

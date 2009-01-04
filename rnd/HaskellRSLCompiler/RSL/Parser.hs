@@ -2,7 +2,7 @@
 ---- |
 ---- Module      :  RSL.Parser
 ---- Copyright   :  (c) Syoyo Fujita
----- License     :  BSD-style
+---- License     :  Modified BSD
 ----
 ---- Maintainer  :  syoyo@lucillerender.org
 ---- Stability   :  experimental
@@ -431,11 +431,11 @@ rslType                 =   (reserved "float"         >> return TyFloat     )
                         <?> "RenderMan type"
                       
 
-typeCastExpr            =   do  { ty  <- rslType
-                                ; spacety <- option "" stringLiteral
-                                ; e   <- expr
-                                ; return (TypeCast ty spacety e)
-                                }
+-- typeCastExpr            =   do  { ty  <- rslType
+--                                 ; spacety <- option "" stringLiteral
+--                                 ; e   <- expr
+--                                 ; return (TypeCast Nothing ty spacety e)
+--                                 }
                  
 
 --
@@ -533,8 +533,7 @@ expr        ::  RSLParser Expr
 expr        =   buildExpressionParser table primary
            <?> "expression"
 
-primary     =   typeCastExpr
-            <|> try (parens expr)
+primary     =   try (parens expr)
             <|> triple
             <|> procedureCall   -- Do I really need "try"?
             <|> varRef
@@ -544,8 +543,10 @@ primary     =   typeCastExpr
             <?> "primary"
 
 table       =  [
+               -- typecast
+                  [typecast]
                -- unary
-                  [prefix "-" OpSub, prefix "!" OpNeg]
+               ,  [prefix "-" OpSub, prefix "!" OpNeg]
 
                -- binop
                ,  [binOp "."  OpDot AssocLeft]
@@ -557,6 +558,12 @@ table       =  [
                ]
 
               where
+
+                typecast
+                  = Prefix ( do { ty  <- rslType
+                                ; spacety <- option "" stringLiteral
+                                ; return (\e -> TypeCast Nothing ty spacety e)
+                                } <?> "typecast" )
 
                 prefix name f
                   = Prefix ( do { reservedOp name
@@ -576,7 +583,6 @@ rslDef = javaStyle
                     , "varying", "uniform", "facevarygin", "facevertex"
                     , "output"
                     , "extern"
-                    , "texture", "environment", "shadow"
                     , "color", "vector", "normal", "matrix", "point", "void"
                     -- More is TODO
                     ]

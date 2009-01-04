@@ -2,8 +2,17 @@ surface
 matte(vector Ka; float Kd = 1;)
 {
 	//float m = mod(Ka * Kd, 1), k;
+	
+	//color d = diffuse(N);
+	//color a = ambient();
+	float f = noise(P);
 
-	I = Ka;
+	//color tcol = texture("muda");
+	//color c = color noise(P) + d;
+
+	//normal n = ;
+
+	//I = Ka;
 	//normal Nf = faceforward(normalize(N), I);
 	//Oi = (-Os) - Os;
 	//Ci = Os * Cs * (Ka * ambient() + Kd * diffuse(Nf));

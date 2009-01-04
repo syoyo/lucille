@@ -2,7 +2,7 @@
 ---- |
 ---- Module      :  RSL.CodeGenLLVM
 ---- Copyright   :  (c) Syoyo Fujita
----- License     :  BSD-style
+---- License     :  Modified BSD
 ----
 ---- Maintainer  :  syoyo@lucillerender.org
 ---- Stability   :  experimental
@@ -153,6 +153,7 @@ getLLNameOfSym (SymVar name _ _ _)                    = "%" ++ name
 getReg :: Expr -> String
 getReg expr = case expr of
   Const (Just sym) _              -> getLLNameOfSym sym
+  TypeCast (Just sym) _ _ _       -> getLLNameOfSym sym
   Var (Just sym) _                -> getLLNameOfSym sym
   UnaryOp (Just sym) _ _          -> getLLNameOfSym sym
   BinOp (Just sym) _ _ _          -> getLLNameOfSym sym
@@ -194,12 +195,46 @@ emitLoadFromBuiltinVariable dst src = concat
 
     dstReg = "%" ++ getNameOfSym dst
   
+
+emitInsertElement :: String -> String -> String -> String -> String -> Int -> String
+emitInsertElement ret dst src dstTy srcTy idx =
+  indent 1 ++ ret ++ " = insertelement " ++ dstTy ++ " " ++ dst ++ ", " ++ srcTy ++ " " ++ src ++ ", i32 " ++ (show idx) ++ ";\n"
+
+--   %src : float, %dst : <4xfloat>
+--   %tmp0 = insertelement undef %src 0
+--   %tmp1 = insertelement %tmp0 %src 1
+--   %tmp2 = insertelement %tmp1 %src 2
+--   %dst  = insertelement %tmp2 %src 3
+--
+emitFtoV :: String -> String -> String
+emitFtoV dst src = concat
+  [ emitInsertElement tmpReg0 "undef" src dstTy srcTy 0
+  , emitInsertElement tmpReg1 tmpReg0 src dstTy srcTy 1
+  , emitInsertElement tmpReg2 tmpReg1 src dstTy srcTy 2
+  , emitInsertElement dst     tmpReg2 src dstTy srcTy 3
+  ]
+
+  where
+
+    tmpReg0 = dst ++ ".tmp0"
+    tmpReg1 = dst ++ ".tmp1"
+    tmpReg2 = dst ++ ".tmp2"
+
+    dstTy   = emitTy TyVector
+    srcTy   = emitTy TyFloat
+
+
+emitTypeCast :: Type -> Type -> String -> String -> String
+emitTypeCast toTy fromTy dst src = case (toTy, fromTy) of
+  (TyColor, TyFloat) -> emitFtoV dst src
+
 instance AST Expr where
   
   gen n expr = case expr of
 
-    TypeCast ty space expr      -> concat
-      [ "TypeCast"
+    TypeCast (Just sym) ty space expr      -> concat
+      [ gen n expr
+      , emitTypeCast ty (getTyOfExpr expr) (getLLNameOfSym sym) (getReg expr)
       ]
 
     Const (Just sym) (F val)    -> concat
@@ -396,7 +431,7 @@ instance AST Expr where
 
     Nil                               -> "null"
 
-    _                                 -> error $ "TODO: " ++ show expr
+    _                                 -> error $ "[CodeGen] TODO: " ++ show expr
 
 instance AST FormalDecl where
 
