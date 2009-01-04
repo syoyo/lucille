@@ -7,7 +7,7 @@ matte(vector Ka; float Kd = 1;)
 	//color a = ambient();
 	float f = noise(P);
 
-	//color tcol = texture("muda");
+	color tcol = texture("muda");
 	//color c = color noise(P) + d;
 
 	//normal n = ;

@@ -103,6 +103,7 @@ builtinShaderFunctions =
   -- , (SymFunc "rotate"    f [p, p] [])
   , (SymBuiltinFunc "area"           f [p]       [])
   , (SymBuiltinFunc "faceforward"    v [v, v]    []) -- has opt arg
+  , (SymBuiltinFunc "faceforward"    v [n, v]    []) -- has opt arg
   , (SymBuiltinFunc "reflect"        v [v, v]    [])
   , (SymBuiltinFunc "refract"        v [v, v, f] [])
   , (SymBuiltinFunc "fresnel"        v [v, v, f, f, f] [])  -- TODO

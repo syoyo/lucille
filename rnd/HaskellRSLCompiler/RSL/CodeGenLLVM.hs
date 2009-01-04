@@ -76,10 +76,14 @@ class AST a where
   genList :: Int -> [a] -> String
   genList n = concat . map (gen n)
 
+  genGlobal :: a -> String
+  genGlobalList :: [a] -> String
+  genGlobalList = concat . map genGlobal
 
 instance AST a => AST [a] where
 
   gen = genList
+  genGlobal = genGlobalList
 
 instance AST ShaderType where
 
@@ -89,6 +93,8 @@ instance AST ShaderType where
     Volume        -> "volume"
     Displacement  -> "displacement"
     Imager        -> "imager"
+
+  genGlobal ty = gen 0 ty
 
 -- LLVM IR requires 64bit hex value for 32bit floating point value to exactly
 -- express floating point value in LLVM IR.
@@ -187,7 +193,7 @@ emitLoadFromVariable dst src = concat
 emitLoadFromBuiltinVariable :: Symbol -> Symbol -> String
 emitLoadFromBuiltinVariable dst src = concat
   [ dstReg ++ " = " ++ "call " ++ emitTy (getTyOfSym dst) ++ " "
-  , "@get" ++ (getNameOfSym src) ++ "()"
+  , "@rsl_get" ++ (getNameOfSym src) ++ "()"
   , ";\n"
   ]
  
@@ -258,10 +264,21 @@ instance AST Expr where
       ]
 
         where
+
           dst     = "%" ++ getNameOfSym sym
           ty      = emitTy (getTyOfSym sym)
           tmpReg  = genUniqueReg ++ ".addr"
 
+    Const (Just sym) (S str)    -> concat
+      [ indent n
+      , dst ++ " = " ++ "getelementptr [" ++ (show $ length str + 1) ++ " x i8]* @" ++ (getNameOfSym sym) ++ ".str, i32 0, i32 0"
+      , ";\n"
+      ]
+        
+        where
+
+          dst = getLLNameOfSym sym
+          
 
     Var (Just dstSym) srcSym -> case srcSym of
 
@@ -322,7 +339,7 @@ instance AST Expr where
 
 
     -- shadervar(var) = b
-    -- -> call @setVar(b)
+    -- -> call @rsl_setVar(b)
     -- 
     -- a = b
     -- -> store b, a
@@ -334,7 +351,7 @@ instance AST Expr where
         [ gen n rexpr
         , indent n
         , "call void "
-        , "@set" ++ getNameOfSym sym ++ "( "
+        , "@rsl_set" ++ getNameOfSym sym ++ "( "
         , emitTy (getTyOfExpr rexpr) ++ " "
         , getReg rexpr ++ " "
         , ");\n"
@@ -433,6 +450,9 @@ instance AST Expr where
 
     _                                 -> error $ "[CodeGen] TODO: " ++ show expr
 
+
+  genGlobal e = emitGlobal e
+
 instance AST FormalDecl where
 
   gen n decl = case decl of
@@ -445,6 +465,12 @@ instance AST FormalDecl where
   genList n [x]    = gen n x
   genList n (x:xs) = gen n x ++ ", " ++ gen n xs
 
+
+  genGlobal decl = "" -- TODO
+  genGlobalList []     = ""
+  genGlobalList [x]    = genGlobal x
+  genGlobalList (x:xs) = genGlobal x ++ genGlobal xs
+  
 
 emitStoreFormalVariableToBuffer :: Int -> FormalDecl -> String
 emitStoreFormalVariableToBuffer n (FormalDecl ty name _) = concat
@@ -464,7 +490,7 @@ emitStoreFormalVariableToBuffer n (FormalDecl ty name _) = concat
 
 emitBuiltinVariableSetter :: Symbol -> String
 emitBuiltinVariableSetter (SymVar name ty _ _) =
-  "declare void @set" ++ name ++ "(" ++ tyStr ++ ")\n"
+  "declare void @rsl_set" ++ name ++ "(" ++ tyStr ++ ")\n"
 
   where
 
@@ -472,7 +498,7 @@ emitBuiltinVariableSetter (SymVar name ty _ _) =
 
 emitBuiltinVariableGetter :: Symbol -> String
 emitBuiltinVariableGetter (SymVar name ty _ _) =
-  "declare " ++ tyStr ++ " @get" ++ name ++ "()\n"
+  "declare " ++ tyStr ++ " @rsl_get" ++ name ++ "()\n"
   
   where
 
@@ -511,6 +537,29 @@ emitBuiltinFunctionDef (SymBuiltinFunc name retTy argTys _) = concat
     argSigs (x:xs) = emitTy x ++ ", " ++ argSigs xs
   
 
+emitGlobal :: Expr -> String
+emitGlobal e = case e of
+  Const (Just sym) (S str) -> "@" ++ (getNameOfSym sym) ++ ".str = internal constant [" ++ show (length str + 1) ++ " x i8] c\"" ++ str ++ "\\00\"\n"
+  TypeCast _ _ _ expr -> emitGlobal expr
+  Var _ sym -> ""
+  Assign _ _ lexpr rexpr  -> emitGlobal lexpr ++ emitGlobal rexpr
+  Def _ _ (Just expr)     -> emitGlobal expr
+  UnaryOp _ _ expr        -> emitGlobal expr
+  BinOp _ _ expr0 expr1   -> emitGlobal expr0 ++ emitGlobal expr1
+  Call _ _ exprs          -> concatMap emitGlobal exprs
+  {- TODO
+  | Triple    [Expr]                       -- length(expr) == 3
+  | If        Expr                        -- condition
+              [Expr]                      -- statement
+              (Maybe [Expr])              -- else statement
+  | While     Expr                        -- condition
+              [Expr]                      -- statement
+  | Extract  (Maybe Symbol)
+              Char                        -- x, y, z, or w
+              Expr                        -- Should be vector expr.
+  -}
+
+
 genHeader = concatMap (emitBuiltinVariableGetter) builtinShaderVariables ++
             concatMap (emitBuiltinVariableSetter) builtinOutputShaderVariables ++
             concatMap (emitBuiltinFunctionDef) builtinShaderFunctions
@@ -531,5 +580,10 @@ instance AST Func where
       , "\n}\n"
       ]
 
+  genGlobal f = case f of
+    ShaderFunc ty name decls stms -> concat 
+      [ genGlobal stms
+      , "\n"
+      ]
   
 -- codeGenLLVM ast = gen ast

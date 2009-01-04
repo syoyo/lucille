@@ -13,11 +13,12 @@ debugPrinter ast = do putStrLn $ "// [AST] = " ++ show ast ++ "\n"
                         
                       putStrLn $ "========= LLVM IR ===========" 
 
+                      let globalVariablesString = genGlobal ast
                       let codeString = gen 0 ast
                       putStrLn codeString
                       -- Also write to file.
                       let headerString = genHeader  -- from CodeGenLLVM
-                      writeFile "output.ll" (headerString ++ "\n" ++ codeString)
+                      writeFile "output.ll" (headerString ++ "\n" ++ globalVariablesString ++ codeString)
 
 
 main = do args <- getArgs
