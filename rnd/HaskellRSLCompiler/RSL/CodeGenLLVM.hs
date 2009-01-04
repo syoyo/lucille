@@ -233,6 +233,8 @@ emitFtoV dst src = concat
 emitTypeCast :: Type -> Type -> String -> String -> String
 emitTypeCast toTy fromTy dst src = case (toTy, fromTy) of
   (TyColor, TyFloat) -> emitFtoV dst src
+  (TyPoint, TyFloat) -> emitFtoV dst src
+  _                  -> error $ "[CodeGen] emitTypeCast: TODO: " ++ "to: " ++ show toTy ++ ", from: " ++ show fromTy
 
 instance AST Expr where
   
@@ -265,9 +267,9 @@ instance AST Expr where
 
         where
 
-          dst     = "%" ++ getNameOfSym sym
+          dst     = getLLNameOfSym sym
           ty      = emitTy (getTyOfSym sym)
-          tmpReg  = genUniqueReg ++ ".addr"
+          tmpReg  = getLLNameOfSym sym ++ ".tmp" -- genUniqueReg ++ ".addr"
 
     Const (Just sym) (S str)    -> concat
       [ indent n
@@ -540,6 +542,7 @@ emitBuiltinFunctionDef (SymBuiltinFunc name retTy argTys _) = concat
 emitGlobal :: Expr -> String
 emitGlobal e = case e of
   Const (Just sym) (S str) -> "@" ++ (getNameOfSym sym) ++ ".str = internal constant [" ++ show (length str + 1) ++ " x i8] c\"" ++ str ++ "\\00\"\n"
+  Const _ _               -> ""
   TypeCast _ _ _ expr -> emitGlobal expr
   Var _ sym -> ""
   Assign _ _ lexpr rexpr  -> emitGlobal lexpr ++ emitGlobal rexpr
@@ -558,6 +561,7 @@ emitGlobal e = case e of
               Char                        -- x, y, z, or w
               Expr                        -- Should be vector expr.
   -}
+  _                       -> error $ "[CodeGen] emitGlobal: TODO: " ++ show e
 
 
 genHeader = concatMap (emitBuiltinVariableGetter) builtinShaderVariables ++
