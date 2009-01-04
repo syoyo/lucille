@@ -1,7 +1,8 @@
 Haskell + parsec version of RSL compiler.
 =========================================
 
-  Dec 9th, 2008
+  Started: Dec 9th, 2008
+  Updated: Jan 5th, 2009
 
 What is this?
 -------------
@@ -37,15 +38,17 @@ Structure of source codes
     Sema.hs           Description of RSL syntax and semantic . 
     Typer.hs          Typer for RSL AST.
     CodeGenLLVM.hs    Code generator for LLVM IR from RSL AST.
+    CFG.hs            Call Flow Graph for RSL AST.
+                      Do some higher level optimization.
 
 
 TODO
 ----
 
  * C preprocessor. Use mcpp? cpphs?
- * LLVM IR codegen
  * Syntax fixing
  * Typer
+ * Optimization with CFG.
 
 
 References
@@ -70,9 +73,11 @@ References
  * Write Yourself a Scheme in 48 Hours
    http://en.wikibooks.org/wiki/Write_Yourself_a_Scheme_in_48_Hours 
 
+ * Chopstics: C parser in parsec.
+   http://www.cse.unsw.edu.au/~rubenz/repos/Chopsticks/Parser.hs
+
 
 Author
 ------
 
- * Syoyo Fujita
-   syoyo@lucillerender.org
+ * Syoyo Fujita ( syoyo@lucillerender.org )

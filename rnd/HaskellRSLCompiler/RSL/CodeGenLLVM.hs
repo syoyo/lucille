@@ -232,8 +232,10 @@ emitFtoV dst src = concat
 
 emitTypeCast :: Type -> Type -> String -> String -> String
 emitTypeCast toTy fromTy dst src = case (toTy, fromTy) of
-  (TyColor, TyFloat) -> emitFtoV dst src
-  (TyPoint, TyFloat) -> emitFtoV dst src
+  (TyColor,  TyFloat)  -> emitFtoV dst src
+  (TyPoint,  TyFloat)  -> emitFtoV dst src
+  (TyNormal, TyFloat)  -> emitFtoV dst src
+  (TyVector, TyFloat)  -> emitFtoV dst src
   _                  -> error $ "[CodeGen] emitTypeCast: TODO: " ++ "to: " ++ show toTy ++ ", from: " ++ show fromTy
 
 instance AST Expr where

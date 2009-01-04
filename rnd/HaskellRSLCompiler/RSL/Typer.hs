@@ -20,7 +20,9 @@ import Debug.Trace
 import RSL.AST
 import RSL.Sema
 
-getUniqueName :: State Int String
+type TyperState a = State Int a
+
+getUniqueName :: TyperState String
 getUniqueName = do  { n <- get
                     ; let n' = n + 1
                     ; put n'
@@ -28,7 +30,7 @@ getUniqueName = do  { n <- get
                     } 
 
 class Typer a where
-  typing :: a -> State Int a
+  typing :: a -> TyperState a
 
 getReturnTypeOfFunc :: String -> (Maybe Type)
 getReturnTypeOfFunc name = case (lookupBuiltinFunc builtinShaderFunctions name) of
@@ -45,6 +47,34 @@ getReturnTypeOfFuncWithArgumentSignature name argTys = trace (show argTys) $ cas
 getArgumentTypeSignature :: [Expr] -> [Type]
 getArgumentTypeSignature exprs = map getTyOfExpr exprs
 
+
+insertFtoV :: Type -> Expr -> TyperState Expr
+insertFtoV toTy expr = do { tmpName <- getUniqueName
+                          ; let sym = (SymVar tmpName toTy Uniform KindVariable)
+                          ; return (TypeCast (Just sym) toTy "" expr)
+                          }
+--
+-- Insert FtoV if required.
+--
+upcastBinary :: Expr -> Expr -> TyperState (Expr, Expr)
+upcastBinary e0 e1 = case (getTyOfExpr e0, getTyOfExpr e1) of
+  (TyFloat, TyVector) -> do { e0' <- insertFtoV TyVector e0; return (e0', e1 ) }
+  (TyFloat, TyPoint ) -> do { e0' <- insertFtoV TyPoint  e0; return (e0', e1 ) }
+  (TyFloat, TyNormal) -> do { e0' <- insertFtoV TyNormal e0; return (e0', e1 ) }
+  (TyFloat, TyColor ) -> do { e0' <- insertFtoV TyColor  e0; return (e0', e1 ) }
+  (_      , TyVector) -> do {                                return (e0 , e1 ) }
+  (_      , TyPoint ) -> do {                                return (e0 , e1 ) }
+  (_      , TyNormal) -> do {                                return (e0 , e1 ) }
+  (_      , TyColor ) -> do {                                return (e0 , e1 ) }
+  (TyVector, TyFloat) -> do { e1' <- insertFtoV TyVector e1; return (e0 , e1') }
+  (TyPoint , TyFloat) -> do { e1' <- insertFtoV TyPoint  e1; return (e0 , e1') }
+  (TyNormal, TyFloat) -> do { e1' <- insertFtoV TyNormal e1; return (e0 , e1') }
+  (TyColor , TyFloat) -> do { e1' <- insertFtoV TyColor  e1; return (e0 , e1') }
+  (TyVector, _      ) -> do {                                return (e0 , e1 ) }
+  (TyPoint , _      ) -> do {                                return (e0 , e1 ) }
+  (TyNormal, _      ) -> do {                                return (e0 , e1 ) }
+  (TyColor , _      ) -> do {                                return (e0 , e1 ) }
+  _                   -> error $ "[Typer] upcastBinary: TODO: " ++ show e0 ++ " , " ++ show e1
 
 instance Typer Expr where
   typing e = case e of
@@ -82,10 +112,11 @@ instance Typer Expr where
     BinOp _ op e0 e1 ->
       do  { e0' <- typing e0
           ; e1' <- typing e1
+          ; (e0'', e1'') <- upcastBinary e0' e1'
           ; tmpName <- getUniqueName
-          ; let ty  = getTyOfExpr e0'
+          ; let ty  = getTyOfExpr e0''
           ; let sym = (SymVar tmpName ty Uniform KindVariable)
-          ; return (BinOp (Just sym) op e0' e1')
+          ; return (BinOp (Just sym) op e0'' e1'')
           }
 
     Assign _ op lhs rhs ->
