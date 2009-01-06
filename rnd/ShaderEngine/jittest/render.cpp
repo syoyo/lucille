@@ -11,7 +11,7 @@ static void vnormalize(float *v)
     float invd;
     
     if (d > 1.0e-6f) {
-        invd = 1.0f / sqrt(d);
+        invd = 1.0f / sqrtf(d);
         v[0] *= invd;
         v[1] *= invd;
         v[2] *= invd;
@@ -37,9 +37,9 @@ sphere_isect(isect_t *isect, const sphere_t *sphere, float *org, float *dir)
 
     if (D > 0.0f) {
 
-        t = -B - sqrt(D);
+        t = -B - sqrtf(D);
 
-        if ( (t > 0.0) && (t < isect->t) ) {
+        if ( (t > 0.0f) && (t < isect->t) ) {
             hit = 1;
             isect->t = t;
 
