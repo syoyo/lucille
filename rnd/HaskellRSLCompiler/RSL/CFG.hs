@@ -8,7 +8,7 @@
 ---- Stability   :  experimental
 ---- Portability :  GHC 6.8
 ----
----- RSL.CFG     :  Call Flow Graph library.
+---- RSL.CFG     :  Control Flow Graph library.
 ----
 -------------------------------------------------------------------------------
 
