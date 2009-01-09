@@ -21,6 +21,10 @@ shader_env_def = [
   , ("float" , "v" ,  False)
   , ("float" , "s" ,  False)
   , ("float" , "t" ,  False)
+  , ("int"   , "x" ,  False)        # LSE only. raster pos.
+  , ("int"   , "y" ,  False)        # LSE only. raster pos.
+  , ("int"   , "z" ,  False)        # LSE only. raster pos.
+  , ("int"   , "w" ,  False)        # LSE only. raster pos.
   , ("vector", "L" ,  False)        # Hack
   , ("color" , "Cl",  False)
   , ("color" , "Ol",  False)
@@ -33,6 +37,7 @@ def gen_llvm_code(fname):
       , "normal" : "<4xfloat>"
       , "color"  : "<4xfloat>"
       , "float"  : "float"
+      , "int"    : "i32"
     }
 
     # emit struct def
@@ -133,6 +138,7 @@ def gen_c_header(fname):
       , "normal" : "float4"
       , "color"  : "float4"
       , "float"  : "float"
+      , "int"    : "int"
     }
 
     s = """
