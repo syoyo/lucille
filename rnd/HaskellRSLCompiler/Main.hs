@@ -6,6 +6,7 @@ import System.FilePath
 import RSL.Parser
 import RSL.PPrint
 import RSL.Typer
+import RSL.CFG
 import RSL.CodeGenLLVM
 
 debugPrinter ast = do putStrLn $ "// [AST] = " ++ show ast ++ "\n"
@@ -14,11 +15,14 @@ debugPrinter ast = do putStrLn $ "// [AST] = " ++ show ast ++ "\n"
                       putStrLn $ "========= LLVM IR ===========" 
 
                       let globalVariablesString = genGlobal ast
+                      let staticCodeString = genStatic 0 ast
                       let codeString = gen 0 ast
+                      let cfgArr  = cfg $ (ast !! 0)
                       putStrLn codeString
+                      putStrLn $ show cfgArr
                       -- Also write to file.
                       let headerString = genHeader  -- from CodeGenLLVM
-                      writeFile "output.ll" (headerString ++ "\n" ++ globalVariablesString ++ codeString)
+                      writeFile "output.ll" (headerString ++ "\n" ++ globalVariablesString ++ codeString ++ "\n" ++ staticCodeString)
 
 
 main = do args <- getArgs
