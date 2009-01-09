@@ -35,6 +35,13 @@ builtinShaderVariables =
   , (SymVar "Ol" TyColor  Varying KindBuiltinVariable)
   , (SymVar "s"  TyFloat  Varying KindBuiltinVariable)
   , (SymVar "t"  TyFloat  Varying KindBuiltinVariable)
+
+  -- extension for lucille.
+  
+  , (SymVar "x"  TyInt    Varying KindBuiltinVariable)
+  , (SymVar "y"  TyInt    Varying KindBuiltinVariable)
+  , (SymVar "z"  TyInt    Varying KindBuiltinVariable)
+  , (SymVar "w"  TyInt    Varying KindBuiltinVariable)
   ] -- More is TODO
   
 
@@ -138,6 +145,8 @@ builtinShaderFunctions =
   -- 15.7 Texture Mapping Functions
   , (SymBuiltinFunc "texture"        c [s]       [])
 
+  -- extension for lucille 
+  , (SymBuiltinFunc "save_cache" void [i, i, i, c]      [])
 
   ] -- More is TODO
 
@@ -150,6 +159,7 @@ builtinShaderFunctions =
     n = TyNormal
     s = TyString
     m = TyMatrix
+    i = TyInt
     void = TyVoid
 
 

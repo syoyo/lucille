@@ -41,6 +41,7 @@ data Qual
 data Type
   = TyUnknown
   | TyVoid
+  | TyInt
   | TyString
   | TyFloat
   | TyVector

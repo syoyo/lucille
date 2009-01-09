@@ -24,6 +24,12 @@ import System.IO.Unsafe           -- A magical module ;-)
 import RSL.AST
 import RSL.Sema
 
+{-
+ - gen        : generate shader code.
+ - genStatic  : generate precomputation code. 
+ - genDynamic : generate dynamic, specialized code. 
+ -}
+
 --
 -- Routine to generate unique identifier.
 --
@@ -62,6 +68,7 @@ initLLVMState = LLVMState   { globals = []
 
 emitTy ty = case ty of
   TyVoid    -> "void"
+  TyInt     -> "i32"
   TyString  -> "i8*"
   TyFloat   -> "float"
   TyVector  -> "<4xfloat>"
@@ -76,14 +83,24 @@ class AST a where
   genList :: Int -> [a] -> String
   genList n = concat . map (gen n)
 
+  genStatic :: Int -> a -> String
+  genStaticList :: Int -> [a] -> String
+  genStaticList n = concat . map (genStatic n)
+
+  genDynamic :: Int -> a -> String
+  genDynamicList :: Int -> [a] -> String
+  genDynamicList n = concat . map (genDynamic n)
+
   genGlobal :: a -> String
   genGlobalList :: [a] -> String
   genGlobalList = concat . map genGlobal
 
 instance AST a => AST [a] where
 
-  gen = genList
-  genGlobal = genGlobalList
+  gen        = genList
+  genStatic  = genStaticList
+  genDynamic = genDynamicList
+  genGlobal  = genGlobalList
 
 instance AST ShaderType where
 
@@ -94,7 +111,9 @@ instance AST ShaderType where
     Displacement  -> "displacement"
     Imager        -> "imager"
 
-  genGlobal ty = gen 0 ty
+  genGlobal    ty = gen 0 ty
+  genStatic  n ty = gen 0 ty
+  genDynamic n ty = gen 0 ty
 
 -- LLVM IR requires 64bit hex value for 32bit floating point value to exactly
 -- express floating point value in LLVM IR.
@@ -237,6 +256,24 @@ emitTypeCast toTy fromTy dst src = case (toTy, fromTy) of
   (TyNormal, TyFloat)  -> emitFtoV dst src
   (TyVector, TyFloat)  -> emitFtoV dst src
   _                  -> error $ "[CodeGen] emitTypeCast: TODO: " ++ "to: " ++ show toTy ++ ", from: " ++ show fromTy
+
+emitCacheSaver :: Int -> Int -> Symbol -> String
+emitCacheSaver n layer sym = concat
+  [ indent n ++ tempX ++ " = call i32 @rsl_getx()\n"
+  , indent n ++ tempY ++ " = call i32 @rsl_gety()\n"
+  , indent n ++ "call void @save_cache_iiic("
+  , "i32 " ++ (show layer) ++ ", "
+  , "i32 " ++ tempX ++ ", " 
+  , "i32 " ++ tempY ++ ", " 
+  , emitTy (getTyOfSym sym) ++ " " ++ getLLNameOfSym sym
+  , ")"
+  , "\n"
+  ]
+
+  where
+
+    tempX = "%" ++ (getNameOfSym sym) ++ ".x"
+    tempY = "%" ++ (getNameOfSym sym) ++ ".y"
 
 instance AST Expr where
   
@@ -455,6 +492,217 @@ instance AST Expr where
     _                                 -> error $ "[CodeGen] TODO: " ++ show expr
 
 
+  genStatic n expr = case expr of
+
+    TypeCast (Just sym) ty space expr      -> concat
+      [ genStatic n expr
+      , emitTypeCast ty (getTyOfExpr expr) (getLLNameOfSym sym) (getReg expr)
+      ]
+
+    Const (Just sym) (F val)    -> concat
+
+      -- %tmp.buf = alloca ty
+      -- store ty val, ty* %tmp.buf
+      -- %dst = load ty* %tmp.buf
+      
+      [ indent n ++ tmpReg ++ " = "
+      , "alloca "
+      , ty ++ ";\n"
+      --
+      , indent n ++ "store "
+      , ty ++ " "
+      , emitLLVMFloatString val ++ " "
+      , ", " ++ ty ++ "* "
+      , tmpReg ++ ";\n"
+      --
+      , indent n ++ dst ++ " = " ++ "load " ++ ty ++ "* " ++ tmpReg
+      , ";\n"
+      ]
+
+        where
+
+          dst     = getLLNameOfSym sym
+          ty      = emitTy (getTyOfSym sym)
+          tmpReg  = getLLNameOfSym sym ++ ".tmp" -- genUniqueReg ++ ".addr"
+
+    Const (Just sym) (S str)    -> concat
+      [ indent n
+      , dst ++ " = " ++ "getelementptr [" ++ (show $ length str + 1) ++ " x i8]* @" ++ (getNameOfSym sym) ++ ".str, i32 0, i32 0"
+      , ";\n"
+      ]
+        
+        where
+
+          dst = getLLNameOfSym sym
+          
+
+    Var (Just dstSym) srcSym -> case srcSym of
+
+      (SymVar name _ _ KindFormalVariable)  -> concat
+        [ indent n ++ emitLoadFromFormalVariable dstSym srcSym ]
+
+      (SymVar name _ _ KindBuiltinVariable) -> concat
+        [ indent n ++ emitLoadFromBuiltinVariable dstSym srcSym ]
+
+      _                                     -> concat
+        [ indent n ++ emitLoadFromVariable dstSym srcSym ]
+
+
+    UnaryOp (Just sym) op expr           -> concat
+      [ genStatic n expr
+      , indent n ++ "%" ++ getNameOfSym sym ++ " = "
+      , emitOp op ++ " "
+      , emitTy (getTyOfSym sym) ++ " zeroinitializer , "
+      , getReg expr
+      , ";\n"
+      ]
+
+    BinOp (Just sym) op e0 e1            -> concat
+      [ genStatic n e0
+      , genStatic n e1
+      , indent n ++ "%" ++ getNameOfSym sym ++ " = "
+      , emitOp op ++ " "
+      , emitTy (getTyOfSym sym) ++ " " ++ getReg e0 ++ " , "
+      , getReg e1
+      , ";\n"
+      ]
+
+
+    Def    ty name Nothing -> concat 
+      [ indent n
+      , "%" ++ name ++ " "
+      , "= "
+      , "alloca "
+      , emitTy ty
+      , ";\n"
+      ]
+
+
+    Def    ty name (Just initExpr)  -> concat 
+      [ indent n
+      , "%" ++ name ++ " "
+      , "= "
+      , "alloca "
+      , emitTy ty
+      , ";\n"
+      , genStatic n initExpr
+      --
+      , indent n ++ "store "
+      , emitTy (getTyOfExpr initExpr) ++ " " ++ (getReg initExpr) ++ " , "
+      , emitTy (getTyOfExpr initExpr) ++ "* " ++ "%" ++ name
+      , ";\n"
+      ]
+
+
+    -- shadervar(var) = b
+    -- -> call @rsl_setVar(b)
+    -- 
+    -- a = b
+    -- -> store b, a
+    
+    Assign _ op (Var _ sym) rexpr -> case sym of
+
+      (SymVar _ _ _ KindBuiltinVariable) -> concat
+
+        [ genStatic n rexpr
+        , indent n
+        , "call void "
+        , "@rsl_set" ++ getNameOfSym sym ++ "( "
+        , emitTy (getTyOfExpr rexpr) ++ " "
+        , getReg rexpr ++ " "
+        , ");\n"
+        ]
+
+
+      _ -> concat
+
+        [ genStatic n rexpr
+        , indent n
+        , "store "
+        , emitTy (getTyOfExpr rexpr) ++ " "
+        , getReg rexpr ++ ", "
+        , emitTy (getTyOfExpr rexpr) ++ "* "
+        , getLLNameOfSym sym
+        , ";\n"
+        ]
+
+
+    --
+    -- If call was a texturue function, emit cache saver.
+    -- 
+    Call (Just dst) (SymBuiltinFunc name retTy argTys _) args  -> concat 
+      [ genStatic n args
+      , indent n ++ tmpReg ++ " = alloca " ++ (emitTy retTy) ++ ";\n" -- TODO: consider void case
+      , indent n ++ "call void @" ++ name ++ "_" ++ getFunctionSuffix retTy argTys ++ "("
+      , genArgForRet ++ (if (length args) > 0 then ", " else "") ++ genArgs args
+      , ");\n"
+      , indent n ++ "%" ++ (getNameOfSym dst) ++ " = "
+      , "load " ++ emitTy (getTyOfSym dst) ++ "* " ++ tmpReg ++ ";\n"
+      --
+      , saveCache
+      ]
+
+      where
+
+        genArgForRet = if (retTy == TyVoid) then "" else (emitTy retTy) ++ "* " ++ tmpReg
+        genArgs []     = ""
+        genArgs [x]    = emitTy (getTyOfExpr x) ++ " " ++ getReg x
+        genArgs (x:xs) = emitTy (getTyOfExpr x) ++ " " ++ getReg x ++ ", " ++ genArgs xs
+
+        saveCache      = if (name == "texture") then emitCacheSaver n 0 dst
+                                                else ""
+
+        tmpReg         = "%" ++ getNameOfSym dst ++ ".buf"
+
+    Call (Just dst) (SymFunc name ty _ _) args  -> concat 
+      [ genStatic n args
+      , indent n ++ "%" ++ (getNameOfSym dst) ++ " = "
+      , "call " ++ "@" ++ name ++ "()"
+      , ";\n"
+      ]
+
+      where
+
+        genArgs []     = ""
+        genArgs [x]    = genStatic 0 x
+        genArgs (x:xs) = genStatic 0 x ++ ", " ++ genArgs xs
+
+    Triple exprs                      -> concat
+      [ "( "
+      , genStatic 0 (exprs !! 0)
+      , ", "
+      , genStatic 1 (exprs !! 1)
+      , ", "
+      , genStatic 2 (exprs !! 2)
+      , " )"
+      ]
+
+    While cond stms                   -> concat
+      [ indent n
+      , "while ( "
+      , genStatic 0 cond
+      , " ) {\n"
+      , genStatic (n+1) stms
+      , "\n" ++ indent n ++ "}"
+      ]
+
+    If cond thenStms (Just elseStms)  -> concat
+      [ indent n
+      , "if ( "
+      , genStatic 0 cond 
+      , " ) {\n"
+      , genStatic (n+1) thenStms
+      , indent n ++ "} else {\n"
+      , genStatic (n+1) elseStms
+      , indent n ++ "}"
+      ]
+
+    Nil                               -> "null"
+
+    _                                 -> error $ "[CodeGen] TODO: " ++ show expr
+
+  genDynamic e = genStatic e    -- TODO
+
   genGlobal e = emitGlobal e
 
 instance AST FormalDecl where
@@ -469,6 +717,25 @@ instance AST FormalDecl where
   genList n [x]    = gen n x
   genList n (x:xs) = gen n x ++ ", " ++ gen n xs
 
+  genStatic n decl = case decl of
+
+    FormalDecl ty name Nothing    -> emitTy ty ++ " " ++ "%" ++ name
+    FormalDecl ty name (Just val) -> emitTy ty ++ " " ++ "%" ++ name
+
+
+  genStaticList n []     = ""
+  genStaticList n [x]    = genStatic n x
+  genStaticList n (x:xs) = genStatic n x ++ ", " ++ genStatic n xs
+
+  genDynamic n decl = case decl of
+
+    FormalDecl ty name Nothing    -> emitTy ty ++ " " ++ "%" ++ name
+    FormalDecl ty name (Just val) -> emitTy ty ++ " " ++ "%" ++ name
+
+
+  genDynamicList n []     = ""
+  genDynamicList n [x]    = genDynamic n x
+  genDynamicList n (x:xs) = genDynamic n x ++ ", " ++ genDynamic n xs
 
   genGlobal decl = "" -- TODO
   genGlobalList []     = ""
@@ -512,6 +779,7 @@ getSuffix :: Type -> String
 getSuffix ty = case ty of
   TyVector -> "v"
   TyVoid   -> ""      -- no suffix letter
+  TyInt    -> "i"
   TyFloat  -> "f"
   TyNormal -> "n"
   TyColor  -> "c"
@@ -527,7 +795,7 @@ emitBuiltinFunctionDef :: Symbol -> String
 emitBuiltinFunctionDef (SymBuiltinFunc name retTy argTys _) = concat
   [ "declare void " ++ "@" ++ name ++ "_" ++ getFunctionSuffix retTy argTys ++ "("
   , retArgSig
-  , if (length argTys) > 0 then ", " else ""
+  , if ((retTy /= TyVoid) && (length argTys) > 0) then ", " else ""
   , argSigs argTys
   , ")"
   , ";\n"
@@ -548,6 +816,7 @@ emitGlobal e = case e of
   TypeCast _ _ _ expr -> emitGlobal expr
   Var _ sym -> ""
   Assign _ _ lexpr rexpr  -> emitGlobal lexpr ++ emitGlobal rexpr
+  Def _ _ Nothing         -> ""
   Def _ _ (Just expr)     -> emitGlobal expr
   UnaryOp _ _ expr        -> emitGlobal expr
   BinOp _ _ expr0 expr1   -> emitGlobal expr0 ++ emitGlobal expr1
@@ -582,6 +851,34 @@ instance AST Func where
       , ") {\n"
       , concatMap (emitStoreFormalVariableToBuffer (n+1)) decls
       , gen (n+1) stms
+      , "\n" ++ indent (n+1) ++ "ret void;\n"
+      , "\n}\n"
+      ]
+
+  genStatic n f = case f of
+
+    ShaderFunc ty name decls stms -> concat 
+      [ "define void "
+      , "@" ++ name ++ "_cache_gen_pass"
+      , "("
+      , genStatic n decls
+      , ") {\n"
+      , concatMap (emitStoreFormalVariableToBuffer (n+1)) decls
+      , genStatic (n+1) stms
+      , "\n" ++ indent (n+1) ++ "ret void;\n"
+      , "\n}\n"
+      ]
+
+  genDynamic n f = case f of
+
+    ShaderFunc ty name decls stms -> concat 
+      [ "define void "
+      , "@" ++ name
+      , "("
+      , genDynamic n decls
+      , ") {\n"
+      , concatMap (emitStoreFormalVariableToBuffer (n+1)) decls
+      , genDynamic (n+1) stms
       , "\n" ++ indent (n+1) ++ "ret void;\n"
       , "\n}\n"
       ]
