@@ -1,3 +1,11 @@
+/*
+ *
+ *                   lucille | Global Illumination Renderer
+ *
+ *         Copyright 2003-2203 Syoyo Fujita (syoyo@lucillerender.org)
+ *
+ *
+ */
 
 /*
  * Copyright 2003-2203 Syoyo Fujita.  All rights reserved.
@@ -28,3 +36,33 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+
+/*
+ * H-Buffer
+ * --------
+ *
+ * Hierarchical & flexible buffer. More general buffer strucuture than
+ * G-Buffer [1].
+ *
+ * [1] Takafumi Saito und Tokiichiro Takahashi.
+ *     Comprehensible Rendering of 3-D Shapes.
+ *     In Computer Graphics (Proceedings of ACM SIGGRAPH 90),
+ *     vol 24, p.197–206, 1990.
+ *
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "hbuffer.h"
+
+ri_hbuffer_t *
+ri_hbuffer_new()
+{
+    ri_hbuffer_t *hbuf;
+
+    hbuf = (ri_hbuffer_t *)malloc(sizeof(ri_hbuffer_t));
+
+    return hbuf;
+
+}

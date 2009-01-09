@@ -26,6 +26,7 @@
 #include <math.h>
 
 #include "texture.h"
+#include "hbuffer.h"
 
 // clang specific type definition.
 // You can't comple this source code with other C compilers.
@@ -46,6 +47,7 @@ extern float  rsl_gett();
 extern float4 rsl_getL();
 extern float4 rsl_getCl();
 
+extern void lse_save_cache_iiic(int, int, int, float *);
 
 #define vdot(a, b) (a[0] * b[0] + a[1] * b[1] + a[2] * b[2])
 
@@ -294,3 +296,16 @@ specular_cnvf(float4 *ret, float4 N, float4 V, float roughness)
     (*ret) = r;
 }
 
+/* ---------------------------------------------------------------------------
+ *
+ * LSE(lucille shader engine) specific functions.
+ *
+ * ------------------------------------------------------------------------ */
+
+void save_cache_iiic(int layer, int x, int y, float4 val)
+{
+    float buf[4];
+
+    lse_save_cache_iiic(layer, x, y, buf);
+
+}

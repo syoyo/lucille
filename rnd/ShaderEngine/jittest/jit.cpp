@@ -32,12 +32,13 @@
 #include "shader_env.h"
 #include "texture.h"
 #include "render.h"
+#include "cachelib.h"
 
 #include <iostream>
 #include "timer.h"
 
-#define WINDOW_WIDTH  512
-#define WINDOW_HEIGHT 512
+#define WINDOW_WIDTH  256
+#define WINDOW_HEIGHT 256
 SDL_Surface     *surface;
 unsigned char   *img;
 int              g_mouse_button;
@@ -72,15 +73,17 @@ extern void bora();
 #endif
 
 typedef void (*ShaderFunP)(void);
+typedef void (*ShaderCacheGenFunP)(void);
 typedef void (*ShaderEnvSetFunP)(ri_shader_env_t *env);
 typedef void (*ShaderEnvGetFunP)(ri_shader_env_t *env);
 
 typedef struct _ri_shader_jit_t
 {
 
-    ShaderEnvSetFunP shader_env_set;
-    ShaderEnvGetFunP shader_env_get;
-    ShaderFunP       shader_fun;
+    ShaderEnvSetFunP    shader_env_set;
+    ShaderEnvGetFunP    shader_env_get;
+    ShaderFunP          shader_fun;
+    ShaderCacheGenFunP  shader_cache_gen_fun;
 
 } ri_shader_jit_t;
 
@@ -94,7 +97,7 @@ clamp(float f)
 
     float gamma = 2.2f;
 
-    int i = powf(f, 1.0/gamma) * 255.5f;   // gamma correction
+    int i = powf(f, 1.0f/gamma) * 255.0f;   // gamma correction
 
     if (i < 0) i = 0;
     if (i > 255) i = 255;
@@ -132,6 +135,7 @@ void *customSymbolResolver(const std::string &name)
     if (name == "bora") return (void *)bora;
     if (name == "get_texture") return (void *)get_texture;
     if (name == "texture_map") return (void *)texture_map;
+    if (name == "lse_save_cache_iiic") return (void *)lse_save_cache_iiic;
 
     return NULL;    // fail
 }
@@ -438,6 +442,7 @@ main(int argc, char **argv)
     int  len;
     char buf[1024];
     char *basename;
+    char cacheGenPassFName[1024];
 
     std::string ErrorMessage;
 
@@ -458,6 +463,7 @@ main(int argc, char **argv)
     buf[len-1] = '\0';
     basename = buf;
 
+    sprintf(cacheGenPassFName, "%s_cache_gen_pass", basename);
         
     // Load the input module...
     std::auto_ptr<Module> M;
@@ -480,12 +486,18 @@ main(int argc, char **argv)
     ExecutionEngine *EE = createJITEngine(M.get());
     EE->InstallLazyFunctionCreator(customSymbolResolver);
 
-    Function *F;
-    void *FunP;
+    Function *F, *CacheGenF;
+    void *FunP, *CacheGenFunP;
 
     F = (M.get())->getFunction(basename);
     if (F == NULL) {
         cerr << "can't find the function [ " << basename << " ] from the module\n";
+        return 1;
+    }
+
+    CacheGenF = (M.get())->getFunction(cacheGenPassFName);
+    if (CacheGenF == NULL) {
+        cerr << "can't find the function [ " << cacheGenPassFName << " ] from the module\n";
         return 1;
     }
 
@@ -527,8 +539,11 @@ main(int argc, char **argv)
 
     FunP = JITCompileFunction(EE, F); 
     printf("FunP = 0x%08x\n", FunP);
-    //runShader(FunP);
     g_shader_jit.shader_fun = (ShaderFunP)FunP;
+
+    CacheGenFunP = JITCompileFunction(EE, CacheGenF); 
+    printf("CacheGenFunP = 0x%08x\n", FunP);
+    g_shader_jit.shader_cache_gen_fun = (ShaderCacheGenFunP)CacheGenFunP;
 
     //std::vector<GenericValue> noargs;
     //GenericValue gv = EE->runFunction(F, noargs);
@@ -554,6 +569,7 @@ main(int argc, char **argv)
     dump_shader_env();
 
     init_render();
+    lse_init(WINDOW_WIDTH, WINDOW_HEIGHT);
 
     gui_main();
 

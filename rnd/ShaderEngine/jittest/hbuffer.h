@@ -1,3 +1,11 @@
+/*
+ *
+ *                   lucille | Global Illumination Renderer
+ *
+ *         Copyright 2003-2203 Syoyo Fujita (syoyo@lucillerender.org)
+ *
+ *
+ */
 
 /*
  * Copyright 2003-2203 Syoyo Fujita.  All rights reserved.
@@ -30,14 +38,25 @@
  */
 
 /*
- * H-Buffer: Hierarchical & flexible buffer. More general buffer strucuture
- *           than G-Buffer.
+ * H-Buffer
+ * --------
+ *
+ * Hierarchical & flexible buffer. More general buffer strucuture than G-Buffer.
  *   
  */
 
+#ifndef LUCILLE_HBUFFER_H
+#define LUCILLE_HBUFFER_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include <stdint.h>
+
 typedef struct _ri_hbuffer_t
 {
-    unsigned char *buffer;
+    void          *buffer;
     uint32_t       width;
     uint32_t       height;
     uint32_t       id;
@@ -48,3 +67,9 @@ extern ri_hbuffer_t *ri_hbuffer_new();
 extern void          ri_hbuffer_free(
     ri_hbuffer_t *hbuffer);
 
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif  /* LUCILLE_HBUFFER_H */

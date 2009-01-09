@@ -30,7 +30,9 @@ def compile(fname):
 
     print cmd
     ret = subprocess.call(cmd, shell=True)
-    print "comple ret = ", ret
+    if ret is not 0:
+        print "Failed to compilation"
+        sys.exit(1)
 
     # Assemble IR into BC
     cmd  = LLVM_AS

@@ -24,10 +24,10 @@ ifeq ($(ARCH), Darwin)
     GL_LIBS     = -framework OpenGL
 endif
 
-SRCS = jit.cpp timer.cpp texture.cpp render.cpp
+SRCS = jit.cpp timer.cpp texture.cpp render.cpp hbuffer.cpp cachelib.cpp
 OBJS = ${SRCS:.cpp=.o}
 
-MY_CXXFLAGS  = -g -O2 -I$(LLVM_INCDIR)
+MY_CXXFLAGS  = -g -ffast-math -O2 -I$(LLVM_INCDIR)
 MY_LDFLAGS   = -L$(LLVM_LIBDIR) 
 MY_LIBS      = $(LLVM_LIBS) $(SDL_LIBS) -pthread -ldl -lm $(GL_LIBS) -lstdc++
 
