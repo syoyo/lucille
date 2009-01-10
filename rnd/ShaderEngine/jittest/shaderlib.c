@@ -48,6 +48,7 @@ extern float4 rsl_getL();
 extern float4 rsl_getCl();
 
 extern void lse_save_cache_iiic(int, int, int, float *);
+extern void lse_load_cache_iiic(int, int, int, float *);
 
 #define vdot(a, b) (a[0] * b[0] + a[1] * b[1] + a[2] * b[2])
 
@@ -302,10 +303,25 @@ specular_cnvf(float4 *ret, float4 N, float4 V, float roughness)
  *
  * ------------------------------------------------------------------------ */
 
-void save_cache_iiic(int layer, int x, int y, float4 val)
+void
+save_cache_iiic(int layer, int x, int y, float4 val)
 {
     float buf[4];
 
+    buf[0] = val.x;
+    buf[1] = val.y;
+    buf[2] = val.z;
+    buf[3] = val.w;
+
     lse_save_cache_iiic(layer, x, y, buf);
+
+}
+
+void
+load_cache_ciii(float4 *ret, int layer, int x, int y)
+{
+    float *p = (float *)ret;
+
+    lse_load_cache_iiic(layer, x, y, p);
 
 }

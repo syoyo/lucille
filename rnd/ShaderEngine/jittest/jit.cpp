@@ -47,10 +47,15 @@ int              g_mouse_x;
 int              g_mouse_y;
 float            g_offt_x;
 float            g_offt_y;
+int              g_enable_specialization = 1;
+int              g_cached = 0;
+
+bool             g_run_interpreter = false;
 
 using namespace llvm;
 
 static FunctionPassManager *TheFPM;
+static ExecutionEngine     *TheEE;
 
 #ifdef __cplusplus
 extern "C" {
@@ -74,6 +79,7 @@ extern void bora();
 
 typedef void (*ShaderFunP)(void);
 typedef void (*ShaderCacheGenFunP)(void);
+typedef void (*ShaderDynamicFunP)(void);
 typedef void (*ShaderEnvSetFunP)(ri_shader_env_t *env);
 typedef void (*ShaderEnvGetFunP)(ri_shader_env_t *env);
 
@@ -84,6 +90,14 @@ typedef struct _ri_shader_jit_t
     ShaderEnvGetFunP    shader_env_get;
     ShaderFunP          shader_fun;
     ShaderCacheGenFunP  shader_cache_gen_fun;
+    ShaderDynamicFunP   shader_dynamic_fun;
+
+    // Used for execution by interpreter.
+    Function           *shader_env_set_f;
+    Function           *shader_env_get_f;
+    Function           *shader_fun_f;
+    Function           *shader_cache_gen_fun_f;
+    Function           *shader_dynamic_fun_f;
 
 } ri_shader_jit_t;
 
@@ -136,6 +150,7 @@ void *customSymbolResolver(const std::string &name)
     if (name == "get_texture") return (void *)get_texture;
     if (name == "texture_map") return (void *)texture_map;
     if (name == "lse_save_cache_iiic") return (void *)lse_save_cache_iiic;
+    if (name == "lse_load_cache_iiic") return (void *)lse_load_cache_iiic;
 
     return NULL;    // fail
 }
@@ -170,6 +185,9 @@ dummy_render(int width, int height)
 
     ri_shader_env_t *ret_env;    // FIXME: check align.
 
+    std::vector<GenericValue> Args(1);
+    GenericValue ResultGV;
+
     ret_env = (ri_shader_env_t *)malloc32(sizeof(ri_shader_env_t));
 
     sphere.center[0] = 0.0;
@@ -189,6 +207,21 @@ dummy_render(int width, int height)
 
     float u, v;
     int   hit;
+
+    Args[0].PointerVal = (void *)&genv;
+
+    ShaderFunP shader_fun;
+
+    if (g_enable_specialization) {
+        if (g_cached) {
+            shader_fun = g_shader_jit.shader_dynamic_fun;
+        } else {
+            shader_fun = g_shader_jit.shader_cache_gen_fun;
+        }
+    } else {
+        shader_fun = g_shader_jit.shader_fun;
+    }
+        
 
     for (y = 0; y < height; y++) {
         for (x = 0; x < width; x++) {
@@ -235,9 +268,25 @@ dummy_render(int width, int height)
                 genv.I[3] = 1.0f;
                 genv.s = tu;
                 genv.t = tv;
+                genv.x = x;
+                genv.y = y;
+
+#if 0
+                if (g_run_interpreter) {
+                    ResultGV = TheEE->runFunction(g_shader_jit.shader_env_set_f, Args);
+                    //g_shader_jit.shader_cache_gen_fun();
+                    //g_shader_jit.shader_fun();
+                    //g_shader_jit.shader_env_get(&genv);
+                } else {
+                    g_shader_jit.shader_env_set(&genv);
+                    g_shader_jit.shader_cache_gen_fun();
+                    //g_shader_jit.shader_fun();
+                    g_shader_jit.shader_env_get(&genv);
+                }
+#endif
 
                 g_shader_jit.shader_env_set(&genv);
-                g_shader_jit.shader_fun();
+                shader_fun();
                 g_shader_jit.shader_env_get(&genv);
 
                 img[3 * (y * width + x) + 0] = clamp(genv.Ci[0]);
@@ -272,11 +321,11 @@ dummy_render(int width, int height)
 // (i.e., the JIT engine is bounded with the module)
 //
 ExecutionEngine *
-createJITEngine(Module *M)
+createJITEngine(Module *M, bool ForceInterpreter)
 {
-
+    
     ExistingModuleProvider* MP = new ExistingModuleProvider(M);
-    ExecutionEngine* EE = ExecutionEngine::create(MP, false);
+    ExecutionEngine* EE = ExecutionEngine::create(MP, ForceInterpreter);
 
     FunctionPassManager *FPM = new FunctionPassManager(MP);
 
@@ -335,6 +384,8 @@ display()
 {
     dummy_render(WINDOW_WIDTH, WINDOW_HEIGHT);
 
+    g_cached = 1;
+
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -383,6 +434,21 @@ mouse_motion(SDL_Event event)
 }
 
 static void
+keyboard(SDL_Event event)
+{
+    
+    if (event.key.keysym.sym == 'j') {
+        g_enable_specialization = !g_enable_specialization;
+        if (g_enable_specialization == 1) {
+            g_cached = 0;   // clear cache
+        }
+
+        printf("Specialization = %d\n", g_enable_specialization);
+    }
+
+}
+
+static void
 gui_main()
 {
     SDL_Event event;
@@ -411,6 +477,9 @@ gui_main()
                 break;
             case SDL_MOUSEMOTION:
                 mouse_motion(event);
+                break;
+            case SDL_KEYUP:
+                keyboard(event);
                 break;
             }
         }
@@ -443,6 +512,7 @@ main(int argc, char **argv)
     char buf[1024];
     char *basename;
     char cacheGenPassFName[1024];
+    char dynamicPassFName[1024];
 
     std::string ErrorMessage;
 
@@ -464,6 +534,7 @@ main(int argc, char **argv)
     basename = buf;
 
     sprintf(cacheGenPassFName, "%s_cache_gen_pass", basename);
+    sprintf(dynamicPassFName, "%s_dynamic_pass", basename);
         
     // Load the input module...
     std::auto_ptr<Module> M;
@@ -483,11 +554,11 @@ main(int argc, char **argv)
 
     cout << "bitcode read OK.\n";
 
-    ExecutionEngine *EE = createJITEngine(M.get());
-    EE->InstallLazyFunctionCreator(customSymbolResolver);
+    TheEE = createJITEngine(M.get(), g_run_interpreter);
+    TheEE->InstallLazyFunctionCreator(customSymbolResolver);
 
-    Function *F, *CacheGenF;
-    void *FunP, *CacheGenFunP;
+    Function *F, *CacheGenF, *DynamicF;
+    void *FunP, *CacheGenFunP, *DynamicFunP;
 
     F = (M.get())->getFunction(basename);
     if (F == NULL) {
@@ -498,6 +569,12 @@ main(int argc, char **argv)
     CacheGenF = (M.get())->getFunction(cacheGenPassFName);
     if (CacheGenF == NULL) {
         cerr << "can't find the function [ " << cacheGenPassFName << " ] from the module\n";
+        return 1;
+    }
+
+    DynamicF = (M.get())->getFunction(dynamicPassFName);
+    if (DynamicF == NULL) {
+        cerr << "can't find the function [ " << dynamicPassFName << " ] from the module\n";
         return 1;
     }
 
@@ -529,21 +606,28 @@ main(int argc, char **argv)
             return 1;
         }
 
-        ptr = EE->getPointerToFunction(ShaderEnvSetF);
+        ptr = TheEE->getPointerToFunction(ShaderEnvSetF);
         assert(ptr != NULL);
 
         
         g_shader_jit.shader_env_set = (ShaderEnvSetFunP)ptr;
-
+        g_shader_jit.shader_env_set_f = ShaderEnvSetF;
     }
 
-    FunP = JITCompileFunction(EE, F); 
+    FunP = JITCompileFunction(TheEE, F); 
     printf("FunP = 0x%08x\n", FunP);
     g_shader_jit.shader_fun = (ShaderFunP)FunP;
+    g_shader_jit.shader_fun_f = F;
 
-    CacheGenFunP = JITCompileFunction(EE, CacheGenF); 
+    CacheGenFunP = JITCompileFunction(TheEE, CacheGenF); 
     printf("CacheGenFunP = 0x%08x\n", FunP);
     g_shader_jit.shader_cache_gen_fun = (ShaderCacheGenFunP)CacheGenFunP;
+    g_shader_jit.shader_cache_gen_fun_f = CacheGenF;
+
+    DynamicFunP = JITCompileFunction(TheEE, DynamicF); 
+    printf("DynamicFunP = 0x%08x\n", FunP);
+    g_shader_jit.shader_dynamic_fun   = (ShaderDynamicFunP)DynamicFunP;
+    g_shader_jit.shader_dynamic_fun_f = DynamicF;
 
     //std::vector<GenericValue> noargs;
     //GenericValue gv = EE->runFunction(F, noargs);
@@ -559,10 +643,11 @@ main(int argc, char **argv)
             return 1;
         }
 
-        ptr = EE->getPointerToFunction(ShaderEnvGetF);
+        ptr = TheEE->getPointerToFunction(ShaderEnvGetF);
         assert(ptr != NULL);
 
         g_shader_jit.shader_env_get = (ShaderEnvGetFunP)ptr;
+        g_shader_jit.shader_env_get_f = ShaderEnvGetF;
 
     }
 

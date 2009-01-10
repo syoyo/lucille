@@ -19,6 +19,12 @@ extern void lse_save_cache_iiic(
     int     y,
     float  *val);
 
+extern void lse_load_cache_iiic(
+    int     layer,
+    int     x,
+    int     y,
+    float  *val);
+
 #ifdef __cplusplus
 }
 #endif
