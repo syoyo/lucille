@@ -33,9 +33,9 @@ shader_env_def = [
 def gen_llvm_code(fname):
 
     ty_table = {
-        "vector" : "<4xfloat>"
-      , "normal" : "<4xfloat>"
-      , "color"  : "<4xfloat>"
+        "vector" : "<4 x float>"
+      , "normal" : "<4 x float>"
+      , "color"  : "<4 x float>"
       , "float"  : "float"
       , "int"    : "i32"
     }
