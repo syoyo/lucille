@@ -71,11 +71,11 @@ emitTy ty = case ty of
   TyInt     -> "i32"
   TyString  -> "i8*"
   TyFloat   -> "float"
-  TyVector  -> "<4xfloat>"
-  TyColor   -> "<4xfloat>"
-  TyPoint   -> "<4xfloat>"
-  TyNormal  -> "<4xfloat>"
-  TyMatrix  -> "<16xfloat>"
+  TyVector  -> "<4 x float>"
+  TyColor   -> "<4 x float>"
+  TyPoint   -> "<4 x float>"
+  TyNormal  -> "<4 x float>"
+  TyMatrix  -> "<16 x float>"
 
 class AST a where
 
@@ -274,6 +274,30 @@ emitCacheSaver n layer sym = concat
 
     tempX = "%" ++ (getNameOfSym sym) ++ ".x"
     tempY = "%" ++ (getNameOfSym sym) ++ ".y"
+
+emitCacheLoader :: Int -> Int -> Symbol -> String
+emitCacheLoader n layer sym = concat
+  [ indent n ++ tmpX ++ " = call i32 @rsl_getx();\n"
+  , indent n ++ tmpY ++ " = call i32 @rsl_gety();\n"
+  , indent n ++ tmpReg ++ " = alloca " ++ ty ++ ";\n"
+  , indent n ++ "call void @load_cache_ciii("
+  , ty ++ "* " ++ tmpReg ++ ", "
+  , "i32 " ++ (show layer) ++ ", "
+  , "i32 " ++ tmpX ++ ", " 
+  , "i32 " ++ tmpY
+  , ");\n"
+  --
+  , indent n ++ getLLNameOfSym sym ++ " = load " ++ ty ++ "* " ++ tmpReg
+  , "\n"
+  ]
+
+  where
+
+    ty      = emitTy (getTyOfSym sym)
+    tmpX    = "%" ++ (getNameOfSym sym) ++ ".x"
+    tmpY    = "%" ++ (getNameOfSym sym) ++ ".y"
+    tmpReg  = "%" ++ (getNameOfSym sym) ++ ".tmp"
+
 
 instance AST Expr where
   
@@ -701,7 +725,216 @@ instance AST Expr where
 
     _                                 -> error $ "[CodeGen] TODO: " ++ show expr
 
-  genDynamic e = genStatic e    -- TODO
+  genDynamic n e = case e of
+
+    TypeCast (Just sym) ty space expr      -> concat
+      [ genDynamic n expr
+      , emitTypeCast ty (getTyOfExpr expr) (getLLNameOfSym sym) (getReg expr)
+      ]
+
+    Const (Just sym) (F val)    -> concat
+
+      -- %tmp.buf = alloca ty
+      -- store ty val, ty* %tmp.buf
+      -- %dst = load ty* %tmp.buf
+      
+      [ indent n ++ tmpReg ++ " = "
+      , "alloca "
+      , ty ++ ";\n"
+      --
+      , indent n ++ "store "
+      , ty ++ " "
+      , emitLLVMFloatString val ++ " "
+      , ", " ++ ty ++ "* "
+      , tmpReg ++ ";\n"
+      --
+      , indent n ++ dst ++ " = " ++ "load " ++ ty ++ "* " ++ tmpReg
+      , ";\n"
+      ]
+
+        where
+
+          dst     = getLLNameOfSym sym
+          ty      = emitTy (getTyOfSym sym)
+          tmpReg  = getLLNameOfSym sym ++ ".tmp" -- genUniqueReg ++ ".addr"
+
+    Const (Just sym) (S str)    -> concat
+      [ indent n
+      , dst ++ " = " ++ "getelementptr [" ++ (show $ length str + 1) ++ " x i8]* @" ++ (getNameOfSym sym) ++ ".str, i32 0, i32 0"
+      , ";\n"
+      ]
+        
+        where
+
+          dst = getLLNameOfSym sym
+          
+
+    Var (Just dstSym) srcSym -> case srcSym of
+
+      (SymVar name _ _ KindFormalVariable)  -> concat
+        [ indent n ++ emitLoadFromFormalVariable dstSym srcSym ]
+
+      (SymVar name _ _ KindBuiltinVariable) -> concat
+        [ indent n ++ emitLoadFromBuiltinVariable dstSym srcSym ]
+
+      _                                     -> concat
+        [ indent n ++ emitLoadFromVariable dstSym srcSym ]
+
+
+    UnaryOp (Just sym) op expr           -> concat
+      [ genDynamic n expr
+      , indent n ++ "%" ++ getNameOfSym sym ++ " = "
+      , emitOp op ++ " "
+      , emitTy (getTyOfSym sym) ++ " zeroinitializer , "
+      , getReg expr
+      , ";\n"
+      ]
+
+    BinOp (Just sym) op e0 e1            -> concat
+      [ genDynamic n e0
+      , genDynamic n e1
+      , indent n ++ "%" ++ getNameOfSym sym ++ " = "
+      , emitOp op ++ " "
+      , emitTy (getTyOfSym sym) ++ " " ++ getReg e0 ++ " , "
+      , getReg e1
+      , ";\n"
+      ]
+
+
+    Def    ty name Nothing -> concat 
+      [ indent n
+      , "%" ++ name ++ " "
+      , "= "
+      , "alloca "
+      , emitTy ty
+      , ";\n"
+      ]
+
+
+    Def    ty name (Just initExpr)  -> concat 
+      [ indent n
+      , "%" ++ name ++ " "
+      , "= "
+      , "alloca "
+      , emitTy ty
+      , ";\n"
+      , genDynamic n initExpr
+      --
+      , indent n ++ "store "
+      , emitTy (getTyOfExpr initExpr) ++ " " ++ (getReg initExpr) ++ " , "
+      , emitTy (getTyOfExpr initExpr) ++ "* " ++ "%" ++ name
+      , ";\n"
+      ]
+
+
+    -- shadervar(var) = b
+    -- -> call @rsl_setVar(b)
+    -- 
+    -- a = b
+    -- -> store b, a
+    
+    Assign _ op (Var _ sym) rexpr -> case sym of
+
+      (SymVar _ _ _ KindBuiltinVariable) -> concat
+
+        [ genDynamic n rexpr
+        , indent n
+        , "call void "
+        , "@rsl_set" ++ getNameOfSym sym ++ "( "
+        , emitTy (getTyOfExpr rexpr) ++ " "
+        , getReg rexpr ++ " "
+        , ");\n"
+        ]
+
+
+      _ -> concat
+
+        [ genDynamic n rexpr
+        , indent n
+        , "store "
+        , emitTy (getTyOfExpr rexpr) ++ " "
+        , getReg rexpr ++ ", "
+        , emitTy (getTyOfExpr rexpr) ++ "* "
+        , getLLNameOfSym sym
+        , ";\n"
+        ]
+
+
+    --
+    -- If call was a texturue function, emit cache loader.
+    -- 
+    Call (Just dst) (SymBuiltinFunc name retTy argTys _) args  -> concat 
+      [ genDynamic n args
+      , if (name == "texture") then concat
+
+          [ emitCacheLoader n 0 dst
+          ]
+
+                               else concat
+
+          [ indent n ++ tmpReg ++ " = alloca " ++ (emitTy retTy) ++ ";\n" -- TODO: consider void case
+          , indent n ++ "call void @" ++ name ++ "_" ++ getFunctionSuffix retTy argTys ++ "("
+          , genArgForRet ++ (if (length args) > 0 then ", " else "") ++ genArgs args
+          , ");\n"
+          , indent n ++ "%" ++ (getNameOfSym dst) ++ " = "
+          , "load " ++ emitTy (getTyOfSym dst) ++ "* " ++ tmpReg ++ ";\n"
+          ]
+
+      ]
+
+      where
+
+        genArgForRet = if (retTy == TyVoid) then "" else (emitTy retTy) ++ "* " ++ tmpReg
+        genArgs []     = ""
+        genArgs [x]    = emitTy (getTyOfExpr x) ++ " " ++ getReg x
+        genArgs (x:xs) = emitTy (getTyOfExpr x) ++ " " ++ getReg x ++ ", " ++ genArgs xs
+
+        tmpReg         = "%" ++ getNameOfSym dst ++ ".buf"
+
+    Call (Just dst) (SymFunc name ty _ _) args  -> concat 
+      [ genDynamic n args
+      , indent n ++ "%" ++ (getNameOfSym dst) ++ " = "
+      , "call " ++ "@" ++ name ++ "()"
+      , ";\n"
+      ]
+
+      where
+
+        genArgs []     = ""
+        genArgs [x]    = genDynamic 0 x
+        genArgs (x:xs) = genDynamic 0 x ++ ", " ++ genArgs xs
+
+    Triple exprs                      -> concat
+      [ "( "
+      , genDynamic 0 (exprs !! 0)
+      , ", "
+      , genDynamic 1 (exprs !! 1)
+      , ", "
+      , genDynamic 2 (exprs !! 2)
+      , " )"
+      ]
+
+    While cond stms                   -> concat
+      [ indent n
+      , "while ( "
+      , genDynamic 0 cond
+      , " ) {\n"
+      , genDynamic (n+1) stms
+      , "\n" ++ indent n ++ "}"
+      ]
+
+    If cond thenStms (Just elseStms)  -> concat
+      [ indent n
+      , "if ( "
+      , genDynamic 0 cond 
+      , " ) {\n"
+      , genDynamic (n+1) thenStms
+      , indent n ++ "} else {\n"
+      , genDynamic (n+1) elseStms
+      , indent n ++ "}"
+      ]
+
+    Nil                               -> "null"
 
   genGlobal e = emitGlobal e
 
@@ -873,7 +1106,7 @@ instance AST Func where
 
     ShaderFunc ty name decls stms -> concat 
       [ "define void "
-      , "@" ++ name
+      , "@" ++ name ++ "_dynamic_pass"
       , "("
       , genDynamic n decls
       , ") {\n"

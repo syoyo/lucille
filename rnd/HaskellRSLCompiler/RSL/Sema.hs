@@ -147,6 +147,7 @@ builtinShaderFunctions =
 
   -- extension for lucille 
   , (SymBuiltinFunc "save_cache" void [i, i, i, c]      [])
+  , (SymBuiltinFunc "load_cache" c    [i, i, i]         [])
 
   ] -- More is TODO
 
