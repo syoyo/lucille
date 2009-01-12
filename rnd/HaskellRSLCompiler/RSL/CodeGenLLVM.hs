@@ -157,14 +157,14 @@ emitOp op = case op of
   OpSub       -> "sub"
   OpMul       -> "mul"
   OpDiv       -> "fdiv"   -- FIXME
-  OpDot       -> "."
-  OpNeg       -> "!"
-  OpLe        -> "<="
-  OpLt        -> "<"
-  OpGe        -> ">="
-  OpGt        -> ">"
-  OpEq        -> "=="
-  OpNeq       -> "!="
+  OpDot       -> "."      -- FIXME
+  OpNeg       -> "!"      -- FIXME
+  OpLe        -> "fcmp ole"
+  OpLt        -> "fcmp olt"
+  OpGe        -> "fcmp oge"
+  OpGt        -> "fcmp ogt"
+  OpEq        -> "fcmp oeq"
+  OpNeq       -> "fcmp une"
   OpAssign    -> "="
   OpAddAssign -> "+="
   OpSubAssign -> "-="
@@ -491,14 +491,51 @@ instance AST Expr where
       , " )"
       ]
 
+    --
+    -- while (cond) stmt
+    --
+    -- ->
+    --
+    -- br while.cond
+    --
+    -- while.cond:
+    --
+    --   <<emit cond>>
+    --   br %cmp, label while.body, while.exit
+    --
+    -- while.body:
+    --
+    --   <<emit body>>
+    --   br label while.cond
+    --
+    -- while.exit
+    --
+    --   <<emit.exit>>
+    --
     While cond stms                   -> concat
-      [ indent n
-      , "while ( "
-      , gen 0 cond
-      , " ) {\n"
-      , gen (n+1) stms
-      , "\n" ++ indent n ++ "}"
+      [ indent n ++ "br label %" ++ condLabel ++ "\n\n"
+      -- cond
+      , indent (n-1) ++ condLabel ++ ":\n"
+      , gen n cond
+      , indent n ++ "br i1 " ++ (getReg cond) ++ ", label %" ++ bodyLabel ++ ", label %" ++ exitLabel ++ "\n"
+      , "\n"
+      -- body
+      , indent (n-1) ++ bodyLabel ++ ":\n"
+      , gen n stms
+      , indent n ++ "br label %" ++ condLabel ++ "\n"
+      , "\n"
+      -- exit
+      , indent (n-1) ++ exitLabel ++ ":\n"
+      , "\n"
       ]
+
+      where
+
+        condLabel = "while" ++ show num ++ ".cond"
+        bodyLabel = "body"  ++ show num ++ ".body"
+        exitLabel = "exit"  ++ show num ++ ".exit"
+
+        num       = unsafePerformIO getCounter
 
     If cond thenStms (Just elseStms)  -> concat
       [ indent n
@@ -673,8 +710,10 @@ instance AST Expr where
         genArgs [x]    = emitTy (getTyOfExpr x) ++ " " ++ getReg x
         genArgs (x:xs) = emitTy (getTyOfExpr x) ++ " " ++ getReg x ++ ", " ++ genArgs xs
 
-        saveCache      = if (name == "texture") then emitCacheSaver n 0 dst
-                                                else ""
+        saveCache      = case name of
+          "texture" -> emitCacheSaver n 0 dst
+          "turb"    -> emitCacheSaver n 1 dst
+          _         -> ""
 
         tmpReg         = "%" ++ getNameOfSym dst ++ ".buf"
 
@@ -702,13 +741,29 @@ instance AST Expr where
       ]
 
     While cond stms                   -> concat
-      [ indent n
-      , "while ( "
-      , genStatic 0 cond
-      , " ) {\n"
-      , genStatic (n+1) stms
-      , "\n" ++ indent n ++ "}"
+      [ indent n ++ "br label %" ++ condLabel ++ "\n\n"
+      -- cond
+      , indent (n-1) ++ condLabel ++ ":\n"
+      , genStatic n cond
+      , indent n ++ "br i1 " ++ (getReg cond) ++ ", label %" ++ bodyLabel ++ ", label %" ++ exitLabel ++ "\n"
+      , "\n"
+      -- body
+      , indent (n-1) ++ bodyLabel ++ ":\n"
+      , genStatic n stms
+      , indent n ++ "br label %" ++ condLabel ++ "\n"
+      , "\n"
+      -- exit
+      , indent (n-1) ++ exitLabel ++ ":\n"
+      , "\n"
       ]
+
+      where
+
+        condLabel = "while" ++ show num ++ ".cond"
+        bodyLabel = "body"  ++ show num ++ ".body"
+        exitLabel = "exit"  ++ show num ++ ".exit"
+
+        num       = unsafePerformIO getCounter
 
     If cond thenStms (Just elseStms)  -> concat
       [ indent n
@@ -865,24 +920,22 @@ instance AST Expr where
     -- 
     Call (Just dst) (SymBuiltinFunc name retTy argTys _) args  -> concat 
       [ genDynamic n args
-      , if (name == "texture") then concat
-
-          [ emitCacheLoader n 0 dst
-          ]
-
-                               else concat
-
-          [ indent n ++ tmpReg ++ " = alloca " ++ (emitTy retTy) ++ ";\n" -- TODO: consider void case
-          , indent n ++ "call void @" ++ name ++ "_" ++ getFunctionSuffix retTy argTys ++ "("
-          , genArgForRet ++ (if (length args) > 0 then ", " else "") ++ genArgs args
-          , ");\n"
-          , indent n ++ "%" ++ (getNameOfSym dst) ++ " = "
-          , "load " ++ emitTy (getTyOfSym dst) ++ "* " ++ tmpReg ++ ";\n"
-          ]
-
+      , loadFromCacheIfPossible
       ]
 
       where
+
+        loadFromCacheIfPossible = case name of
+          "texture" -> emitCacheLoader n 0 dst
+          "turb"    -> emitCacheLoader n 1 dst
+          _         -> concat
+            [ indent n ++ tmpReg ++ " = alloca " ++ (emitTy retTy) ++ ";\n" -- TODO: consider void case
+            , indent n ++ "call void @" ++ name ++ "_" ++ getFunctionSuffix retTy argTys ++ "("
+            , genArgForRet ++ (if (length args) > 0 then ", " else "") ++ genArgs args
+            , ");\n"
+            , indent n ++ "%" ++ (getNameOfSym dst) ++ " = "
+            , "load " ++ emitTy (getTyOfSym dst) ++ "* " ++ tmpReg ++ ";\n"
+            ]
 
         genArgForRet = if (retTy == TyVoid) then "" else (emitTy retTy) ++ "* " ++ tmpReg
         genArgs []     = ""
@@ -915,13 +968,29 @@ instance AST Expr where
       ]
 
     While cond stms                   -> concat
-      [ indent n
-      , "while ( "
-      , genDynamic 0 cond
-      , " ) {\n"
-      , genDynamic (n+1) stms
-      , "\n" ++ indent n ++ "}"
+      [ indent n ++ "br label %" ++ condLabel ++ "\n\n"
+      -- cond
+      , indent (n-1) ++ condLabel ++ ":\n"
+      , genDynamic n cond
+      , indent n ++ "br i1 " ++ (getReg cond) ++ ", label %" ++ bodyLabel ++ ", label %" ++ exitLabel ++ "\n"
+      , "\n"
+      -- body
+      , indent (n-1) ++ bodyLabel ++ ":\n"
+      , genDynamic n stms
+      , indent n ++ "br label %" ++ condLabel ++ "\n"
+      , "\n"
+      -- exit
+      , indent (n-1) ++ exitLabel ++ ":\n"
+      , "\n"
       ]
+
+      where
+
+        condLabel = "while" ++ show num ++ ".cond"
+        bodyLabel = "body"  ++ show num ++ ".body"
+        exitLabel = "exit"  ++ show num ++ ".exit"
+
+        num       = unsafePerformIO getCounter
 
     If cond thenStms (Just elseStms)  -> concat
       [ indent n
@@ -1054,13 +1123,12 @@ emitGlobal e = case e of
   UnaryOp _ _ expr        -> emitGlobal expr
   BinOp _ _ expr0 expr1   -> emitGlobal expr0 ++ emitGlobal expr1
   Call _ _ exprs          -> concatMap emitGlobal exprs
+  While cond stmt         -> emitGlobal cond ++ (concatMap emitGlobal stmt)
   {- TODO
   | Triple    [Expr]                       -- length(expr) == 3
   | If        Expr                        -- condition
               [Expr]                      -- statement
               (Maybe [Expr])              -- else statement
-  | While     Expr                        -- condition
-              [Expr]                      -- statement
   | Extract  (Maybe Symbol)
               Char                        -- x, y, z, or w
               Expr                        -- Should be vector expr.

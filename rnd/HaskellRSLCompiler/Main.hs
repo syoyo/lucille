@@ -18,9 +18,9 @@ debugPrinter ast = do putStrLn $ "// [AST] = " ++ show ast ++ "\n"
                       let staticCodeString  = genStatic 0 ast
                       let dynamicCodeString = genDynamic 0 ast
                       let codeString        = gen 0 ast
-                      let cfgArr            = cfg $ (ast !! 0)
+                      -- let cfgArr            = cfg $ (ast !! 0)
                       putStrLn codeString
-                      putStrLn $ show cfgArr
+                      -- putStrLn $ show cfgArr
                       -- Also write to file.
                       let headerString = genHeader  -- from CodeGenLLVM
                       writeFile "output.ll" (headerString ++ "\n" ++ globalVariablesString ++ codeString ++ "\n" ++ staticCodeString ++ "\n" ++ dynamicCodeString)

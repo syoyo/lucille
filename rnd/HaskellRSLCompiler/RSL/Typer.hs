@@ -58,6 +58,7 @@ insertFtoV toTy expr = do { tmpName <- getUniqueName
 --
 upcastBinary :: Expr -> Expr -> TyperState (Expr, Expr)
 upcastBinary e0 e1 = case (getTyOfExpr e0, getTyOfExpr e1) of
+  (TyFloat, TyFloat ) ->      return (e0, e1)
   (TyFloat, TyVector) -> do { e0' <- insertFtoV TyVector e0; return (e0', e1 ) }
   (TyFloat, TyPoint ) -> do { e0' <- insertFtoV TyPoint  e0; return (e0', e1 ) }
   (TyFloat, TyNormal) -> do { e0' <- insertFtoV TyNormal e0; return (e0', e1 ) }
@@ -140,6 +141,12 @@ instance Typer Expr where
     Def ty name (Just initExpr) -> 
       do  { initExpr' <- typing initExpr
           ; return (Def ty name (Just initExpr'))
+          }
+
+    While cond stmt ->
+      do  { cond' <- typing cond
+          ; stmt' <- mapM typing stmt
+          ; return (While cond' stmt')
           }
 
     _ -> error $ "Typing: TODO: " ++ (show e)
