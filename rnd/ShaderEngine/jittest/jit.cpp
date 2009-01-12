@@ -37,8 +37,8 @@
 #include <iostream>
 #include "timer.h"
 
-#define WINDOW_WIDTH  256
-#define WINDOW_HEIGHT 256
+#define WINDOW_WIDTH  512
+#define WINDOW_HEIGHT 512
 SDL_Surface     *surface;
 unsigned char   *img;
 int              g_mouse_button;
@@ -49,6 +49,7 @@ float            g_offt_x;
 float            g_offt_y;
 int              g_enable_specialization = 1;
 int              g_cached = 0;
+int              g_skip   = 1;
 
 bool             g_run_interpreter = false;
 
@@ -171,7 +172,7 @@ void *malloc32(size_t sz)
 }
 
 void
-dummy_render(int width, int height)
+dummy_render(int width, int height, int skip)
 {
     int         x, y;
     mytimer_t   start_time, end_time;
@@ -204,9 +205,11 @@ dummy_render(int width, int height)
 
     float theta, phi;
     float tu, tv;
+    unsigned char shadecol[4];
 
     float u, v;
     int   hit;
+    int   xx, yy;
 
     Args[0].PointerVal = (void *)&genv;
 
@@ -223,8 +226,8 @@ dummy_render(int width, int height)
     }
         
 
-    for (y = 0; y < height; y++) {
-        for (x = 0; x < width; x++) {
+    for (y = 0; y < height; y += skip) {
+        for (x = 0; x < width; x += skip) {
 
             isect.t = 1.0e+30f;
             
@@ -289,18 +292,36 @@ dummy_render(int width, int height)
                 shader_fun();
                 g_shader_jit.shader_env_get(&genv);
 
-                img[3 * (y * width + x) + 0] = clamp(genv.Ci[0]);
-                img[3 * (y * width + x) + 1] = clamp(genv.Ci[1]);
-                img[3 * (y * width + x) + 2] = clamp(genv.Ci[2]);
-                //img[3 * (y * width + x) + 0] = clamp(texcol[0]);
-                //img[3 * (y * width + x) + 1] = clamp(texcol[1]);
-                //img[3 * (y * width + x) + 2] = clamp(texcol[2]);
+                shadecol[0] = clamp(genv.Ci[0]);
+                shadecol[1] = clamp(genv.Ci[1]);
+                shadecol[2] = clamp(genv.Ci[2]);
+
+            } else {
+                
+                shadecol[0] = 0;
+                shadecol[1] = 0;
+                shadecol[2] = 0;
+
+            }
+
+
+            if (skip != 1) {
+
+                for (yy = 0; yy < skip; yy++) {
+                    for (xx = 0; xx < skip; xx++) {
+
+                        img[3 * ((y+yy) * width + (x+xx)) + 0] = shadecol[0];
+                        img[3 * ((y+yy) * width + (x+xx)) + 1] = shadecol[1];
+                        img[3 * ((y+yy) * width + (x+xx)) + 2] = shadecol[2];
+                    }
+                }
+                
 
             } else {
 
-                img[3 * (y * width + x) + 0] = 0;
-                img[3 * (y * width + x) + 1] = 0;
-                img[3 * (y * width + x) + 2] = 0; 
+                img[3 * (y * width + x) + 0] = shadecol[0];
+                img[3 * (y * width + x) + 1] = shadecol[1];
+                img[3 * (y * width + x) + 2] = shadecol[2];
 
             }
 
@@ -382,7 +403,7 @@ runShader(void *FunP)
 static void
 display()
 {
-    dummy_render(WINDOW_WIDTH, WINDOW_HEIGHT);
+    dummy_render(WINDOW_WIDTH, WINDOW_HEIGHT, g_skip);
 
     g_cached = 1;
 
@@ -403,6 +424,7 @@ mouse_down(SDL_Event event)
         g_mouse_pressed = 1; 
         g_mouse_x = event.button.x;
         g_mouse_y = event.button.y;
+        if (g_enable_specialization) g_skip = 4;
     }
 }
 
@@ -412,6 +434,7 @@ mouse_up(SDL_Event event)
     if (event.button.button == SDL_BUTTON_LEFT) {
         //g_mouse_button  = SDL_BUTTON_LEFT;
         g_mouse_pressed = 0; 
+        g_skip = 1;
     }
 }
 

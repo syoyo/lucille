@@ -5,7 +5,7 @@ LLVM_CONFIG   	= llvm-config
 LLVM_INCDIR   	= `$(LLVM_CONFIG) --includedir`
 LLVM_CXXFLAGS 	= `$(LLVM_CONFIG) --cxxflags`
 LLVM_LIBDIR   	= `$(LLVM_CONFIG) --libdir`
-LLVM_LIBS     	= `$(LLVM_CONFIG) --libs bitreader engine jit interpreter`
+LLVM_LIBS     	= `$(LLVM_CONFIG) --libs core bitreader engine jit interpreter`
 
 SDL_CONFIG    	= sdl-config
 SDL_CXXFLAGS  	= `$(SDL_CONFIG) --cflags`

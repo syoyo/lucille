@@ -297,6 +297,31 @@ specular_cnvf(float4 *ret, float4 N, float4 V, float roughness)
     (*ret) = r;
 }
 
+// hack
+void
+turb_cp(float4 *ret, float4 p)
+{
+    float sum   = 0.0f;
+    float a     = 0.0001f;
+    float scale = 2.0f;
+    float4 v;
+    float4 r;
+
+    while (a < scale) {
+        v.x = p.x / scale;
+        v.y = p.y / scale;
+        v.z = p.z / scale;
+        sum += scale * noise3(v.x, v.y, v.z);
+        scale *= 0.5f;
+    }
+
+    r.x = sum;
+    r.y = sum;
+    r.z = sum;
+
+    (*ret) = r;
+}
+
 /* ---------------------------------------------------------------------------
  *
  * LSE(lucille shader engine) specific functions.

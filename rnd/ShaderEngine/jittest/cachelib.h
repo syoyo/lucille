@@ -7,7 +7,8 @@ extern "C" {
 
 #include "hbuffer.h"
 
-extern ri_hbuffer_t *g_hbuffer;
+#define MAX_LAYER 16
+extern ri_hbuffer_t *g_hbuffer[MAX_LAYER];
 
 extern void lse_init(
     int w,

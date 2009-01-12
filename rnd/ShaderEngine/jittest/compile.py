@@ -80,11 +80,17 @@ def compile(fname):
 def usage():
     print "slc.py <input.sl>"
 
+def update_runtimelib():
+    cmd = "make gen"
+    print cmd
+    ret = subprocess.call(cmd, shell=True)
+    
 def main():
     if len(sys.argv) < 2:
         usage()
         sys.exit(1);
 
+    update_runtimelib()
     compile(sys.argv[1])
 
 
