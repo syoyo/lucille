@@ -39,6 +39,7 @@ $(TARGET): $(OBJS)
 	gcc -o $(TARGET) $(OBJS) $(MY_LDFLAGS) $(LDFLAGS) $(MY_LIBS)
 
 gen:
+	(cd ..; make gen)
 	clang -emit-llvm-bc shaderlib.c noise.c
 	cp ../shader_env.ll .
 	cp ../shader_env.h .
