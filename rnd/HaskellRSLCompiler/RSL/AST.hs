@@ -11,7 +11,12 @@
 ---- RSLParser   :  Data structure for RSL Abstract Syntax Tree.
 ----
 -------------------------------------------------------------------------------
+
+{-# LANGUAGE DeriveDataTypeable #-} 
+
 module RSL.AST where
+
+import Data.Generics      -- from syb package
 
 data Op
   = OpAdd
@@ -31,12 +36,12 @@ data Op
   | OpSubAssign -- -=
   | OpMulAssign -- *=
   | OpDivAssign -- /=
-    deriving (Show, Eq)
+    deriving (Show, Eq, Typeable, Data)
 
 -- | Type qualifier
 data Qual
   = Output
-    deriving (Show, Eq) 
+    deriving (Show, Eq, Typeable, Data) 
   
 data Type
   = TyUnknown
@@ -50,7 +55,7 @@ data Type
   | TyNormal
   | TyMatrix
   | TyQualified Qual Type
-    deriving (Show, Eq)
+    deriving (Show, Eq, Typeable, Data)
 
 data StorageClass
   = Uniform
@@ -58,7 +63,7 @@ data StorageClass
   | Vertex            -- Not in RI Spec3.2
   | FaceVarying       -- Not in RI Spec3.2
   | FaceVertex        -- Not in RI Spec3.2
-    deriving (Show, Eq)
+    deriving (Show, Eq, Typeable, Data)
 
 data ShaderType 
   = Surface
@@ -66,7 +71,7 @@ data ShaderType
   | Volume
   | Displacement
   | Imager
-    deriving (Show, Eq)
+    deriving (Show, Eq, Typeable, Data)
 
 data Const 
   = I Int             -- optinal?
@@ -74,13 +79,13 @@ data Const
   | S String
   | V [Double]        -- vector
   | M [Double]        -- matrix
-    deriving (Show, Eq)
+    deriving (Show, Eq, Typeable, Data)
 
 data Kind
   = KindVariable
   | KindFormalVariable
   | KindBuiltinVariable
-    deriving (Show, Eq)
+    deriving (Show, Eq, Typeable, Data)
 
 
 data Symbol
@@ -100,7 +105,7 @@ data Symbol
             [Type]            -- arguments of the function         
             [Type]            -- optional arguments
 
-    deriving (Show, Eq)
+    deriving (Show, Eq, Typeable, Data)
 
 getNameOfSym (SymVar  name _ _ _) = name
 getNameOfSym (SymFunc name _ _ _) = name
@@ -117,6 +122,7 @@ getTyOfExpr expr = case expr of
   UnaryOp (Just sym) _ _          -> getTyOfSym sym
   BinOp (Just sym) _ _ _          -> getTyOfSym sym
   Call (Just sym) _ _             -> getTyOfSym sym
+  Triple (x:xs)                   -> getTyOfExpr x
   _                               -> error $ "getTyOfExpr: TODO: " ++ (show expr)
 
 type SymbolTable
@@ -125,54 +131,80 @@ type SymbolTable
 type Statement = [Expr]
 
 --
+-- TODO: - Separate Statement constructor from Expr.
+--       - Add field for SourcePos
+--
+
+--
 -- We define 3-address form of AST.
 --
 data Expr 
-  = Const     (Maybe Symbol)
-              Const
-  | TypeCast  (Maybe Symbol)
-              Type                        -- toType
-              String                      -- spaceType if any
-              Expr                        -- fromExpr
-  | Var       (Maybe Symbol)
-              Symbol
-  | Assign    (Maybe Symbol)
-              Op                          -- operator
-              Expr                        -- lhs
-              Expr                        -- rhs
-  | Def       Type String (Maybe Expr)
-  | UnaryOp   (Maybe Symbol)
-              Op                          -- Operator
-              Expr                        
-  | BinOp     (Maybe Symbol)
-              Op                          -- Operator
-              Expr                        -- Left
-              Expr                        -- Right
-  | Call      (Maybe Symbol)
-              Symbol                      -- Function signature
-              [Expr]                      -- Arguments
+  = Const      (Maybe Symbol)
+                Const
+  | TypeCast   (Maybe Symbol)
+                Type                        -- toType
+                String                      -- spaceType if any
+                Expr                        -- fromExpr
+  | Var        (Maybe Symbol)
+                Symbol
+  | Assign     (Maybe Symbol)
+                Op                          -- operator
+                Expr                        -- lhs
+                Expr                        -- rhs
+  | Def         Type String (Maybe Expr)
+  | UnaryOp    (Maybe Symbol)
+                Op                          -- Operator
+                Expr                        
+  | BinOp      (Maybe Symbol)
+                Op                          -- Operator
+                Expr                        -- Left
+                Expr                        -- Right
+  | Call       (Maybe Symbol)
+                Symbol                      -- Function signature
+               [Expr]                       -- Arguments
 
-  | Triple    [Expr]                       -- length(expr) == 3
+  | Triple     [Expr]                       -- length(expr) == 3
+
+  | Conditional (Maybe Symbol)
+                Expr                        -- cond
+                Expr                        -- then
+                Expr                        -- else
+
 
   -- Stmt
-  | If        Expr                        -- condition
-              [Expr]                      -- statement
-              (Maybe [Expr])              -- else statement
-  | While     Expr                        -- condition
-              [Expr]                      -- statement
-  | Extract  (Maybe Symbol)
-              Char                        -- x, y, z, or w
-              Expr                        -- Should be vector expr.
+  
+  | If          Expr                      -- condition
+                [Expr]                    -- statement
+                (Maybe [Expr])            -- else statement
+
+  | While       Expr                      -- condition
+               [Expr]                     -- statement
+
+  | For         Expr                      -- init
+                Expr                      -- cond
+                Expr                      -- inc
+               [Expr]                     -- statement
+
+  | Extract    (Maybe Symbol)
+                Char                      -- x, y, z, or w
+                Expr                      -- Should be vector expr.
+
+  | Illuminance Expr                      -- position
+                Expr                      -- normal
+                Expr                      -- angle
+               (Maybe String)             -- category
+               [Expr]                     -- statement
+
   | Nil                                   -- null expr
-    deriving (Show, Eq)
+    deriving (Show, Eq, Typeable, Data)
   
 
 data Func 
   = ShaderFunc ShaderType String [FormalDecl] [Expr]
   | UserFunc   Type       String
-    deriving (Show, Eq)
+    deriving (Show, Eq, Typeable, Data)
 
 
 data FormalDecl 
   = FormalDecl Type String (Maybe Expr)     -- TODO: Allow const expression
-    deriving (Show, Eq)
+    deriving (Show, Eq, Typeable, Data)

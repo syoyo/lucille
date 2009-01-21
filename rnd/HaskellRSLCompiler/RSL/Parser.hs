@@ -150,10 +150,12 @@ statements            =  do { stms <- many statement    -- [[]]
 
 statement :: RSLParser [Expr]
 statement             =   varDefsStmt
-                      <|> do { stm <- assignStmt; return [stm] }
-                      <|> do { stm <- exprStmt  ; return [stm] }
-                      <|> do { stm <- whileStmt ; return [stm] }
-                      <|> do { stm <- ifStmt    ; return [stm] }
+                      -- <|> do { stm <- assignStmt      ; return [stm] }
+                      <|> do { stm <- exprStmt        ; return [stm] }
+                      <|> do { stm <- whileStmt       ; return [stm] }
+                      <|> do { stm <- forStmt         ; return [stm] }
+                      <|> do { stm <- illuminanceStmt ; return [stm] }
+                      <|> do { stm <- ifStmt          ; return [stm] }
                       <?> "statement"
 
 
@@ -197,6 +199,7 @@ varDefsStmt           = do  { ty    <- rslType
                               genDefs ty ((name, expr):x) = [(Def ty name expr)] ++ genDefs ty x
 
 
+{-
 --
 -- Assign statement
 --
@@ -213,9 +216,10 @@ assignStmt            = do  { var <- definedSym
                             ; return (Assign Nothing op (Var Nothing var) rexpr)
                             }
                       <?> "assign stetement"
+-}
 
 --
--- Condition statement
+-- while statement
 --
 whileStmt             = do  { reserved "while"
                             ; symbol "("
@@ -228,22 +232,73 @@ whileStmt             = do  { reserved "while"
                             ; return (While cond stms)
                             }
 
+--
+-- for statement
+--
+forStmt               = do  { reserved "for"
+                            ; symbol "("
+                            ; init <- expr
+                            ; symbol ";"
+                            ; cond <- expr      -- TODO: allow cond expr only.
+                            ; symbol ";"
+                            ; inc  <- expr
+                            ; symbol ")"
+                            ; symbol "{"
+                            ; stms <- statements
+                            ; symbol "}"
+                            ; optional (symbol ";")
+                            ; return (For init cond inc stms)
+                            }
+
 -- If not having else clause is TODO
 ifStmt                = do  { reserved "if"
                             ; symbol "("
                             ; cond <- expr      -- TODO: allow cond expr only.
                             ; symbol ")"
-                            ; symbol "{"
-                            ; thenStmts <- statements
-                            ; symbol "}"
-                            ; reserved "else"
-                            ; symbol "{"
-                            ; elseStmts <- statements
-                            ; symbol "}"
+                            ; thenStmt <- statementBlock
+                            ; elseStmt <- option Nothing elseStatement
                             ; optional (symbol ";")
-                            ; return (If cond thenStmts (Just elseStmts))
+                            ; return (If cond thenStmt elseStmt)
                             }
 
+
+elseStatement         = do  { reserved "else"
+                            ; stmt <- statementBlock
+                            ; return (Just stmt)
+                            }
+
+statementBlock :: RSLParser [Expr]
+statementBlock        = try ( do { s <- statement; return s } )
+                      <|>     do { s <- braces (many statement); return $ concat s }
+                      <?> "statement"
+
+--
+-- Illuminate statement
+-- TODO: Parse optional "category" field.
+--
+-- [13.3]
+--
+-- illuminance( [string category,] point position )
+--     statements
+--
+-- illuminance( [string category,] point position, vector axis, float angle )
+--     statements
+--
+--
+illuminanceStmt       = do  { reserved "illuminance"
+                            ; symbol "("
+                            ; pos     <- expr -- TODO: allow vector expr only
+                            ; symbol ","
+                            ; normal  <- expr -- TODO: allow vector expr only
+                            ; symbol ","
+                            ; angle   <- expr -- TODO: allow float expr only
+                            ; symbol ")"
+                            ; symbol "{"      -- TODO: brace could be optional.
+                            ; stms <- statements
+                            ; symbol "}"
+                            ; optional (symbol ";")
+                            ; return (Illuminance pos normal angle Nothing stms)
+                            }
 --
 -- Expression
 --
@@ -504,7 +559,8 @@ run p name proc =
 
 runLex :: RSLParser [Func] -> FilePath -> ([Func] -> IO ()) -> IO ()
 runLex p name proc =
-  run (do { x <- p
+  run (do { whiteSpace
+          ; x <- p
           ; eof
           ; return x
           }
@@ -513,7 +569,7 @@ runLex p name proc =
 --
 -- Useful parsing tools
 --
-lexer           = P.makeTokenParser rslDef
+lexer           = P.makeTokenParser rslStyle
 
 whiteSpace      = P.whiteSpace lexer
 lexeme          = P.lexeme lexer
@@ -523,6 +579,7 @@ naturalOrFloat  = P.naturalOrFloat lexer
 stringLiteral   = P.stringLiteral lexer
 float           = P.float lexer
 parens          = P.parens lexer
+braces          = P.braces lexer
 semi            = P.semi lexer
 commaSep        = P.commaSep lexer
 identifier      = P.identifier lexer
@@ -555,6 +612,18 @@ table       =  [
                ,  [binOp ">=" OpGe  AssocLeft, binOp ">"  OpGt  AssocLeft]
                ,  [binOp "<=" OpLe  AssocLeft, binOp "<"  OpLt  AssocLeft]
                ,  [binOp "==" OpEq  AssocLeft, binOp "!=" OpNeq AssocLeft]
+
+               -- a ? b : c
+               ,  [conditional]
+
+               -- assign
+               ,  [ assignOp "="  OpAssign    AssocRight
+                  , assignOp "+=" OpAddAssign AssocRight
+                  , assignOp "-=" OpSubAssign AssocRight
+                  , assignOp "*=" OpMulAssign AssocRight
+                  , assignOp "/=" OpDivAssign AssocRight
+                  ]
+  
                ]
 
               where
@@ -575,7 +644,20 @@ table       =  [
                                 ; return (\x y -> BinOp Nothing f x y)
                                 } ) assoc
 
-rslDef = javaStyle
+                conditional
+                  = Infix  ( do { reservedOp "?"
+                                ; thenExpr <- expr
+                                ; reservedOp ":"
+                                ; return (\condExpr elseExpr -> Conditional Nothing condExpr thenExpr elseExpr)
+                                } <?> "conditional" ) AssocRight
+
+                assignOp name f assoc
+                  = Infix  ( do { state <- getState
+                                ; reservedOp name
+                                ; return (\x y -> Assign Nothing f x y)
+                                } <?> "assign" ) assoc
+
+rslStyle = javaStyle
   { reservedNames = [ "const"
                     , "break", "continue"
                     , "while", "if", "for", "solar", "illuminate", "illuminance"
@@ -587,5 +669,10 @@ rslDef = javaStyle
                     -- More is TODO
                     ]
   , reservedOpNames = ["+", "-", "*", "/"] -- More is TODO
+  , caseSensitive   = True
+  , commentStart    = "/*"
+  , commentEnd      = "*/"
+  , commentLine     = "//"
+  , nestedComments  = True
   }
 

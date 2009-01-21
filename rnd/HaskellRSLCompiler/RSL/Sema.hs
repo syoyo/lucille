@@ -29,6 +29,7 @@ builtinShaderVariables =
   , (SymVar "P"  TyPoint  Varying KindBuiltinVariable)
   , (SymVar "I"  TyVector Varying KindBuiltinVariable)
   , (SymVar "E"  TyPoint  Uniform KindBuiltinVariable)
+  , (SymVar "L"  TyVector Uniform KindBuiltinVariable)
   , (SymVar "N"  TyNormal Varying KindBuiltinVariable)
   , (SymVar "Ng" TyNormal Varying KindBuiltinVariable)
   , (SymVar "Cl" TyColor  Varying KindBuiltinVariable)
@@ -42,6 +43,10 @@ builtinShaderVariables =
   , (SymVar "y"  TyInt    Varying KindBuiltinVariable)
   , (SymVar "z"  TyInt    Varying KindBuiltinVariable)
   , (SymVar "w"  TyInt    Varying KindBuiltinVariable)
+
+  -- Constant
+  , (SymVar "PI" TyFloat  Uniform KindBuiltinVariable)
+
   ] -- More is TODO
   
 
@@ -81,6 +86,11 @@ builtinShaderFunctions =
   , (SymBuiltinFunc "clamp"          f [f, f] [])
   -- float, point, vector, normal, color
   , (SymBuiltinFunc "mix"            f [f, f, f] [])
+  , (SymBuiltinFunc "floor"          f [f]       [])
+  , (SymBuiltinFunc "ceil"           f [f]       [])
+  , (SymBuiltinFunc "round"          f [f]       [])
+  , (SymBuiltinFunc "step"           f [f, f]    [])
+  , (SymBuiltinFunc "smoothstep"     f [f, f, f] [])
   -- TODO...
   , (SymBuiltinFunc "random"         f []        [])
   , (SymBuiltinFunc "random"         c []        [])
@@ -149,6 +159,7 @@ builtinShaderFunctions =
   , (SymBuiltinFunc "save_cache" void [i, i, i, c]      [])
   , (SymBuiltinFunc "load_cache" c    [i, i, i]         [])
   , (SymBuiltinFunc "turb"       c    [p]               [])
+  , (SymBuiltinFunc "occlusion"  f    [p, n]            [])
 
   ] -- More is TODO
 

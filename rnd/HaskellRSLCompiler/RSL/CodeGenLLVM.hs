@@ -186,6 +186,39 @@ getReg expr = case expr of
   _                               -> error $ "getReg, TODO:" ++ show expr
 
 
+emitDotOp :: Int -> Symbol -> Expr -> Expr -> String
+emitDotOp n dst e0 e1 = concat $ map (indent n ++)
+  [ xReg0 ++ " = extractelement " ++ ty ++ " " ++ srcReg0 ++ ", i32 0;\n"
+  , xReg1 ++ " = extractelement " ++ ty ++ " " ++ srcReg1 ++ ", i32 0;\n"
+  , yReg0 ++ " = extractelement " ++ ty ++ " " ++ srcReg0 ++ ", i32 1;\n"
+  , yReg1 ++ " = extractelement " ++ ty ++ " " ++ srcReg1 ++ ", i32 1;\n"
+  , zReg0 ++ " = extractelement " ++ ty ++ " " ++ srcReg0 ++ ", i32 2;\n"
+  , zReg1 ++ " = extractelement " ++ ty ++ " " ++ srcReg1 ++ ", i32 2;\n"
+  , tmpMulReg0 ++ " = mul " ++ fty ++ " " ++ xReg0 ++ ", " ++ xReg1 ++ ";\n"
+  , tmpMulReg1 ++ " = mul " ++ fty ++ " " ++ yReg0 ++ ", " ++ yReg1 ++ ";\n"
+  , tmpMulReg2 ++ " = mul " ++ fty ++ " " ++ zReg0 ++ ", " ++ zReg1 ++ ";\n"
+  , tmpAddReg0 ++ " = add " ++ fty ++ " " ++ tmpMulReg0 ++ ", " ++ tmpMulReg1 ++ ";\n"
+  , dstReg     ++ " = add " ++ fty ++ " " ++ tmpMulReg2 ++ ", " ++ tmpAddReg0 ++ ";\n"
+  ]
+
+  where
+
+    fty         = emitTy TyFloat
+    ty          = emitTy (getTyOfExpr e0)
+    srcReg0     = getReg e0
+    srcReg1     = getReg e1
+    dstReg      = getLLNameOfSym dst
+    xReg0       = getLLNameOfSym dst ++ ".dotx0"
+    xReg1       = getLLNameOfSym dst ++ ".dotx1"
+    yReg0       = getLLNameOfSym dst ++ ".doty0"
+    yReg1       = getLLNameOfSym dst ++ ".doty1"
+    zReg0       = getLLNameOfSym dst ++ ".dotz0"
+    zReg1       = getLLNameOfSym dst ++ ".dotz1"
+    tmpMulReg0  = getLLNameOfSym dst ++ ".tmpmul0"
+    tmpMulReg1  = getLLNameOfSym dst ++ ".tmpmul1"
+    tmpMulReg2  = getLLNameOfSym dst ++ ".tmpmul2"
+    tmpAddReg0  = getLLNameOfSym dst ++ ".tmpadd0"
+
 emitLoadFromFormalVariable :: Symbol -> Symbol -> String
 emitLoadFromFormalVariable dst src = concat
   [ dstReg ++ " = " ++ "load " ++ emitTy (getTyOfSym dst) ++ "* "
@@ -299,6 +332,55 @@ emitCacheLoader n layer sym = concat
     tmpReg  = "%" ++ (getNameOfSym sym) ++ ".tmp"
 
 
+-- for (init; cond; inc) { stmt } =>
+--
+-- init:
+--   br cond 
+-- 
+-- cond:
+--   br body or after
+--
+-- body:
+--   br inc
+--
+-- inc:
+--   br cond or after
+--
+emitFor :: Int -> Expr -> Expr -> Expr -> [Expr] -> String
+emitFor n init cond inc body = concat
+
+  [ gen n init
+  , indent n ++ "br label %" ++ condLabel ++ "\n\n"
+  -- cond
+  , indent (n-1) ++ condLabel ++ ":\n"
+  , gen n cond
+  , indent n ++ "br i1 " ++ (getReg cond) ++ ", label %" ++ afterLabel ++ ", label %" ++ bodyLabel ++ "\n"
+  , "\n"
+  -- body
+  , indent (n-1) ++ bodyLabel ++ ":\n"
+  , gen n body
+  , indent n ++ "br label %" ++ incLabel ++ "\n"
+  , "\n"
+  -- inc
+  , indent (n-1) ++ incLabel ++ ":\n"
+  , gen n inc
+  , indent n ++ "br label %" ++ condLabel ++ "\n"
+  , "\n"
+  -- after
+  , indent (n-1) ++ afterLabel ++ ":\n"
+  , "\n"
+  ]
+
+  where
+
+    condLabel   = "for"  ++ show num ++ ".cond"
+    bodyLabel   = "for"  ++ show num ++ ".body"
+    incLabel    = "for"  ++ show num ++ ".inc"
+    afterLabel  = "for"  ++ show num ++ ".after"
+
+    num       = unsafePerformIO getCounter
+
+
 instance AST Expr where
   
   gen n expr = case expr of
@@ -366,6 +448,11 @@ instance AST Expr where
       , ";\n"
       ]
 
+    BinOp (Just sym) OpDot e0 e1         -> concat
+      [ gen n e0
+      , gen n e1
+      , emitDotOp n sym e0 e1
+      ]
     BinOp (Just sym) op e0 e1            -> concat
       [ gen n e0
       , gen n e1
@@ -537,16 +624,76 @@ instance AST Expr where
 
         num       = unsafePerformIO getCounter
 
+    For init cond inc stms            -> emitFor n init cond inc stms
+
     If cond thenStms (Just elseStms)  -> concat
-      [ indent n
-      , "if ( "
-      , gen 0 cond 
-      , " ) {\n"
-      , gen (n+1) thenStms
-      , indent n ++ "} else {\n"
-      , gen (n+1) elseStms
-      , indent n ++ "}"
+      [ 
+      -- cond
+        gen n cond
+      , indent n ++ "br i1 " ++ (getReg cond) ++ ", label %" ++ thenLabel ++ ", label %" ++ elseLabel ++ "\n"
+      , "\n"
+      -- then
+      , indent (n-1) ++ thenLabel ++ ":\n"
+      , gen n thenStms
+      , indent n ++ "br label %" ++ endLabel ++ "\n"
+      , "\n"
+      -- else
+      , indent (n-1) ++ elseLabel ++ ":\n"
+      , gen n elseStms
+      , indent n ++ "br label %" ++ endLabel ++ "\n"
+      , "\n"
+      -- exit
+      , indent (n-1) ++ endLabel ++ ":\n"
+      , "\n"
       ]
+
+      where
+ 
+        thenLabel = "if" ++ show num ++ ".then"
+        elseLabel = "if" ++ show num ++ ".else"
+        endLabel  = "if" ++ show num ++ ".end"
+
+        num       = unsafePerformIO getCounter
+
+    If cond thenStms Nothing          -> concat
+      [ 
+      -- cond
+        gen n cond
+      , indent n ++ "br i1 " ++ (getReg cond) ++ ", label %" ++ thenLabel ++ ", label %" ++ endLabel ++ "\n"
+      , "\n"
+      -- then
+      , indent (n-1) ++ thenLabel ++ ":\n"
+      , gen n thenStms
+      , indent n ++ "br label %" ++ endLabel ++ "\n"
+      , "\n"
+      -- exit
+      , indent (n-1) ++ endLabel ++ ":\n"
+      , "\n"
+      ]
+
+      where
+ 
+        thenLabel = "if" ++ show num ++ ".then"
+        elseLabel = "if" ++ show num ++ ".else"
+        endLabel  = "if" ++ show num ++ ".end"
+
+        num       = unsafePerformIO getCounter
+
+    Illuminance posExpr normalExpr angleExpr category stms -> concat 
+      [ gen n stms
+      , gen n posExpr
+      , gen n normalExpr
+      , gen n angleExpr
+      , indent n ++ "call void @rsl_illuminance("
+      , genArgs [posExpr, normalExpr, angleExpr]
+      , ");\n"
+      ]
+
+      where
+
+        genArgs []     = ""
+        genArgs [x]    = emitTy (getTyOfExpr x) ++ " " ++ getReg x
+        genArgs (x:xs) = emitTy (getTyOfExpr x) ++ " " ++ getReg x ++ ", " ++ genArgs xs
 
     Nil                               -> "null"
 
@@ -618,6 +765,11 @@ instance AST Expr where
       , ";\n"
       ]
 
+    BinOp (Just sym) OpDot e0 e1         -> concat
+      [ gen n e0
+      , gen n e1
+      , emitDotOp n sym e0 e1
+      ]
     BinOp (Just sym) op e0 e1            -> concat
       [ genStatic n e0
       , genStatic n e1
@@ -711,9 +863,10 @@ instance AST Expr where
         genArgs (x:xs) = emitTy (getTyOfExpr x) ++ " " ++ getReg x ++ ", " ++ genArgs xs
 
         saveCache      = case name of
-          "texture" -> emitCacheSaver n 0 dst
-          "turb"    -> emitCacheSaver n 1 dst
-          _         -> ""
+          "texture"   -> emitCacheSaver n 0 dst
+          "turb"      -> emitCacheSaver n 1 dst
+          "occlusion" -> emitCacheSaver n 2 dst
+          _           -> ""
 
         tmpReg         = "%" ++ getNameOfSym dst ++ ".buf"
 
@@ -765,16 +918,77 @@ instance AST Expr where
 
         num       = unsafePerformIO getCounter
 
+    -- FIXME:
+    For init cond inc stms            -> emitFor n init cond inc stms
+
     If cond thenStms (Just elseStms)  -> concat
-      [ indent n
-      , "if ( "
-      , genStatic 0 cond 
-      , " ) {\n"
-      , genStatic (n+1) thenStms
-      , indent n ++ "} else {\n"
-      , genStatic (n+1) elseStms
-      , indent n ++ "}"
+      [ 
+      -- cond
+        gen n cond
+      , indent n ++ "br i1 " ++ (getReg cond) ++ ", label %" ++ thenLabel ++ ", label %" ++ elseLabel ++ "\n"
+      , "\n"
+      -- then
+      , indent (n-1) ++ thenLabel ++ ":\n"
+      , gen n thenStms
+      , indent n ++ "br label %" ++ endLabel ++ "\n"
+      , "\n"
+      -- else
+      , indent (n-1) ++ elseLabel ++ ":\n"
+      , gen n elseStms
+      , indent n ++ "br label %" ++ endLabel ++ "\n"
+      , "\n"
+      -- exit
+      , indent (n-1) ++ endLabel ++ ":\n"
+      , "\n"
       ]
+
+      where
+ 
+        thenLabel = "if" ++ show num ++ ".then"
+        elseLabel = "if" ++ show num ++ ".else"
+        endLabel  = "if" ++ show num ++ ".end"
+
+        num       = unsafePerformIO getCounter
+
+    If cond thenStms Nothing          -> concat
+      [ 
+      -- cond
+        gen n cond
+      , indent n ++ "br i1 " ++ (getReg cond) ++ ", label %" ++ thenLabel ++ ", label %" ++ endLabel ++ "\n"
+      , "\n"
+      -- then
+      , indent (n-1) ++ thenLabel ++ ":\n"
+      , gen n thenStms
+      , indent n ++ "br label %" ++ endLabel ++ "\n"
+      , "\n"
+      -- exit
+      , indent (n-1) ++ endLabel ++ ":\n"
+      , "\n"
+      ]
+
+      where
+ 
+        thenLabel = "if" ++ show num ++ ".then"
+        elseLabel = "if" ++ show num ++ ".else"
+        endLabel  = "if" ++ show num ++ ".end"
+
+        num       = unsafePerformIO getCounter
+
+    Illuminance posExpr normalExpr angleExpr category stms -> concat 
+      [ genStatic n stms
+      , genStatic n posExpr
+      , genStatic n normalExpr
+      , genStatic n angleExpr
+      , indent n ++ "call void @rsl_illuminance("
+      , genArgs [posExpr, normalExpr, angleExpr]
+      , ");\n"
+      ]
+
+      where
+
+        genArgs []     = ""
+        genArgs [x]    = emitTy (getTyOfExpr x) ++ " " ++ getReg x
+        genArgs (x:xs) = emitTy (getTyOfExpr x) ++ " " ++ getReg x ++ ", " ++ genArgs xs
 
     Nil                               -> "null"
 
@@ -845,6 +1059,11 @@ instance AST Expr where
       , ";\n"
       ]
 
+    BinOp (Just sym) OpDot e0 e1         -> concat
+      [ gen n e0
+      , gen n e1
+      , emitDotOp n sym e0 e1
+      ]
     BinOp (Just sym) op e0 e1            -> concat
       [ genDynamic n e0
       , genDynamic n e1
@@ -926,9 +1145,10 @@ instance AST Expr where
       where
 
         loadFromCacheIfPossible = case name of
-          "texture" -> emitCacheLoader n 0 dst
-          "turb"    -> emitCacheLoader n 1 dst
-          _         -> concat
+          "texture"   -> emitCacheLoader n 0 dst
+          "turb"      -> emitCacheLoader n 1 dst
+          "occlusion" -> emitCacheLoader n 2 dst
+          _           -> concat
             [ indent n ++ tmpReg ++ " = alloca " ++ (emitTy retTy) ++ ";\n" -- TODO: consider void case
             , indent n ++ "call void @" ++ name ++ "_" ++ getFunctionSuffix retTy argTys ++ "("
             , genArgForRet ++ (if (length args) > 0 then ", " else "") ++ genArgs args
@@ -992,16 +1212,78 @@ instance AST Expr where
 
         num       = unsafePerformIO getCounter
 
+    -- FIXME:
+    For init cond inc stms            -> emitFor n init cond inc stms
+
     If cond thenStms (Just elseStms)  -> concat
-      [ indent n
-      , "if ( "
-      , genDynamic 0 cond 
-      , " ) {\n"
-      , genDynamic (n+1) thenStms
-      , indent n ++ "} else {\n"
-      , genDynamic (n+1) elseStms
-      , indent n ++ "}"
+      [ 
+      -- cond
+        gen n cond
+      , indent n ++ "br i1 " ++ (getReg cond) ++ ", label %" ++ thenLabel ++ ", label %" ++ elseLabel ++ "\n"
+      , "\n"
+      -- then
+      , indent (n-1) ++ thenLabel ++ ":\n"
+      , gen n thenStms
+      , indent n ++ "br label %" ++ endLabel ++ "\n"
+      , "\n"
+      -- else
+      , indent (n-1) ++ elseLabel ++ ":\n"
+      , gen n elseStms
+      , indent n ++ "br label %" ++ endLabel ++ "\n"
+      , "\n"
+      -- exit
+      , indent (n-1) ++ endLabel ++ ":\n"
+      , "\n"
       ]
+
+      where
+ 
+        thenLabel = "if" ++ show num ++ ".then"
+        elseLabel = "if" ++ show num ++ ".else"
+        endLabel  = "if" ++ show num ++ ".end"
+
+        num       = unsafePerformIO getCounter
+
+    If cond thenStms Nothing          -> concat
+      [ 
+      -- cond
+        gen n cond
+      , indent n ++ "br i1 " ++ (getReg cond) ++ ", label %" ++ thenLabel ++ ", label %" ++ endLabel ++ "\n"
+      , "\n"
+      -- then
+      , indent (n-1) ++ thenLabel ++ ":\n"
+      , gen n thenStms
+      , indent n ++ "br label %" ++ endLabel ++ "\n"
+      , "\n"
+      -- exit
+      , indent (n-1) ++ endLabel ++ ":\n"
+      , "\n"
+      ]
+
+      where
+ 
+        thenLabel = "if" ++ show num ++ ".then"
+        elseLabel = "if" ++ show num ++ ".else"
+        endLabel  = "if" ++ show num ++ ".end"
+
+        num       = unsafePerformIO getCounter
+
+
+    Illuminance posExpr normalExpr angleExpr category stms -> concat 
+      [ genDynamic n stms
+      , genDynamic n posExpr
+      , genDynamic n normalExpr
+      , genDynamic n angleExpr
+      , indent n ++ "call void @rsl_illuminance("
+      , genArgs [posExpr, normalExpr, angleExpr]
+      , ");\n"
+      ]
+
+      where
+
+        genArgs []     = ""
+        genArgs [x]    = emitTy (getTyOfExpr x) ++ " " ++ getReg x
+        genArgs (x:xs) = emitTy (getTyOfExpr x) ++ " " ++ getReg x ++ ", " ++ genArgs xs
 
     Nil                               -> "null"
 
@@ -1113,17 +1395,21 @@ emitBuiltinFunctionDef (SymBuiltinFunc name retTy argTys _) = concat
 
 emitGlobal :: Expr -> String
 emitGlobal e = case e of
-  Const (Just sym) (S str) -> "@" ++ (getNameOfSym sym) ++ ".str = internal constant [" ++ show (length str + 1) ++ " x i8] c\"" ++ str ++ "\\00\"\n"
-  Const _ _               -> ""
-  TypeCast _ _ _ expr -> emitGlobal expr
-  Var _ sym -> ""
-  Assign _ _ lexpr rexpr  -> emitGlobal lexpr ++ emitGlobal rexpr
-  Def _ _ Nothing         -> ""
-  Def _ _ (Just expr)     -> emitGlobal expr
-  UnaryOp _ _ expr        -> emitGlobal expr
-  BinOp _ _ expr0 expr1   -> emitGlobal expr0 ++ emitGlobal expr1
-  Call _ _ exprs          -> concatMap emitGlobal exprs
-  While cond stmt         -> emitGlobal cond ++ (concatMap emitGlobal stmt)
+  Const (Just sym) (S str)  -> "@" ++ (getNameOfSym sym) ++ ".str = internal constant [" ++ show (length str + 1) ++ " x i8] c\"" ++ str ++ "\\00\"\n"
+  Const _ _                 -> ""
+  TypeCast _ _ _ expr       -> emitGlobal expr
+  Var _ sym                 -> ""
+  Assign _ _ lexpr rexpr    -> emitGlobal lexpr ++ emitGlobal rexpr
+  Def _ _ Nothing           -> ""
+  Def _ _ (Just expr)       -> emitGlobal expr
+  UnaryOp _ _ expr          -> emitGlobal expr
+  BinOp _ _ expr0 expr1     -> emitGlobal expr0 ++ emitGlobal expr1
+  Call _ _ exprs            -> concatMap emitGlobal exprs
+  While cond stmt           -> emitGlobal cond ++ (concatMap emitGlobal stmt)
+  For init cond inc stmt    -> emitGlobal init ++ emitGlobal cond ++ emitGlobal inc ++ (concatMap emitGlobal stmt)
+  If  cond thenStmt Nothing -> emitGlobal cond ++ (concatMap emitGlobal thenStmt)
+  If  cond thenStmt (Just elseStmt) -> emitGlobal cond ++ (concatMap emitGlobal thenStmt) ++ (concatMap emitGlobal elseStmt)
+  Illuminance _ _ _ _ stmt  -> concatMap emitGlobal stmt
   {- TODO
   | Triple    [Expr]                       -- length(expr) == 3
   | If        Expr                        -- condition

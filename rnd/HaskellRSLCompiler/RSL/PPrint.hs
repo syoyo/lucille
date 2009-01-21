@@ -177,6 +177,32 @@ instance AST Expr where
       , "\n" ++ indent n ++ "}"
       ]
 
+    For init cond step stms           -> concat
+      [ indent n
+      , "for ( "
+      , pprint 0 init
+      , "; "
+      , pprint 0 cond
+      , "; "
+      , pprint 0 step
+      , " ) {\n"
+      , pprint (n+1) stms
+      , "\n" ++ indent n ++ "}"
+      ]
+
+    Illuminance position normal angle category stms -> concat
+      [ indent n
+      , "illuminance ( "
+      , pprint 0 position
+      , ", "
+      , pprint 0 normal
+      , ", "
+      , pprint 0 angle
+      , " ) {\n"
+      , pprint (n+1) stms
+      , "\n" ++ indent n ++ "}"
+      ]
+
     If cond thenStms (Just elseStms)  -> concat
       [ indent n
       , "if ( "
@@ -185,6 +211,15 @@ instance AST Expr where
       , pprint (n+1) thenStms
       , indent n ++ "} else {\n"
       , pprint (n+1) elseStms
+      , indent n ++ "}"
+      ]
+
+    If cond thenStms Nothing          -> concat
+      [ indent n
+      , "if ( "
+      , pprint 0 cond 
+      , " ) {\n"
+      , pprint (n+1) thenStms
       , indent n ++ "}"
       ]
 
