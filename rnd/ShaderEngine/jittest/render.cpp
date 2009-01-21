@@ -3,32 +3,36 @@
 
 #include "render.h"
 
-#define vdot(a, b) (a[0] * b[0] + a[1] * b[1] + a[2] * b[2])
+#define vdot(a, b) ((a).x * (b).x + (a).y * (b).y + (a).z * (b).z)
 
-static void vnormalize(float *v)
+sphere_t scene_spheres[3];
+
+
+
+static void vnormalize(vec *v)
 {
-    float d = vdot(v, v);
+    float d = vdot(*v, *v);
     float invd;
     
     if (d > 1.0e-6f) {
         invd = 1.0f / sqrtf(d);
-        v[0] *= invd;
-        v[1] *= invd;
-        v[2] *= invd;
+        v->x *= invd;
+        v->y *= invd;
+        v->z *= invd;
     }
 }
 
 int
-sphere_isect(isect_t *isect, const sphere_t *sphere, float *org, float *dir)
+ray_sphere_intersect(isect_t *isect, const ray_t *ray, const sphere_t *sphere)
 {
     int   hit;
-    float rs[3];
+    vec   rs;
 
-    rs[0] = org[0] - sphere->center[0];
-    rs[1] = org[1] - sphere->center[1];
-    rs[2] = org[2] - sphere->center[2];
+    rs.x = ray->org.x - sphere->center.x;
+    rs.y = ray->org.y - sphere->center.y;
+    rs.z = ray->org.z - sphere->center.z;
 
-    float B = vdot(rs, dir);
+    float B = vdot(rs, ray->dir);
     float C = vdot(rs, rs) - sphere->radius * sphere->radius;
     float D = B * B - C;
     float t;
@@ -43,19 +47,38 @@ sphere_isect(isect_t *isect, const sphere_t *sphere, float *org, float *dir)
             hit = 1;
             isect->t = t;
 
-            isect->p[0] = org[0] + t * dir[0];
-            isect->p[1] = org[1] + t * dir[1];
-            isect->p[2] = org[2] + t * dir[2];
+            isect->p.x = ray->org.x + t * ray->dir.x;
+            isect->p.y = ray->org.y + t * ray->dir.y;
+            isect->p.z = ray->org.z + t * ray->dir.z;
 
-            isect->n[0] = isect->p[0] - sphere->center[0];
-            isect->n[1] = isect->p[1] - sphere->center[1];
-            isect->n[2] = isect->p[2] - sphere->center[2];
+            isect->n.x = isect->p.x - sphere->center.x;
+            isect->n.y = isect->p.y - sphere->center.y;
+            isect->n.z = isect->p.z - sphere->center.z;
 
-            vnormalize(isect->n);
+            vnormalize(&isect->n);
         }
  
     }
 
     return hit;
 
+}
+
+void
+init_render_scene()
+{
+    scene_spheres[0].center.x =  0.0;
+    scene_spheres[0].center.y =  0.0;
+    scene_spheres[0].center.z = -1.0;
+    scene_spheres[0].radius   = 0.5;
+
+    scene_spheres[1].center.x = -0.75;
+    scene_spheres[1].center.y =  0.0;
+    scene_spheres[1].center.z = -0.5;
+    scene_spheres[1].radius   = 0.5;
+
+    scene_spheres[2].center.x =  1.0;
+    scene_spheres[2].center.y =  0.0;
+    scene_spheres[2].center.z = -2.2;
+    scene_spheres[2].radius = 0.5;
 }

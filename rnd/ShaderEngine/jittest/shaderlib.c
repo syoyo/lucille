@@ -50,6 +50,17 @@ extern float4 rsl_getCl();
 extern void lse_save_cache_iiic(int, int, int, float *);
 extern void lse_load_cache_iiic(int, int, int, float *);
 
+/* ---------------------------------------------------------------------------
+ *
+ * Constant
+ *
+ * ------------------------------------------------------------------------- */
+
+float rsl_getPI()
+{
+    return M_PI;
+}
+
 #define vdot(a, b) (a[0] * b[0] + a[1] * b[1] + a[2] * b[2])
 
 static void vnormalize(float4 *v)

@@ -24,7 +24,7 @@ ifeq ($(ARCH), Darwin)
     GL_LIBS     = -framework OpenGL
 endif
 
-SRCS = jit.cpp timer.cpp texture.cpp render.cpp hbuffer.cpp cachelib.cpp
+SRCS = jit.cpp timer.cpp texture.cpp render.cpp hbuffer.cpp cachelib.cpp occlusion.cpp
 OBJS = ${SRCS:.cpp=.o}
 
 MY_CXXFLAGS  = -g -ffast-math -O2 -I$(LLVM_INCDIR)
