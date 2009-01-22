@@ -51,7 +51,7 @@
 #define MAX_RIBPATH 1024
 #endif
 
-static char version[] = "0.2";
+static char version[] = "0.2(devel)";
 static char compile[] = __DATE__;
 
 char   *ribfile = NULL;	/* filename of RIB */
