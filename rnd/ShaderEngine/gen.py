@@ -12,6 +12,7 @@ shader_env_def = [
     ("color" , "Ci",  True )
   , ("color" , "Oi",  True )
   , ("color" , "Cs",  False)
+  , ("color" , "Os",  False)
   , ("vector", "I" ,  False)
   , ("normal", "N" ,  False)
   , ("normal", "Ng",  False)
