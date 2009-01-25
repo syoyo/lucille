@@ -1,0 +1,100 @@
+Notes
+=====
+
+Revision
+--------
+
+ - Jan 25, 2009.  Initial
+
+
+Refactoring
+-----------
+
+コードをもっと綺麗にする. 重複している部分をまとめる.
+
+
+LLVM codegen
+------------
+
+Haskell の LLVM binding を使うことは考えていない. LLVM ライブラリとのリンクが必要になるから.
+現状は直接 LLVM IR の string を吐いている. ::
+
+  BinOp (Just sym) op e0 e1            -> concat
+       [ gen n e0
+       , gen n e1
+       , indent n ++ "%" ++ getNameOfSym sym ++ " = "
+       , emitOp op ++ " "
+       , emitTy (getTyOfSym sym) ++ " " ++ getReg e0 ++ " , "
+       , getReg e1
+       , ";\n"
+       ]
+
+もう少しモナドなどを利用して, 綺麗にしたい. 
+llvm バインディングや、parsec に近い形で記述できるように. こんな風. ::
+
+  BinOp (Just sym) op e0 e1 ->
+    do lhs  <- gen n e0
+       rhd  <- gen n e1
+       dst  <- getReg sym
+       code <- binOp op dst lhs rhs
+       return code
+
+Error 処理
+----------
+
+Error 文字列の出力をよりきちんと. 今は error でその場で error を吐いて終わりにしている. Error モナドを使う?
+
+パースエラーは、エラーの起きた行ではなくて、expression 全体を表示したい. clang の expressive error report のように.
+
+
+AST
+---
+
+AST データ構造には SourcePos 情報も入れる. SourcePos は Parsec で定義されている. こうしておくと、後々の処理でエラーを表示するときに、対応するソースの位置を示すことができる.
+
+Typing
+------
+
+現在は parse 後に type check を行っているが、これを Parse の段階でできないか.
+もっとましな型チェックシステムを作る.
+Haskell Rules を参考にしてみる.
+
+http://web.engr.oregonstate.edu/~erwig/HaskellRules/
+
+行数
+----
+
+なるべく 1 万行以下に抑える
+
+
+Polymorphic 関数
+----------------
+
+Polymorphic 関数の処理をもっとマシにする.
+
+
+Specialization
+--------------
+
+expression が変数 x に依存するかしないかの判定を行うアルゴリズムをかく.
+expression tree に対するグラフ処理が必要.
+fgl(Functional Graph Library) を使うことを考える.
+
+式変換
+------
+
+最適化や、型変換 expression 挿入など, AST ツリーをいじりたいときがある.
+SYB(Scrap your boilerplate) や RecLib を参考にしてみる.
+
+http://web.engr.oregonstate.edu/~erwig/reclib/
+
+また、このような変換を主に開発されたシステムである Stratego というのがある.
+AST のフォーマットを合わせれば、Stratego で変換ルールを記述して AST tree に apply, というのもできるかもしれない.
+
+http://www.program-transformation.org/Stratego/WebHome
+
+
+Builtin
+-------
+
+Builtin 関数の定義をより code less にする. ベクトル型はまとめるなど. 

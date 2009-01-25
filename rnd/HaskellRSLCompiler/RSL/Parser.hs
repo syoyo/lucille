@@ -130,7 +130,8 @@ formalDef             = do  { name  <- identifier
                             ; return (name, expr)
                             }
 
-formalDecl            = do  { ty    <- rslType
+formalDecl            = do  { sc    <- option Nothing maybeRSLStorageClass
+                            ; ty    <- rslType
                             ; defs  <- sepBy1 formalDef (symbol ",")
                             ; mapM (updateState . addSymbol) (genSyms ty defs)
                             ; return (genDecls ty defs)
@@ -183,7 +184,8 @@ varDefStmt            = do  { ty    <- rslType
                       <?> "variable definition"
 -}
 
-varDefsStmt           = do  { ty    <- rslType
+varDefsStmt           = do  { sc    <- option Nothing maybeRSLStorageClass
+                            ; ty    <- rslType
                             ; defs  <- sepBy1 varDef (symbol ",")
                             ; symbol ";"
                             ; mapM (updateState . addSymbol) (genSyms ty defs)
@@ -325,7 +327,7 @@ triple        = do  { try (symbol "(")        -- try is added to remove
                     ; symbol ","
                     ; e2 <- expr
                     ; symbol ")"
-                    ; return (Triple [e0, e1, e2])    
+                    ; return (Triple Nothing [e0, e1, e2])    
                     }
                     
 
@@ -485,6 +487,13 @@ rslType                 =   (reserved "float"         >> return TyFloat     )
                         <|> (reserved "matrix"        >> return TyMatrix    )
                         <?> "RenderMan type"
                       
+rslStorageClass         =   (reserved "uniform"       >> return Uniform     )
+                        <|> (reserved "varying"       >> return Varying     )
+                        <?> "RenderMan storage class"
+
+maybeRSLStorageClass    = do  { sc <- rslStorageClass
+                              ; return (Just sc)
+                              }
 
 -- typeCastExpr            =   do  { ty  <- rslType
 --                                 ; spacety <- option "" stringLiteral
@@ -609,9 +618,14 @@ table       =  [
                ,  [binOp "."  OpDot AssocLeft]
                ,  [binOp "*"  OpMul AssocLeft, binOp "/"  OpDiv AssocLeft]
                ,  [binOp "+"  OpAdd AssocLeft, binOp "-"  OpSub AssocLeft]
-               ,  [binOp ">=" OpGe  AssocLeft, binOp ">"  OpGt  AssocLeft]
-               ,  [binOp "<=" OpLe  AssocLeft, binOp "<"  OpLt  AssocLeft]
+
+               -- relop
+               ,  [binOp ">"  OpGt  AssocLeft, binOp ">=" OpGe  AssocLeft]
+               ,  [binOp "<"  OpLt  AssocLeft, binOp "<=" OpLe  AssocLeft]
                ,  [binOp "==" OpEq  AssocLeft, binOp "!=" OpNeq AssocLeft]
+
+               -- logop
+               ,  [binOp "&&" OpAnd AssocLeft, binOp "||" OpOr  AssocLeft]
 
                -- a ? b : c
                ,  [conditional]
@@ -654,8 +668,17 @@ table       =  [
                 assignOp name f assoc
                   = Infix  ( do { state <- getState
                                 ; reservedOp name
-                                ; return (\x y -> Assign Nothing f x y)
+                                ; return (\x y -> mkAssign f x y)
                                 } <?> "assign" ) assoc
+
+                -- Make Assign node with flattening expression.
+                mkAssign :: Op -> Expr -> Expr -> Expr
+                mkAssign op x y = case op of
+                  OpAssign    -> Assign Nothing OpAssign x y
+                  OpAddAssign -> Assign Nothing OpAssign x (BinOp Nothing OpAdd x y)
+                  OpSubAssign -> Assign Nothing OpAssign x (BinOp Nothing OpSub x y)
+                  OpMulAssign -> Assign Nothing OpAssign x (BinOp Nothing OpMul x y)
+                  OpDivAssign -> Assign Nothing OpAssign x (BinOp Nothing OpDiv x y)
 
 rslStyle = javaStyle
   { reservedNames = [ "const"

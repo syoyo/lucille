@@ -54,6 +54,7 @@ instance AST Type where
     TyPoint       -> "point"
     TyNormal      -> "normal"
     TyMatrix      -> "matrix"
+    TyString      -> "string"
 
 emitOp op = case op of
   OpAdd       -> "+"
@@ -68,6 +69,8 @@ emitOp op = case op of
   OpGt        -> ">"
   OpEq        -> "=="
   OpNeq       -> "!="
+  OpOr        -> "||"
+  OpAnd       -> "&&"
   OpAssign    -> "="
   OpAddAssign -> "+="
   OpSubAssign -> "-="
@@ -158,14 +161,22 @@ instance AST Expr where
         pprintArgs [x]    = pprint 0 x
         pprintArgs (x:xs) = pprint 0 x ++ ", " ++ pprintArgs xs
 
-    Triple exprs                      -> concat
+    Triple _ exprs                    -> concat
       [ "( "
       , pprint 0 (exprs !! 0)
       , ", "
-      , pprint 1 (exprs !! 1)
+      , pprint 0 (exprs !! 1)
       , ", "
-      , pprint 2 (exprs !! 2)
+      , pprint 0 (exprs !! 2)
       , " )"
+      ]
+
+    Conditional _ cond thenExpr elseExpr  -> concat
+      [ "( " ++ pprint 0 cond ++ " )"
+      , " ? "
+      , "( " ++ pprint 0 thenExpr ++ " )"
+      , " : "
+      , "( " ++ pprint 0 thenExpr ++ " )"
       ]
 
     While cond stms                   -> concat

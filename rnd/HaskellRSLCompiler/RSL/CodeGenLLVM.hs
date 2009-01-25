@@ -66,6 +66,8 @@ initLLVMState = LLVMState   { globals = []
                             , n       = 0
                             }
 
+type Register = String
+
 emitTy ty = case ty of
   TyVoid    -> "void"
   TyInt     -> "i32"
@@ -165,6 +167,8 @@ emitOp op = case op of
   OpGt        -> "fcmp ogt"
   OpEq        -> "fcmp oeq"
   OpNeq       -> "fcmp une"
+  OpOr        -> "or"
+  OpAnd       -> "and"
   OpAssign    -> "="
   OpAddAssign -> "+="
   OpSubAssign -> "-="
@@ -183,6 +187,8 @@ getReg expr = case expr of
   UnaryOp (Just sym) _ _          -> getLLNameOfSym sym
   BinOp (Just sym) _ _ _          -> getLLNameOfSym sym
   Call (Just sym) _ _             -> getLLNameOfSym sym
+  Triple (Just sym) _             -> getLLNameOfSym sym
+  Conditional (Just sym) _ _ _    -> getLLNameOfSym sym
   _                               -> error $ "getReg, TODO:" ++ show expr
 
 
@@ -256,7 +262,7 @@ emitLoadFromBuiltinVariable dst src = concat
 
 emitInsertElement :: String -> String -> String -> String -> String -> Int -> String
 emitInsertElement ret dst src dstTy srcTy idx =
-  indent 1 ++ ret ++ " = insertelement " ++ dstTy ++ " " ++ dst ++ ", " ++ srcTy ++ " " ++ src ++ ", i32 " ++ (show idx) ++ ";\n"
+  ret ++ " = insertelement " ++ dstTy ++ " " ++ dst ++ ", " ++ srcTy ++ " " ++ src ++ ", i32 " ++ (show idx) ++ ";\n"
 
 --   %src : float, %dst : <4xfloat>
 --   %tmp0 = insertelement undef %src 0
@@ -265,7 +271,7 @@ emitInsertElement ret dst src dstTy srcTy idx =
 --   %dst  = insertelement %tmp2 %src 3
 --
 emitFtoV :: String -> String -> String
-emitFtoV dst src = concat
+emitFtoV dst src = concat $ map (indent 1 ++)
   [ emitInsertElement tmpReg0 "undef" src dstTy srcTy 0
   , emitInsertElement tmpReg1 tmpReg0 src dstTy srcTy 1
   , emitInsertElement tmpReg2 tmpReg1 src dstTy srcTy 2
@@ -281,14 +287,62 @@ emitFtoV dst src = concat
     dstTy   = emitTy TyVector
     srcTy   = emitTy TyFloat
 
+--   %src[0:2] : float, %dst : <4xfloat>
+--   %tmp0 = insertelement undef %src0 0
+--   %tmp1 = insertelement %tmp0 %src1 1
+--   %tmp2 = insertelement %tmp1 %src2 2
+--   %dst  = insertelement %tmp2 %src2 3
+--
+emitTriple :: Int -> String -> String -> String -> String -> String
+emitTriple n dst src0 src1 src2 = concat $ map (indent n ++)
+  [ emitInsertElement tmpReg0 "undef" src0 dstTy srcTy 0
+  , emitInsertElement tmpReg1 tmpReg0 src1 dstTy srcTy 1
+  , emitInsertElement tmpReg2 tmpReg1 src2 dstTy srcTy 2
+  , emitInsertElement dst     tmpReg2 src2 dstTy srcTy 3 -- FIXME
+  ]
 
+  where
+
+    tmpReg0 = dst ++ ".tmp0"
+    tmpReg1 = dst ++ ".tmp1"
+    tmpReg2 = dst ++ ".tmp2"
+
+    dstTy   = emitTy TyVector
+    srcTy   = emitTy TyFloat
+
+
+--   %tmp = alloca ty
+--   store %src, %tmp
+--   %dst = load %tmp
+emitRegCopy :: Register -> Register -> Type -> String
+emitRegCopy dst src ty = concat $ map (indent 1 ++)
+  [ tmpReg ++ " = alloca " ++ emitTy ty  ++ ";\n"
+  , "store " ++ emitTy ty ++ " " ++ src ++ ", " ++ emitTy ty ++ "* " ++ tmpReg ++ ";\n"    
+  , dst ++ " = load " ++ emitTy ty ++ "* " ++ tmpReg ++ ";\n"    
+  ] 
+
+  where
+
+    tmpReg = dst ++ ".tmp"
+
+--
+-- For vector-vector typecast, emit following insruction since LLVM IR does not
+-- support reg-reg copy.
+-- 
+--   %tmp = alloca ty
+--   store %src, %tmp
+--   %dst = load %tmp
+--
 emitTypeCast :: Type -> Type -> String -> String -> String
 emitTypeCast toTy fromTy dst src = case (toTy, fromTy) of
-  (TyColor,  TyFloat)  -> emitFtoV dst src
-  (TyPoint,  TyFloat)  -> emitFtoV dst src
-  (TyNormal, TyFloat)  -> emitFtoV dst src
-  (TyVector, TyFloat)  -> emitFtoV dst src
-  _                  -> error $ "[CodeGen] emitTypeCast: TODO: " ++ "to: " ++ show toTy ++ ", from: " ++ show fromTy
+  (_       , TyFloat)  ->
+    if isVectorTy toTy
+      then emitFtoV dst src
+      else error $ "[CodeGen] emitTypeCast: Invalid typecast?: " ++ "to: " ++ show toTy ++ ", from: " ++ show fromTy
+  _                    ->
+    if (isVectorTy toTy) && (isVectorTy fromTy)
+      then emitRegCopy dst src toTy
+      else error $ "[CodeGen] emitTypeCast: TODO: " ++ "to: " ++ show toTy ++ ", from: " ++ show fromTy
 
 emitCacheSaver :: Int -> Int -> Symbol -> String
 emitCacheSaver n layer sym = concat
@@ -495,6 +549,12 @@ instance AST Expr where
     -- 
     -- a = b
     -- -> store b, a
+    --
+    -- a (op)= b
+    --
+    -- -> tmp0 = load a
+    --    tmp1 = op tmp0 b
+    --    store tmp1 a
     
     Assign _ op (Var _ sym) rexpr -> case sym of
 
@@ -568,15 +628,43 @@ instance AST Expr where
         genArgs [x]    = gen 0 x
         genArgs (x:xs) = gen 0 x ++ ", " ++ genArgs xs
 
-    Triple exprs                      -> concat
-      [ "( "
-      , gen 0 (exprs !! 0)
-      , ", "
-      , gen 1 (exprs !! 1)
-      , ", "
-      , gen 2 (exprs !! 2)
-      , " )"
+    Triple (Just sym) exprs            -> concat
+      [ gen n exprs
+      , emitTriple n (getLLNameOfSym sym) (getReg (exprs !! 0)) (getReg (exprs !! 1)) (getReg (exprs !! 2))
       ]
+
+    -- FIXME
+    Conditional (Just sym) cond thenExpr elseExpr -> concat
+      [ 
+      -- cond
+        gen n cond
+      , indent n ++ "br i1 " ++ (getReg cond) ++ ", label %" ++ thenLabel ++ ", label %" ++ elseLabel ++ "\n"
+      , "\n"
+      -- then
+      , indent (n-1) ++ thenLabel ++ ":\n"
+      , gen n thenExpr
+      , indent n ++ "br label %" ++ contLabel ++ "\n"
+      , "\n"
+      -- else
+      , indent (n-1) ++ elseLabel ++ ":\n"
+      , gen n elseExpr
+      , indent n ++ "br label %" ++ contLabel ++ "\n"
+      , "\n"
+      -- cont
+      , indent (n-1) ++ contLabel ++ ":\n"
+      , indent n ++ getLLNameOfSym sym ++ " = phi " ++ emitTy (getTyOfSym sym)
+      , " [ " ++ getReg thenExpr ++ ", %" ++ thenLabel ++ " ],"
+      , " [ " ++ getReg elseExpr ++ ", %" ++ elseLabel ++ " ] ;\n"
+      , "\n"
+      ]
+
+      where
+ 
+        thenLabel = "if" ++ show num ++ ".then"
+        elseLabel = "if" ++ show num ++ ".else"
+        contLabel = "if" ++ show num ++ ".cont"
+
+        num       = unsafePerformIO getCounter
 
     --
     -- while (cond) stmt
@@ -883,15 +971,43 @@ instance AST Expr where
         genArgs [x]    = genStatic 0 x
         genArgs (x:xs) = genStatic 0 x ++ ", " ++ genArgs xs
 
-    Triple exprs                      -> concat
-      [ "( "
-      , genStatic 0 (exprs !! 0)
-      , ", "
-      , genStatic 1 (exprs !! 1)
-      , ", "
-      , genStatic 2 (exprs !! 2)
-      , " )"
+    Triple (Just sym) exprs            -> concat
+      [ genStatic n exprs
+      , emitTriple n (getLLNameOfSym sym) (getReg (exprs !! 0)) (getReg (exprs !! 1)) (getReg (exprs !! 2))
       ]
+
+    -- FIXME
+    Conditional (Just sym) cond thenExpr elseExpr -> concat
+      [ 
+      -- cond
+        gen n cond
+      , indent n ++ "br i1 " ++ (getReg cond) ++ ", label %" ++ thenLabel ++ ", label %" ++ elseLabel ++ "\n"
+      , "\n"
+      -- then
+      , indent (n-1) ++ thenLabel ++ ":\n"
+      , gen n thenExpr
+      , indent n ++ "br label %" ++ contLabel ++ "\n"
+      , "\n"
+      -- else
+      , indent (n-1) ++ elseLabel ++ ":\n"
+      , gen n elseExpr
+      , indent n ++ "br label %" ++ contLabel ++ "\n"
+      , "\n"
+      -- cont
+      , indent (n-1) ++ contLabel ++ ":\n"
+      , indent n ++ getLLNameOfSym sym ++ " = phi " ++ emitTy (getTyOfSym sym)
+      , " [ " ++ getReg thenExpr ++ ", %" ++ thenLabel ++ " ],"
+      , " [ " ++ getReg elseExpr ++ ", %" ++ elseLabel ++ " ] ;\n"
+      , "\n"
+      ]
+
+      where
+ 
+        thenLabel = "if" ++ show num ++ ".then"
+        elseLabel = "if" ++ show num ++ ".else"
+        contLabel = "if" ++ show num ++ ".cont"
+
+        num       = unsafePerformIO getCounter
 
     While cond stms                   -> concat
       [ indent n ++ "br label %" ++ condLabel ++ "\n\n"
@@ -1177,15 +1293,42 @@ instance AST Expr where
         genArgs [x]    = genDynamic 0 x
         genArgs (x:xs) = genDynamic 0 x ++ ", " ++ genArgs xs
 
-    Triple exprs                      -> concat
-      [ "( "
-      , genDynamic 0 (exprs !! 0)
-      , ", "
-      , genDynamic 1 (exprs !! 1)
-      , ", "
-      , genDynamic 2 (exprs !! 2)
-      , " )"
+    Triple (Just sym) exprs            -> concat
+      [ genDynamic n exprs
+      , emitTriple n (getLLNameOfSym sym) (getReg (exprs !! 0)) (getReg (exprs !! 1)) (getReg (exprs !! 2))
       ]
+
+    Conditional (Just sym) cond thenExpr elseExpr -> concat
+      [ 
+      -- cond
+        gen n cond
+      , indent n ++ "br i1 " ++ (getReg cond) ++ ", label %" ++ thenLabel ++ ", label %" ++ elseLabel ++ "\n"
+      , "\n"
+      -- then
+      , indent (n-1) ++ thenLabel ++ ":\n"
+      , gen n thenExpr
+      , indent n ++ "br label %" ++ contLabel ++ "\n"
+      , "\n"
+      -- else
+      , indent (n-1) ++ elseLabel ++ ":\n"
+      , gen n elseExpr
+      , indent n ++ "br label %" ++ contLabel ++ "\n"
+      , "\n"
+      -- cont
+      , indent (n-1) ++ contLabel ++ ":\n"
+      , indent n ++ getLLNameOfSym sym ++ " = phi " ++ emitTy (getTyOfSym sym)
+      , " [ " ++ getReg thenExpr ++ ", %" ++ thenLabel ++ " ],"
+      , " [ " ++ getReg elseExpr ++ ", %" ++ elseLabel ++ " ] ;\n"
+      , "\n"
+      ]
+
+      where
+ 
+        thenLabel = "if" ++ show num ++ ".then"
+        elseLabel = "if" ++ show num ++ ".else"
+        contLabel = "if" ++ show num ++ ".cont"
+
+        num       = unsafePerformIO getCounter
 
     While cond stms                   -> concat
       [ indent n ++ "br label %" ++ condLabel ++ "\n\n"
@@ -1405,13 +1548,14 @@ emitGlobal e = case e of
   UnaryOp _ _ expr          -> emitGlobal expr
   BinOp _ _ expr0 expr1     -> emitGlobal expr0 ++ emitGlobal expr1
   Call _ _ exprs            -> concatMap emitGlobal exprs
+  Triple _ exprs            -> concatMap emitGlobal exprs
+  Conditional _ cond thenE elseE -> emitGlobal cond ++ emitGlobal thenE ++ emitGlobal elseE
   While cond stmt           -> emitGlobal cond ++ (concatMap emitGlobal stmt)
   For init cond inc stmt    -> emitGlobal init ++ emitGlobal cond ++ emitGlobal inc ++ (concatMap emitGlobal stmt)
   If  cond thenStmt Nothing -> emitGlobal cond ++ (concatMap emitGlobal thenStmt)
   If  cond thenStmt (Just elseStmt) -> emitGlobal cond ++ (concatMap emitGlobal thenStmt) ++ (concatMap emitGlobal elseStmt)
   Illuminance _ _ _ _ stmt  -> concatMap emitGlobal stmt
   {- TODO
-  | Triple    [Expr]                       -- length(expr) == 3
   | If        Expr                        -- condition
               [Expr]                      -- statement
               (Maybe [Expr])              -- else statement

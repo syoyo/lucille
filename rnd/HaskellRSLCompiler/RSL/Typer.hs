@@ -134,7 +134,8 @@ instance Typer Expr where
     TypeCast _ toTy space e ->
       do { e' <- typing e
          ; tmpName <- getUniqueName
-         ; return (TypeCast (Just (SymVar tmpName toTy Uniform KindVariable)) toTy space e')
+         -- If toTy and Ty(e') has same type, no need for type casting.
+         ; if toTy == (getTyOfExpr e') then return e' else return (TypeCast (Just (SymVar tmpName toTy Uniform KindVariable)) toTy space e')
          }
 
     UnaryOp _ op e ->
@@ -180,9 +181,23 @@ instance Typer Expr where
           ; return (Def ty name (Just initExpr'))
           }
 
-    Triple stmt ->
-      do  { stmt' <- mapM typing stmt
-          ; return (Triple stmt')       -- TODO: check len(stmt) == 3.
+    Triple _ stmt ->
+      do  { stmt'   <- mapM typing stmt
+          ; tmpName <- getUniqueName
+          ; let ty   = TyVector           -- always vector value
+          ; let sym = (SymVar tmpName ty Uniform KindVariable)
+          ; return (Triple (Just sym) stmt')       -- TODO: check len(stmt) == 3.
+          }
+
+    -- TODO: checl all expression has same type.
+    Conditional _ cond thenExpr elseExpr ->
+      do  { cond'     <- typing cond
+          ; thenExpr' <- typing thenExpr
+          ; elseExpr' <- typing elseExpr
+          ; tmpName   <- getUniqueName
+          ; let ty  = getTyOfExpr cond'
+          ; let sym = (SymVar tmpName ty Uniform KindVariable)
+          ; return (Conditional (Just sym) cond' thenExpr' elseExpr')
           }
 
     While cond stmt ->

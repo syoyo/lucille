@@ -13,6 +13,12 @@
 ----
 -------------------------------------------------------------------------------
 
+{-
+ 
+ List of builtin varibles and functions based on RI spec 3.2
+
+-}
+
 module RSL.Sema where
 
 import RSL.AST
@@ -59,7 +65,7 @@ builtinOutputShaderVariables =
 builtinShaderFunctions :: [Symbol]
 builtinShaderFunctions =
   [ 
-  -- 15.1 Mathematical Functions
+  -- [15.1] Mathematical Functions
     (SymBuiltinFunc "radians"        f [f]    [])
   , (SymBuiltinFunc "degrees"        f [f]    [])
   , (SymBuiltinFunc "sin"            f [f]    [])
@@ -95,11 +101,14 @@ builtinShaderFunctions =
   , (SymBuiltinFunc "random"         f []        [])
   , (SymBuiltinFunc "random"         c []        [])
   , (SymBuiltinFunc "random"         p []        [])
-  , (SymBuiltinFunc "noise"          f [f, f]    [])
+  , (SymBuiltinFunc "noise"          f [f]       [])
   , (SymBuiltinFunc "noise"          f [p]       [])
+  , (SymBuiltinFunc "noise"          f [v]       [])
+  , (SymBuiltinFunc "noise"          f [n]       [])
+  , (SymBuiltinFunc "noise"          f [f, f]    [])
   -- TODO...
 
-  -- 15.2 Geometric Functions
+  -- [15.2] Geometric Functions
   , (SymBuiltinFunc "xcomp"          f [v]       [])
   , (SymBuiltinFunc "xcomp"          f [p]       [])
   , (SymBuiltinFunc "xcomp"          f [n]       [])
@@ -121,8 +130,13 @@ builtinShaderFunctions =
   , (SymBuiltinFunc "area"           f [p]       [])
   , (SymBuiltinFunc "faceforward"    v [v, v]    []) -- has opt arg
   , (SymBuiltinFunc "faceforward"    v [n, v]    []) -- has opt arg
+  , (SymBuiltinFunc "faceforward"    v [n, p]    []) -- has opt arg
+  , (SymBuiltinFunc "faceforward"    v [v, p]    []) -- has opt arg
   , (SymBuiltinFunc "reflect"        v [v, v]    [])
+  , (SymBuiltinFunc "reflect"        v [v, n]    [])
+  , (SymBuiltinFunc "reflect"        v [v, p]    [])
   , (SymBuiltinFunc "refract"        v [v, v, f] [])
+  , (SymBuiltinFunc "refract"        v [v, n, f] [])
   , (SymBuiltinFunc "fresnel"        v [v, v, f, f, f] [])  -- TODO
   , (SymBuiltinFunc "transform"      p [s, p]    []) 
   , (SymBuiltinFunc "transform"      p [s, s, p] []) 
@@ -136,30 +150,38 @@ builtinShaderFunctions =
   , (SymBuiltinFunc "transform"      n [s, s, n] []) 
   , (SymBuiltinFunc "transform"      n [m, n]    []) 
   , (SymBuiltinFunc "transform"      n [s, m, n] []) 
+  , (SymBuiltinFunc "vtransform"     v [s, s, v] []) 
   , (SymBuiltinFunc "depth"          f [p]       []) 
   , (SymBuiltinFunc "depth"          f [p]       []) 
 
-  -- 15.3 Color Functions
+  -- [15.3] Color Functions
   , (SymBuiltinFunc "comp"           f [c, f]    []) 
   -- , (SymBuiltinFunc "setcomp"        void [c, f, f]    []) 
   , (SymBuiltinFunc "mix"            c [c, c, f] []) 
 
-  -- 15.6 Shading and Lighting Functions
+  -- [15.6] Shading and Lighting Functions
   , (SymBuiltinFunc "ambient"        c []        [])
   , (SymBuiltinFunc "diffuse"        c [n]       [])
+  , (SymBuiltinFunc "diffuse"        c [p]       [])
+  , (SymBuiltinFunc "diffuse"        c [v]       [])
   , (SymBuiltinFunc "specular"       c [n, v, f] [])
+  , (SymBuiltinFunc "specular"       c [p, p, f] [])
   , (SymBuiltinFunc "specularbrdf"   c [v, n, v, f] [])
   , (SymBuiltinFunc "phong"          c [n, v, f] [])
   , (SymBuiltinFunc "trace"          c [p, p]    [])
+  , (SymBuiltinFunc "trace"          c [p, v]    [])
 
-  -- 15.7 Texture Mapping Functions
+  -- [15.7] Texture Mapping Functions
   , (SymBuiltinFunc "texture"        c [s]       [])
+  , (SymBuiltinFunc "environment"    c [s]       [])
+  , (SymBuiltinFunc "environment"    c [s, v]    [])
 
   -- extension for lucille 
   , (SymBuiltinFunc "save_cache" void [i, i, i, c]      [])
   , (SymBuiltinFunc "load_cache" c    [i, i, i]         [])
   , (SymBuiltinFunc "turb"       c    [p]               [])
   , (SymBuiltinFunc "occlusion"  f    [p, n]            [])
+  , (SymBuiltinFunc "occlusion"  f    [p, n, f]         [])
 
   ] -- More is TODO
 

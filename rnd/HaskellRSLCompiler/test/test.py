@@ -16,11 +16,27 @@ slfiles = [
   , "metal.sl"
   , "checker.sl"
   , "turbulence.sl"
+  , "granite.sl"
+  , "normdir.sl"
+  , "ambientocclusion.sl"
+  , "paintedplastic.sl"
+  , "plastic.sl"
+  , "shinymetal.sl"
+  , "show_st.sl"
+  , "show_xyz.sl"
+  , "texturemapping.sl"
+  , "turbulence2.sl"
+  , "weird.sl"
+  , "whitted.sl"
+  , "wood.sl"
 ]
 
 def run_test(fname):
 
     failed = False
+
+    if os.access("output.ll", os.F_OK):
+        os.remove("output.ll")
 
     cmd = "../lslc "
     cmd += fname
@@ -36,6 +52,9 @@ def run_test(fname):
     for l in lines:
         if errLineRE.match(l):
             failed = True
+
+    if not os.access("output.ll", os.F_OK):
+        failed = True
 
     if failed:
         print "=================================================="

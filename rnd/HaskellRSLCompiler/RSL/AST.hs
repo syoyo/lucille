@@ -31,6 +31,8 @@ data Op
   | OpLt        -- <
   | OpEq        -- ==
   | OpNeq       -- !=
+  | OpOr        -- ||
+  | OpAnd       -- &&
   | OpAssign    -- =
   | OpAddAssign -- +=
   | OpSubAssign -- -=
@@ -56,6 +58,15 @@ data Type
   | TyMatrix
   | TyQualified Qual Type
     deriving (Show, Eq, Typeable, Data)
+
+isVectorTy :: Type -> Bool
+isVectorTy ty = case ty of
+  TyVector -> True
+  TyColor  -> True
+  TyPoint  -> True
+  TyNormal -> True
+  _        -> False
+
 
 data StorageClass
   = Uniform
@@ -122,7 +133,8 @@ getTyOfExpr expr = case expr of
   UnaryOp (Just sym) _ _          -> getTyOfSym sym
   BinOp (Just sym) _ _ _          -> getTyOfSym sym
   Call (Just sym) _ _             -> getTyOfSym sym
-  Triple (x:xs)                   -> getTyOfExpr x
+  Triple (Just sym) _             -> getTyOfSym sym
+  Conditional (Just sym) _ _ _    -> getTyOfSym sym
   _                               -> error $ "getTyOfExpr: TODO: " ++ (show expr)
 
 type SymbolTable
@@ -163,7 +175,8 @@ data Expr
                 Symbol                      -- Function signature
                [Expr]                       -- Arguments
 
-  | Triple     [Expr]                       -- length(expr) == 3
+  | Triple     (Maybe Symbol)
+               [Expr]                       -- length(expr) == 3
 
   | Conditional (Maybe Symbol)
                 Expr                        -- cond

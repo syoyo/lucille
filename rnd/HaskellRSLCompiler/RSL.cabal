@@ -5,7 +5,7 @@ License:           BSD3
 License-file:      LICENSE
 Author:            Syoyo Fujita
 Maintainer:        syoyo@lucillerender.org
-Build-Depends:     base, haskell98, mtl, containers, parsec, regex-compat, array, filepath, fgl
+Build-Depends:     base, haskell98, mtl, containers, parsec, regex-compat, array, filepath, fgl, syb
 
 Executable:        lslc
 Main-is:           Main.hs
