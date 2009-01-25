@@ -14,7 +14,7 @@ extern "C" {
 #endif
 
 //extern double	noise1(double arg);
-double          noise1(double arg);
+float           noise1(float arg);
 extern float	noise2(float u, float v);
 extern float	noise3(float u, float v, float w);
 

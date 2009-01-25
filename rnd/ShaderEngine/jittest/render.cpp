@@ -69,8 +69,8 @@ init_render_scene()
 {
     scene_spheres[0].center.x =  0.0;
     scene_spheres[0].center.y =  0.0;
-    scene_spheres[0].center.z = -1.0;
-    scene_spheres[0].radius   = 0.5;
+    scene_spheres[0].center.z = -2.0;
+    scene_spheres[0].radius   = 1.25;
 
     scene_spheres[1].center.x = -0.75;
     scene_spheres[1].center.y =  0.0;

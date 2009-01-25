@@ -39,6 +39,11 @@
 
 #define WINDOW_WIDTH  256
 #define WINDOW_HEIGHT 256
+
+#define MODE_SPECIALIZE_COARSE_UPDATE 0
+#define MODE_SPECIALIZE_FINE_UPDATE   2
+#define MODE_FULL_UPDATE              1
+
 SDL_Surface     *surface;
 unsigned char   *img;
 int              g_mouse_button;
@@ -50,6 +55,7 @@ float            g_offt_y;
 int              g_enable_specialization = 1;
 int              g_cached = 0;
 int              g_skip   = 1;
+int              g_mode   = MODE_SPECIALIZE_COARSE_UPDATE;
 
 bool             g_run_interpreter = false;
 
@@ -276,8 +282,12 @@ dummy_rerender(int width, int height, int skip)
                 // load cached N
                 lse_load_cache_iiic(N_LAYER, x, y, Ncache);
 
-                genv.Cs[0] = (x / (float)width);
-                genv.Cs[1] = (y / (float)height);
+                genv.Cs[0] = 1.0f;
+                genv.Cs[1] = 1.0f;
+                genv.Cs[2] = 1.0f;
+                genv.Os[0] = 1.0f;
+                genv.Os[1] = 1.0f;
+                genv.Os[2] = 1.0f;
                 genv.Cl[0] = 0.8f;
                 genv.Cl[1] = 1.0f;
                 genv.Cl[2] = 0.5f;
@@ -421,7 +431,7 @@ dummy_render(int width, int height)
             vnormalize(&ray.dir);
 
             ray_sphere_intersect(&isect, &ray, &scene_spheres[0]);
-            ray_sphere_intersect(&isect, &ray, &scene_spheres[1]);
+            //ray_sphere_intersect(&isect, &ray, &scene_spheres[1]);
 
             hit = isect.t < 1.0e+30f;
 
@@ -435,8 +445,12 @@ dummy_render(int width, int height)
 
                 //texture_map(texcol, gtex, tu, tv);
 
-                genv.Cs[0] = (x / (float)width);
-                genv.Cs[1] = (y / (float)height);
+                genv.Cs[0] = 1.0f;
+                genv.Cs[1] = 1.0f;
+                genv.Cs[2] = 1.0f;
+                genv.Os[0] = 1.0f;
+                genv.Os[1] = 1.0f;
+                genv.Os[2] = 1.0f;
                 genv.Cl[0] = 0.8f;
                 genv.Cl[1] = 1.0f;
                 genv.Cl[2] = 0.5f;
@@ -626,7 +640,11 @@ mouse_down(SDL_Event event)
         g_mouse_pressed = 1; 
         g_mouse_x = event.button.x;
         g_mouse_y = event.button.y;
-        if (g_enable_specialization) g_skip = 4;
+        if (g_enable_specialization) {
+            if (g_mode == MODE_SPECIALIZE_COARSE_UPDATE) {
+                g_skip = 4;
+            }
+        }
     }
 }
 
@@ -663,12 +681,28 @@ keyboard(SDL_Event event)
 {
     
     if (event.key.keysym.sym == 'j') {
-        g_enable_specialization = !g_enable_specialization;
-        if (g_enable_specialization == 1) {
-            g_cached = 0;   // clear cache
+        g_mode++;
+
+        if (g_mode > 2) {
+            g_mode = MODE_SPECIALIZE_COARSE_UPDATE;
         }
 
-        printf("Specialization = %d\n", g_enable_specialization);
+        switch (g_mode) {
+        case MODE_SPECIALIZE_COARSE_UPDATE:
+            g_enable_specialization = 1;
+            g_cached = 0;   // clear cache
+            break;
+        case MODE_SPECIALIZE_FINE_UPDATE:
+            g_enable_specialization = 1;
+            g_cached = 0;   // clear cache
+            break;
+        case MODE_FULL_UPDATE:
+            g_enable_specialization = 0;
+            break;
+        }
+
+        printf("Mode = %d\n", g_mode);
+
     }
 
 }

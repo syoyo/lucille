@@ -39,6 +39,7 @@ extern void bora(); // defined in the renderer side
 
 //extern void texture_map(float *out, float u, float v);
 
+extern float noise1(float u);
 extern float noise2(float u, float v);
 extern float noise3(float u, float v, float w);
 
@@ -174,6 +175,18 @@ diffuse_cn(float4 *ret, float4 N)
 }
 
 void
+diffuse_cp(float4 *ret, float4 P)
+{
+    diffuse_cn(ret, P);
+}
+
+void
+diffuse_cv(float4 *ret, float4 v)
+{
+    diffuse_cn(ret, v);
+}
+
+void
 reflect_vvv(float4 *ret, float4 I, float4 N)
 {
     float IdotN;
@@ -248,6 +261,16 @@ texture_cs(float4 *ret, char *texname)
 }
 
 void
+noise_ff(float *ret, float f)
+{
+    float r;
+
+    r = noise1(f);
+    
+    (*ret) = r;
+}
+
+void
 noise_fff(float *ret, float u, float v)
 {
     float r;
@@ -306,6 +329,170 @@ specular_cnvf(float4 *ret, float4 N, float4 V, float roughness)
     r.z = Cl.z * specular_col.z;
 
     (*ret) = r;
+}
+
+void
+specular_cppf(float4 *ret, float4 N, float4 V, float roughness)
+{
+    specular_cnvf(ret, N, V, roughness);
+}
+
+void
+transform_psp(float4 *ret, char *space, float4 from)
+{
+    // TODO:
+    (*ret) = from;
+}
+
+/* ---------------------------------------------------------------------------
+ *
+ * Math functions
+ *
+ * ------------------------------------------------------------------------- */
+
+void
+abs_ff(float *ret, float f)
+{
+    float r;
+
+    r = fabsf(f);
+    
+
+    (*ret) = r;
+}
+
+void
+floor_ff(float *ret, float f)
+{
+    float r;
+
+    r = floorf(f);
+
+    (*ret) = r;
+}
+
+void
+sqrt_ff(float *ret, float f)
+{
+    (*ret) = sqrtf(f);
+}
+
+void
+smoothstep_ffff(float *ret, float minval, float maxval, float value)
+{
+    // (RI spec 3.2 says)
+    // smoothstep returns 0 if value is less than min, 1 if value is greater
+    // than or equal to max, and performs a smooth Hermite interpolation
+    // between 0 and 1 in the interval min to max.
+
+    float v;
+    float f;
+
+    if (value < minval) {
+
+        v = 0.0f; 
+
+    } else if (value > maxval) {
+
+        v = 1.0f;
+
+    } else {
+
+        f = (value - minval) / (maxval - minval);
+        v = f * f * (3.0f - 2.0f * f);
+    }
+
+    (*ret) = v;
+
+}
+
+// (RI spec 3.2 says)
+// mix returns x * (1 - alpha) + y * alpha, that is, it performs a linear blend
+// between values x and y . The types of x and y must be identical, but may 
+// be any of float, point, vector, normal, or color. The variants that
+// operate on colors or point-like objects operate on a component-by-component
+// asis (e.g., separately for x, y, and z).
+void
+mix_cccf(float4 *ret, float4 x, float4 y, float alpha)
+{
+    float4 r;
+
+    r = x * (1.0f - alpha) + y * alpha;
+
+    (*ret) = r;
+
+}
+
+void
+sin_ff(float *ret, float x)
+{
+    float f;
+
+    f = sinf(x);
+
+    (*ret) = f;
+
+}
+
+void
+mod_fff(float *ret, float a, float b)
+{
+    // (RI spec 3.2 says)
+    // mod returns a value greater than 0 and less than or equal to b
+    // such that mod(a,b) = a - n*b for some integer n. abs returns
+    // the absolute value of its argument and sign returns -1
+    // if its argument is negative, 1 if its argument is positive, 
+    // and 0 if its argument is zero
+    
+    float f;
+
+    f = fmodf(a, b);
+
+    (*ret) = f;
+}
+
+
+/* ---------------------------------------------------------------------------
+ *
+ * Geometric functions
+ *
+ * ------------------------------------------------------------------------- */
+void
+area_fp(float* ret, float4 p)
+{
+    // FIXME
+    (*ret) = 1.0f;
+}
+
+/* ---------------------------------------------------------------------------
+ *
+ *
+ *
+ * ------------------------------------------------------------------------- */
+
+void
+xcomp_fp(float *ret, float4 v)
+{
+    (*ret) = v[0];
+}
+
+void
+ycomp_fp(float *ret, float4 v)
+{
+    (*ret) = v[1];
+}
+
+void
+zcomp_fp(float *ret, float4 v)
+{
+    (*ret) = v[2];
+}
+
+void
+wcomp_fp(float *ret, float4 v)
+{
+    // TODO:
+    (*ret) = v[3];
 }
 
 // hack
