@@ -22,7 +22,7 @@ custom_cxxflags = [ '-g', '-W', '-Wall']
 # 'debug'   : debug compile(-g).
 # 'release' : release compile(-O2). default
 # 'speed'   : Maximum optimization. experimental
-build_target = 'debug'
+build_target = 'release'
 
 #
 # SSE option. default = 1

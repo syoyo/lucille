@@ -1,4 +1,4 @@
-%struct.ri_shader_env_t = type { <4 x float>, <4 x float>, <4 x float>, <4 x float>, <4 x float>, <4 x float>, <4 x float>, <4 x float>, float, float, float, float, i32, i32, i32, i32, <4 x float>, <4 x float>, <4 x float> }
+%struct.ri_shader_env_t = type { <4 x float>, <4 x float>, <4 x float>, <4 x float>, <4 x float>, <4 x float>, <4 x float>, <4 x float>, <4 x float>, float, float, float, float, i32, i32, i32, i32, <4 x float>, <4 x float>, <4 x float> }
 @genv = internal global %struct.ri_shader_env_t zeroinitializer, align 32
 
 define <4 x float> @rsl_getCi() nounwind {
@@ -31,98 +31,104 @@ define <4 x float> @rsl_getCs() nounwind {
     ret <4 x float> %tmp1
 }
 
-define <4 x float> @rsl_getI() nounwind {
+define <4 x float> @rsl_getOs() nounwind {
     %tmp = getelementptr %struct.ri_shader_env_t* @genv, i32 0, i32 3
     %tmp1 = load <4 x float>* %tmp
     ret <4 x float> %tmp1
 }
 
-define <4 x float> @rsl_getN() nounwind {
+define <4 x float> @rsl_getI() nounwind {
     %tmp = getelementptr %struct.ri_shader_env_t* @genv, i32 0, i32 4
     %tmp1 = load <4 x float>* %tmp
     ret <4 x float> %tmp1
 }
 
-define <4 x float> @rsl_getNg() nounwind {
+define <4 x float> @rsl_getN() nounwind {
     %tmp = getelementptr %struct.ri_shader_env_t* @genv, i32 0, i32 5
     %tmp1 = load <4 x float>* %tmp
     ret <4 x float> %tmp1
 }
 
-define <4 x float> @rsl_getE() nounwind {
+define <4 x float> @rsl_getNg() nounwind {
     %tmp = getelementptr %struct.ri_shader_env_t* @genv, i32 0, i32 6
     %tmp1 = load <4 x float>* %tmp
     ret <4 x float> %tmp1
 }
 
-define <4 x float> @rsl_getP() nounwind {
+define <4 x float> @rsl_getE() nounwind {
     %tmp = getelementptr %struct.ri_shader_env_t* @genv, i32 0, i32 7
     %tmp1 = load <4 x float>* %tmp
     ret <4 x float> %tmp1
 }
 
-define float @rsl_getu() nounwind {
+define <4 x float> @rsl_getP() nounwind {
     %tmp = getelementptr %struct.ri_shader_env_t* @genv, i32 0, i32 8
-    %tmp1 = load float* %tmp
-    ret float %tmp1
+    %tmp1 = load <4 x float>* %tmp
+    ret <4 x float> %tmp1
 }
 
-define float @rsl_getv() nounwind {
+define float @rsl_getu() nounwind {
     %tmp = getelementptr %struct.ri_shader_env_t* @genv, i32 0, i32 9
     %tmp1 = load float* %tmp
     ret float %tmp1
 }
 
-define float @rsl_gets() nounwind {
+define float @rsl_getv() nounwind {
     %tmp = getelementptr %struct.ri_shader_env_t* @genv, i32 0, i32 10
     %tmp1 = load float* %tmp
     ret float %tmp1
 }
 
-define float @rsl_gett() nounwind {
+define float @rsl_gets() nounwind {
     %tmp = getelementptr %struct.ri_shader_env_t* @genv, i32 0, i32 11
     %tmp1 = load float* %tmp
     ret float %tmp1
 }
 
-define i32 @rsl_getx() nounwind {
+define float @rsl_gett() nounwind {
     %tmp = getelementptr %struct.ri_shader_env_t* @genv, i32 0, i32 12
-    %tmp1 = load i32* %tmp
-    ret i32 %tmp1
+    %tmp1 = load float* %tmp
+    ret float %tmp1
 }
 
-define i32 @rsl_gety() nounwind {
+define i32 @rsl_getx() nounwind {
     %tmp = getelementptr %struct.ri_shader_env_t* @genv, i32 0, i32 13
     %tmp1 = load i32* %tmp
     ret i32 %tmp1
 }
 
-define i32 @rsl_getz() nounwind {
+define i32 @rsl_gety() nounwind {
     %tmp = getelementptr %struct.ri_shader_env_t* @genv, i32 0, i32 14
     %tmp1 = load i32* %tmp
     ret i32 %tmp1
 }
 
-define i32 @rsl_getw() nounwind {
+define i32 @rsl_getz() nounwind {
     %tmp = getelementptr %struct.ri_shader_env_t* @genv, i32 0, i32 15
     %tmp1 = load i32* %tmp
     ret i32 %tmp1
 }
 
-define <4 x float> @rsl_getL() nounwind {
+define i32 @rsl_getw() nounwind {
     %tmp = getelementptr %struct.ri_shader_env_t* @genv, i32 0, i32 16
-    %tmp1 = load <4 x float>* %tmp
-    ret <4 x float> %tmp1
+    %tmp1 = load i32* %tmp
+    ret i32 %tmp1
 }
 
-define <4 x float> @rsl_getCl() nounwind {
+define <4 x float> @rsl_getL() nounwind {
     %tmp = getelementptr %struct.ri_shader_env_t* @genv, i32 0, i32 17
     %tmp1 = load <4 x float>* %tmp
     ret <4 x float> %tmp1
 }
 
-define <4 x float> @rsl_getOl() nounwind {
+define <4 x float> @rsl_getCl() nounwind {
     %tmp = getelementptr %struct.ri_shader_env_t* @genv, i32 0, i32 18
+    %tmp1 = load <4 x float>* %tmp
+    ret <4 x float> %tmp1
+}
+
+define <4 x float> @rsl_getOl() nounwind {
+    %tmp = getelementptr %struct.ri_shader_env_t* @genv, i32 0, i32 19
     %tmp1 = load <4 x float>* %tmp
     ret <4 x float> %tmp1
 }
@@ -178,9 +184,9 @@ define void @set_shader_env(%struct.ri_shader_env_t* %env) {
 
 
     %srcaddr8 = getelementptr %struct.ri_shader_env_t* %env, i32 0, i32 8
-    %tmp8     = load float* %srcaddr8 
+    %tmp8     = load <4 x float>* %srcaddr8 
     %dstaddr8 = getelementptr %struct.ri_shader_env_t* @genv, i32 0, i32 8
-    store float %tmp8, float* %dstaddr8 
+    store <4 x float> %tmp8, <4 x float>* %dstaddr8 
 
 
     %srcaddr9 = getelementptr %struct.ri_shader_env_t* %env, i32 0, i32 9
@@ -202,9 +208,9 @@ define void @set_shader_env(%struct.ri_shader_env_t* %env) {
 
 
     %srcaddr12 = getelementptr %struct.ri_shader_env_t* %env, i32 0, i32 12
-    %tmp12     = load i32* %srcaddr12 
+    %tmp12     = load float* %srcaddr12 
     %dstaddr12 = getelementptr %struct.ri_shader_env_t* @genv, i32 0, i32 12
-    store i32 %tmp12, i32* %dstaddr12 
+    store float %tmp12, float* %dstaddr12 
 
 
     %srcaddr13 = getelementptr %struct.ri_shader_env_t* %env, i32 0, i32 13
@@ -226,9 +232,9 @@ define void @set_shader_env(%struct.ri_shader_env_t* %env) {
 
 
     %srcaddr16 = getelementptr %struct.ri_shader_env_t* %env, i32 0, i32 16
-    %tmp16     = load <4 x float>* %srcaddr16 
+    %tmp16     = load i32* %srcaddr16 
     %dstaddr16 = getelementptr %struct.ri_shader_env_t* @genv, i32 0, i32 16
-    store <4 x float> %tmp16, <4 x float>* %dstaddr16 
+    store i32 %tmp16, i32* %dstaddr16 
 
 
     %srcaddr17 = getelementptr %struct.ri_shader_env_t* %env, i32 0, i32 17
@@ -241,6 +247,12 @@ define void @set_shader_env(%struct.ri_shader_env_t* %env) {
     %tmp18     = load <4 x float>* %srcaddr18 
     %dstaddr18 = getelementptr %struct.ri_shader_env_t* @genv, i32 0, i32 18
     store <4 x float> %tmp18, <4 x float>* %dstaddr18 
+
+
+    %srcaddr19 = getelementptr %struct.ri_shader_env_t* %env, i32 0, i32 19
+    %tmp19     = load <4 x float>* %srcaddr19 
+    %dstaddr19 = getelementptr %struct.ri_shader_env_t* @genv, i32 0, i32 19
+    store <4 x float> %tmp19, <4 x float>* %dstaddr19 
 
     ret void
 }
@@ -296,9 +308,9 @@ define void @get_shader_env(%struct.ri_shader_env_t* %env) {
 
 
     %srcaddr8 = getelementptr %struct.ri_shader_env_t* @genv, i32 0, i32 8
-    %tmp8     = load float* %srcaddr8 
+    %tmp8     = load <4 x float>* %srcaddr8 
     %dstaddr8 = getelementptr %struct.ri_shader_env_t* %env, i32 0, i32 8
-    store float %tmp8, float* %dstaddr8 
+    store <4 x float> %tmp8, <4 x float>* %dstaddr8 
 
 
     %srcaddr9 = getelementptr %struct.ri_shader_env_t* @genv, i32 0, i32 9
@@ -320,9 +332,9 @@ define void @get_shader_env(%struct.ri_shader_env_t* %env) {
 
 
     %srcaddr12 = getelementptr %struct.ri_shader_env_t* @genv, i32 0, i32 12
-    %tmp12     = load i32* %srcaddr12 
+    %tmp12     = load float* %srcaddr12 
     %dstaddr12 = getelementptr %struct.ri_shader_env_t* %env, i32 0, i32 12
-    store i32 %tmp12, i32* %dstaddr12 
+    store float %tmp12, float* %dstaddr12 
 
 
     %srcaddr13 = getelementptr %struct.ri_shader_env_t* @genv, i32 0, i32 13
@@ -344,9 +356,9 @@ define void @get_shader_env(%struct.ri_shader_env_t* %env) {
 
 
     %srcaddr16 = getelementptr %struct.ri_shader_env_t* @genv, i32 0, i32 16
-    %tmp16     = load <4 x float>* %srcaddr16 
+    %tmp16     = load i32* %srcaddr16 
     %dstaddr16 = getelementptr %struct.ri_shader_env_t* %env, i32 0, i32 16
-    store <4 x float> %tmp16, <4 x float>* %dstaddr16 
+    store i32 %tmp16, i32* %dstaddr16 
 
 
     %srcaddr17 = getelementptr %struct.ri_shader_env_t* @genv, i32 0, i32 17
@@ -359,6 +371,12 @@ define void @get_shader_env(%struct.ri_shader_env_t* %env) {
     %tmp18     = load <4 x float>* %srcaddr18 
     %dstaddr18 = getelementptr %struct.ri_shader_env_t* %env, i32 0, i32 18
     store <4 x float> %tmp18, <4 x float>* %dstaddr18 
+
+
+    %srcaddr19 = getelementptr %struct.ri_shader_env_t* @genv, i32 0, i32 19
+    %tmp19     = load <4 x float>* %srcaddr19 
+    %dstaddr19 = getelementptr %struct.ri_shader_env_t* %env, i32 0, i32 19
+    store <4 x float> %tmp19, <4 x float>* %dstaddr19 
 
     ret void
 }

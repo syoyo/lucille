@@ -7,7 +7,14 @@ extern "C" {
 
 #include "hbuffer.h"
 
-#define MAX_LAYER 16
+#define MAX_LAYER 32
+
+
+
+#define N_LAYER   29            /* Normal   */
+#define UV_LAYER  30            /* UV, t    */
+#define P_LAYER   31            /* Position */
+
 extern ri_hbuffer_t *g_hbuffer[MAX_LAYER];
 
 extern void lse_init(

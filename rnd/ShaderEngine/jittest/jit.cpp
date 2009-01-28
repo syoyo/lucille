@@ -37,8 +37,13 @@
 #include <iostream>
 #include "timer.h"
 
-#define WINDOW_WIDTH  512
-#define WINDOW_HEIGHT 512
+#define WINDOW_WIDTH  256
+#define WINDOW_HEIGHT 256
+
+#define MODE_SPECIALIZE_COARSE_UPDATE 0
+#define MODE_SPECIALIZE_FINE_UPDATE   2
+#define MODE_FULL_UPDATE              1
+
 SDL_Surface     *surface;
 unsigned char   *img;
 int              g_mouse_button;
@@ -50,6 +55,7 @@ float            g_offt_y;
 int              g_enable_specialization = 1;
 int              g_cached = 0;
 int              g_skip   = 1;
+int              g_mode   = MODE_SPECIALIZE_COARSE_UPDATE;
 
 bool             g_run_interpreter = false;
 
@@ -127,6 +133,31 @@ bora()
     printf("bora called\n");
 }
 
+static double vdot(vec v0, vec v1)
+{
+    return v0.x * v1.x + v0.y * v1.y + v0.z * v1.z;
+}
+
+static void vcross(vec *c, vec v0, vec v1)
+{
+    
+    c->x = v0.y * v1.z - v0.z * v1.y;
+    c->y = v0.z * v1.x - v0.x * v1.z;
+    c->z = v0.x * v1.y - v0.y * v1.x;
+}
+
+static void vnormalize(vec *c)
+{
+    double length = sqrt(vdot((*c), (*c)));
+
+    if (fabs(length) > 1.0e-17) {
+        c->x /= length;
+        c->y /= length;
+        c->z /= length;
+    }
+}
+
+
 void
 init_shader_env()
 {
@@ -171,17 +202,19 @@ void *malloc32(size_t sz)
     return p32;
 }
 
+/*
+ * Re-render the image using cache.
+ */
 void
-dummy_render(int width, int height, int skip)
+dummy_rerender(int width, int height, int skip)
 {
+
     int         x, y;
     mytimer_t   start_time, end_time;
     double      elap;
 
-    float       rayorg[3];
-    float       raydir[3];
+    ray_t       ray;
     float       texcol[4];
-    sphere_t    sphere;
     isect_t     isect;
 
     ri_shader_env_t *ret_env;    // FIXME: check align.
@@ -191,23 +224,18 @@ dummy_render(int width, int height, int skip)
 
     ret_env = (ri_shader_env_t *)malloc32(sizeof(ri_shader_env_t));
 
-    sphere.center[0] = 0.0;
-    sphere.center[1] = 0.0;
-    sphere.center[2] = -2.0;
-
-    sphere.radius    = 0.75;
-
     get_time(&start_time);
-
-    raydir[0] = 0.0;
-    raydir[1] = 0.0;
-    raydir[2] = -1.0;
 
     float theta, phi;
     float tu, tv;
+    float cacheval[4];
+    float Pcache[4];
+    float UVTcache[4];
+    float Ncache[4];
     unsigned char shadecol[4];
 
     float u, v;
+    float dist;
     int   hit;
     int   xx, yy;
 
@@ -229,50 +257,240 @@ dummy_render(int width, int height, int skip)
     for (y = 0; y < height; y += skip) {
         for (x = 0; x < width; x += skip) {
 
+            u = (x - 0.5f * width) / (float)(0.5f * width);
+            v = (y - 0.5f * height) / (float)(0.5f * height);
+
+            ray.org.x = 0.0f;
+            ray.org.y = 0.0f;
+            ray.org.z = 0.0f;
+
+            ray.dir.x = u;
+            ray.dir.y = v;
+            ray.dir.z = -1.0f;
+
+            vnormalize(&ray.dir);
+
+            // load cached uv and t.
+            lse_load_cache_iiic(UV_LAYER, x, y, UVTcache);
+
+            dist = UVTcache[2];
+            if (dist > 0.0f) {
+
+                // load cached P
+                lse_load_cache_iiic(P_LAYER, x, y, Pcache);
+
+                // load cached N
+                lse_load_cache_iiic(N_LAYER, x, y, Ncache);
+
+                genv.Cs[0] = 1.0f;
+                genv.Cs[1] = 1.0f;
+                genv.Cs[2] = 1.0f;
+                genv.Os[0] = 1.0f;
+                genv.Os[1] = 1.0f;
+                genv.Os[2] = 1.0f;
+                genv.Cl[0] = 0.8f;
+                genv.Cl[1] = 1.0f;
+                genv.Cl[2] = 0.5f;
+                genv.N[0] = Ncache[0];
+                genv.N[1] = Ncache[1];
+                genv.N[2] = Ncache[2];
+                genv.L[0] = 1.0f + g_offt_x;
+                genv.L[1] = 1.0f + g_offt_y;
+                genv.L[2] = 1.0f;
+                genv.P[0] = Pcache[0];
+                genv.P[1] = Pcache[1];
+                genv.P[2] = Pcache[2];
+                genv.P[3] = 1.0f;
+                genv.I[0] = Pcache[0] - ray.org.x;
+                genv.I[1] = Pcache[1] - ray.org.y;
+                genv.I[2] = Pcache[2] - ray.org.z;
+                genv.I[3] = 1.0f;
+                genv.s = UVTcache[0];
+                genv.t = UVTcache[1];
+                genv.x = x;
+                genv.y = y;
+
+                g_shader_jit.shader_env_set(&genv);
+                shader_fun();
+                g_shader_jit.shader_env_get(&genv);
+
+                shadecol[0] = clamp(genv.Ci[0]);
+                shadecol[1] = clamp(genv.Ci[1]);
+                shadecol[2] = clamp(genv.Ci[2]);
+
+            } else {
+                
+                shadecol[0] = 0;
+                shadecol[1] = 0;
+                shadecol[2] = 0;
+
+            }
+
+            if (skip != 1) {
+
+                for (yy = 0; yy < skip; yy++) {
+                    for (xx = 0; xx < skip; xx++) {
+
+                        img[3 * ((y+yy) * width + (x+xx)) + 0] = shadecol[0];
+                        img[3 * ((y+yy) * width + (x+xx)) + 1] = shadecol[1];
+                        img[3 * ((y+yy) * width + (x+xx)) + 2] = shadecol[2];
+                    }
+                }
+                
+
+            } else {
+
+                img[3 * (y * width + x) + 0] = shadecol[0];
+                img[3 * (y * width + x) + 1] = shadecol[1];
+                img[3 * (y * width + x) + 2] = shadecol[2];
+
+            }
+
+        }
+    }
+
+    get_time(&end_time);
+
+    elap = elapsed_time(&start_time, &end_time); 
+
+    printf("\r[Re-render] elapsed = %f (sec)", elap);
+    fflush(stdout);
+
+
+}
+
+/*
+ * Render the image with full update.
+ */
+void
+dummy_render(int width, int height)
+{
+    int         x, y;
+    mytimer_t   start_time, end_time;
+    double      elap;
+
+    float       texcol[4];
+    //sphere_t    sphere;
+    isect_t     isect;
+    ray_t       ray;
+
+    ri_shader_env_t *ret_env;    // FIXME: check align.
+
+    std::vector<GenericValue> Args(1);
+    GenericValue ResultGV;
+
+    ret_env = (ri_shader_env_t *)malloc32(sizeof(ri_shader_env_t));
+
+    //sphere.center.x = 0.0;
+    //sphere.center.y = 0.0;
+    //sphere.center.z = -2.0;
+    //sphere.radius    = 0.75;
+
+    get_time(&start_time);
+
+    float theta, phi;
+    float tu, tv;
+    float cacheval[4];
+    unsigned char shadecol[4];
+
+    float u, v;
+    int   hit;
+    int   xx, yy;
+
+    Args[0].PointerVal = (void *)&genv;
+
+    ShaderFunP shader_fun;
+
+    if (g_enable_specialization) {
+        if (g_cached) {
+            shader_fun = g_shader_jit.shader_dynamic_fun;
+        } else {
+            shader_fun = g_shader_jit.shader_cache_gen_fun;
+        }
+    } else {
+        shader_fun = g_shader_jit.shader_fun;
+    }
+        
+
+    for (y = 0; y < height; y++) {
+        for (x = 0; x < width; x++) {
+
             isect.t = 1.0e+30f;
             
             u = (x - 0.5f * width) / (float)(0.5f * width);
             v = (y - 0.5f * height) / (float)(0.5f * height);
 
-            rayorg[0] = u;
-            rayorg[1] = v;
-            rayorg[2] = 0.0;
+            ray.org.x = 0.0f;
+            ray.org.y = 0.0f;
+            ray.org.z = 0.0f;
 
-            hit = sphere_isect(&isect, &sphere, rayorg, raydir);
+            ray.dir.x = u;
+            ray.dir.y = v;
+            ray.dir.z = -1.0f;
+
+            vnormalize(&ray.dir);
+
+            ray_sphere_intersect(&isect, &ray, &scene_spheres[0]);
+            //ray_sphere_intersect(&isect, &ray, &scene_spheres[1]);
+
+            hit = isect.t < 1.0e+30f;
 
             if (hit) {
 
-                theta = acosf(isect.n[1]);
+                theta = acosf(isect.n.y);
                 tv = theta / M_PI;
 
-                phi = atan2f(-isect.n[2], isect.n[0]);
+                phi = atan2f(-isect.n.z, isect.n.x);
                 tu = (phi + M_PI) / (2.0 * M_PI);
 
                 //texture_map(texcol, gtex, tu, tv);
 
-                genv.Cs[0] = (x / (float)width);
-                genv.Cs[1] = (y / (float)height);
+                genv.Cs[0] = 1.0f;
+                genv.Cs[1] = 1.0f;
+                genv.Cs[2] = 1.0f;
+                genv.Os[0] = 1.0f;
+                genv.Os[1] = 1.0f;
+                genv.Os[2] = 1.0f;
                 genv.Cl[0] = 0.8f;
                 genv.Cl[1] = 1.0f;
                 genv.Cl[2] = 0.5f;
-                genv.N[0] = isect.n[0];
-                genv.N[1] = isect.n[1];
-                genv.N[2] = isect.n[2];
+                genv.N[0] = isect.n.x;
+                genv.N[1] = isect.n.y;
+                genv.N[2] = isect.n.z;
                 genv.L[0] = 1.0f + g_offt_x;
                 genv.L[1] = 1.0f + g_offt_y;
                 genv.L[2] = 1.0f;
-                genv.P[0] = isect.p[0];
-                genv.P[1] = isect.p[1];
-                genv.P[2] = isect.p[2];
+                genv.P[0] = isect.p.x;
+                genv.P[1] = isect.p.y;
+                genv.P[2] = isect.p.z;
                 genv.P[3] = 1.0f;
-                genv.I[0] = isect.p[0] - rayorg[0];
-                genv.I[1] = isect.p[1] - rayorg[1];
-                genv.I[2] = isect.p[2] - rayorg[2];
+                genv.I[0] = isect.p.x - ray.org.x;
+                genv.I[1] = isect.p.y - ray.org.y;
+                genv.I[2] = isect.p.z - ray.org.z;
                 genv.I[3] = 1.0f;
                 genv.s = tu;
                 genv.t = tv;
                 genv.x = x;
                 genv.y = y;
+
+                // cache P
+                cacheval[0] = isect.p.x;
+                cacheval[1] = isect.p.y;
+                cacheval[2] = isect.p.z;
+                lse_save_cache_iiic(P_LAYER, x, y, cacheval);
+
+                // cache N
+                cacheval[0] = isect.n.x;
+                cacheval[1] = isect.n.y;
+                cacheval[2] = isect.n.z;
+                lse_save_cache_iiic(N_LAYER, x, y, cacheval);
+
+                // cache UV and T
+                cacheval[0] = tu;
+                cacheval[1] = tv;
+                cacheval[2] = isect.t;
+                lse_save_cache_iiic(UV_LAYER, x, y, cacheval);
+
 
 #if 0
                 if (g_run_interpreter) {
@@ -297,6 +515,12 @@ dummy_render(int width, int height, int skip)
                 shadecol[2] = clamp(genv.Ci[2]);
 
             } else {
+
+                // cache UV and T
+                cacheval[0] = 0.0f;
+                cacheval[1] = 0.0f;
+                cacheval[2] = -1.0f;    // Neg = not hit.
+                lse_save_cache_iiic(UV_LAYER, x, y, cacheval);
                 
                 shadecol[0] = 0;
                 shadecol[1] = 0;
@@ -305,25 +529,9 @@ dummy_render(int width, int height, int skip)
             }
 
 
-            if (skip != 1) {
-
-                for (yy = 0; yy < skip; yy++) {
-                    for (xx = 0; xx < skip; xx++) {
-
-                        img[3 * ((y+yy) * width + (x+xx)) + 0] = shadecol[0];
-                        img[3 * ((y+yy) * width + (x+xx)) + 1] = shadecol[1];
-                        img[3 * ((y+yy) * width + (x+xx)) + 2] = shadecol[2];
-                    }
-                }
-                
-
-            } else {
-
-                img[3 * (y * width + x) + 0] = shadecol[0];
-                img[3 * (y * width + x) + 1] = shadecol[1];
-                img[3 * (y * width + x) + 2] = shadecol[2];
-
-            }
+            img[3 * (y * width + x) + 0] = shadecol[0];
+            img[3 * (y * width + x) + 1] = shadecol[1];
+            img[3 * (y * width + x) + 2] = shadecol[2];
 
         }
     }
@@ -403,9 +611,17 @@ runShader(void *FunP)
 static void
 display()
 {
-    dummy_render(WINDOW_WIDTH, WINDOW_HEIGHT, g_skip);
 
-    g_cached = 1;
+    if (g_cached) {
+
+        dummy_rerender(WINDOW_WIDTH, WINDOW_HEIGHT, g_skip);
+
+    } else {
+
+        dummy_render(WINDOW_WIDTH, WINDOW_HEIGHT);
+        g_cached = 1;
+
+    }
 
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -424,7 +640,11 @@ mouse_down(SDL_Event event)
         g_mouse_pressed = 1; 
         g_mouse_x = event.button.x;
         g_mouse_y = event.button.y;
-        if (g_enable_specialization) g_skip = 4;
+        if (g_enable_specialization) {
+            if (g_mode == MODE_SPECIALIZE_COARSE_UPDATE) {
+                g_skip = 4;
+            }
+        }
     }
 }
 
@@ -461,12 +681,28 @@ keyboard(SDL_Event event)
 {
     
     if (event.key.keysym.sym == 'j') {
-        g_enable_specialization = !g_enable_specialization;
-        if (g_enable_specialization == 1) {
-            g_cached = 0;   // clear cache
+        g_mode++;
+
+        if (g_mode > 2) {
+            g_mode = MODE_SPECIALIZE_COARSE_UPDATE;
         }
 
-        printf("Specialization = %d\n", g_enable_specialization);
+        switch (g_mode) {
+        case MODE_SPECIALIZE_COARSE_UPDATE:
+            g_enable_specialization = 1;
+            g_cached = 0;   // clear cache
+            break;
+        case MODE_SPECIALIZE_FINE_UPDATE:
+            g_enable_specialization = 1;
+            g_cached = 0;   // clear cache
+            break;
+        case MODE_FULL_UPDATE:
+            g_enable_specialization = 0;
+            break;
+        }
+
+        printf("Mode = %d\n", g_mode);
+
     }
 
 }
@@ -520,6 +756,7 @@ quit_app:
 void
 init_render()
 {
+    init_render_scene();
     gtex = texture_load("muda512.ppm");
 }
 
@@ -677,6 +914,9 @@ main(int argc, char **argv)
     dump_shader_env();
 
     init_render();
+
+    srand48(13);
+
     lse_init(WINDOW_WIDTH, WINDOW_HEIGHT);
 
     gui_main();

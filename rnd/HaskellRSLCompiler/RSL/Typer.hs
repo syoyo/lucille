@@ -16,6 +16,7 @@ module RSL.Typer where
 
 import Control.Monad.State
 import Debug.Trace
+import Data.Generics          -- from syb package.
 
 import RSL.AST
 import RSL.Sema
@@ -53,6 +54,13 @@ insertFtoV toTy expr = do { tmpName <- getUniqueName
                           ; let sym = (SymVar tmpName toTy Uniform KindVariable)
                           ; return (TypeCast (Just sym) toTy "" expr)
                           }
+
+-- Extract first element of the vector variable.
+insertVtoF ::  Expr -> TyperState Expr
+insertVtoF expr = do { tmpName <- getUniqueName
+                     ; let sym = (SymVar tmpName TyFloat Uniform KindVariable)
+                     ; return (TypeCast (Just sym) TyFloat "" expr)
+                     }
 --
 -- Insert FtoV if required.
 --
@@ -77,6 +85,33 @@ upcastBinary e0 e1 = case (getTyOfExpr e0, getTyOfExpr e1) of
   (TyColor , _      ) -> do {                                return (e0 , e1 ) }
   _                   -> error $ "[Typer] upcastBinary: TODO: " ++ show e0 ++ " , " ++ show e1
 
+--
+-- If Ty(lhs) > Ty(rhs), up cast Ty(rhs) to Ty(lhs).
+-- If Ty(lhs) < Ty(rhs), down cast Ty(rhs) to Ty(lhs).
+-- At this time, Ty(a) is either scalar or vector.
+-- 
+forceCast :: Expr -> Expr -> TyperState (Expr, Expr)
+forceCast e0 e1 = case (getTyOfExpr e0, getTyOfExpr e1) of
+  (TyFloat, TyFloat ) ->      return (e0, e1)
+  (TyFloat, TyVector) -> do { e1' <- insertVtoF          e1; return (e0 , e1') }
+  (TyFloat, TyPoint ) -> do { e1' <- insertVtoF          e1; return (e0 , e1') }
+  (TyFloat, TyNormal) -> do { e1' <- insertVtoF          e1; return (e0 , e1') }
+  (TyFloat, TyColor ) -> do { e1' <- insertVtoF          e1; return (e0 , e1') }
+  (_      , TyVector) -> do {                                return (e0 , e1 ) }
+  (_      , TyPoint ) -> do {                                return (e0 , e1 ) }
+  (_      , TyNormal) -> do {                                return (e0 , e1 ) }
+  (_      , TyColor ) -> do {                                return (e0 , e1 ) }
+  (TyVector, TyFloat) -> do { e1' <- insertFtoV TyVector e1; return (e0 , e1') }
+  (TyPoint , TyFloat) -> do { e1' <- insertFtoV TyPoint  e1; return (e0 , e1') }
+  (TyNormal, TyFloat) -> do { e1' <- insertFtoV TyNormal e1; return (e0 , e1') }
+  (TyColor , TyFloat) -> do { e1' <- insertFtoV TyColor  e1; return (e0 , e1') }
+  (TyVector, _      ) -> do {                                return (e0 , e1 ) }
+  (TyPoint , _      ) -> do {                                return (e0 , e1 ) }
+  (TyNormal, _      ) -> do {                                return (e0 , e1 ) }
+  (TyColor , _      ) -> do {                                return (e0 , e1 ) }
+  _                   -> error $ "[Typer] forceCast: TODO: " ++ show e0 ++ " , " ++ show e1
+
+
 instance Typer Expr where
   typing e = case e of
 
@@ -99,7 +134,8 @@ instance Typer Expr where
     TypeCast _ toTy space e ->
       do { e' <- typing e
          ; tmpName <- getUniqueName
-         ; return (TypeCast (Just (SymVar tmpName toTy Uniform KindVariable)) toTy space e')
+         -- If toTy and Ty(e') has same type, no need for type casting.
+         ; if toTy == (getTyOfExpr e') then return e' else return (TypeCast (Just (SymVar tmpName toTy Uniform KindVariable)) toTy space e')
          }
 
     UnaryOp _ op e ->
@@ -115,15 +151,17 @@ instance Typer Expr where
           ; e1' <- typing e1
           ; (e0'', e1'') <- upcastBinary e0' e1'
           ; tmpName <- getUniqueName
-          ; let ty  = getTyOfExpr e0''
+          ; let ty  = if op == OpDot then TyFloat else getTyOfExpr e0''
           ; let sym = (SymVar tmpName ty Uniform KindVariable)
           ; return (BinOp (Just sym) op e0'' e1'')
+
           }
 
     Assign _ op lhs rhs ->
-      do  { rhs' <- typing rhs
-          ; lhs' <- typing lhs
-          ; return (Assign Nothing op lhs' rhs')
+      do  { rhs'            <- typing rhs
+          ; lhs'            <- typing lhs
+          ; (lhs'', rhs'')  <- forceCast lhs' rhs'
+          ; return (Assign Nothing op lhs'' rhs'')
           }
 
     Call _ sym exprs   ->
@@ -143,11 +181,60 @@ instance Typer Expr where
           ; return (Def ty name (Just initExpr'))
           }
 
+    Triple _ stmt ->
+      do  { stmt'   <- mapM typing stmt
+          ; tmpName <- getUniqueName
+          ; let ty   = TyVector           -- always vector value
+          ; let sym = (SymVar tmpName ty Uniform KindVariable)
+          ; return (Triple (Just sym) stmt')       -- TODO: check len(stmt) == 3.
+          }
+
+    -- TODO: checl all expression has same type.
+    Conditional _ cond thenExpr elseExpr ->
+      do  { cond'     <- typing cond
+          ; thenExpr' <- typing thenExpr
+          ; elseExpr' <- typing elseExpr
+          ; tmpName   <- getUniqueName
+          ; let ty  = getTyOfExpr cond'
+          ; let sym = (SymVar tmpName ty Uniform KindVariable)
+          ; return (Conditional (Just sym) cond' thenExpr' elseExpr')
+          }
+
     While cond stmt ->
       do  { cond' <- typing cond
           ; stmt' <- mapM typing stmt
           ; return (While cond' stmt')
           }
+
+    For init cond step stmt ->
+      do  { init' <- typing init
+          ; cond' <- typing cond
+          ; step' <- typing step
+          ; stmt' <- mapM typing stmt
+          ; return (For init' cond' step' stmt')
+          }
+
+    Illuminance position normal angle category stmt ->
+      do  { position' <- typing position    -- TODO: Check if vector ty
+          ; normal'   <- typing normal      -- TODO: Check if vector ty
+          ; angle'    <- typing angle       -- TODO: Check if float  ty
+          ; stmt'     <- mapM typing stmt
+          ; return (Illuminance position' normal' angle' category stmt')
+          }
+
+    If cond thenStmt (Just elseStmt) ->
+      do  { cond'     <- typing cond
+          ; thenStmt' <- mapM typing thenStmt
+          ; elseStmt' <- mapM typing elseStmt
+          ; return (If cond' thenStmt' (Just elseStmt'))
+          }
+
+    If cond thenStmt Nothing ->
+      do  { cond'     <- typing cond
+          ; thenStmt' <- mapM typing thenStmt
+          ; return (If cond' thenStmt' Nothing)
+          }
+
 
     _ -> error $ "Typing: TODO: " ++ (show e)
   
