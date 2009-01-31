@@ -55,12 +55,35 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 #include <assert.h>
 
 #include "curve.h"
 
 #define vdot(a, b) ((a).x * (b).x + (a).y * (b).y + (a).z * (b).z)
+
+static float vlength(point_t p)
+{
+    return sqrt(p.x * p.x + p.y * p.y + p.z * p.z);
+}
+
+static void vnormalize(point_t *p)
+{
+    float d;
+    float d2 = p->x * p->x + p->y * p->y + p->z * p->z;
+
+    if (d2 > 1.0e-6f) {
+        d = sqrt(d2);
+        p->x /= d; 
+        p->y /= d; 
+        p->z /= d; 
+    } 
+
+}
+
+static ri_curve_stat_t g_stat;
+
 
 /*
  * Project the curve onto a 2D coordinate system through an orthographic
@@ -103,24 +126,90 @@ ri_bezier_curve_eval3(
     p->z = c.P[0].z * w[0] + c.P[1].z * w[1] + c.P[2].z * w[2] + c.P[3].z * w[3];
 }
 
+/*
+ * Calculate derivative of cubic Bezier curve.
+ */
+void
+ri_bezier_curve_deriv3(
+    point_t           *p,
+    ri_bezier_curve_t  c,
+    float              t)
+{
+    float   w[3];
+    point_t Q[3];
+
+    Q[0].x = c.P[1].x - c.P[0].x;
+    Q[0].y = c.P[1].y - c.P[0].y;
+    Q[0].z = c.P[1].z - c.P[0].z;
+    Q[1].x = c.P[2].x - c.P[1].x;
+    Q[1].y = c.P[2].y - c.P[1].y;
+    Q[1].z = c.P[2].z - c.P[1].z;
+    Q[2].x = c.P[3].x - c.P[2].x;
+    Q[2].y = c.P[3].y - c.P[2].y;
+    Q[2].z = c.P[3].z - c.P[2].z;
+
+    // w = n * B
+    w[0] = 2.0f *        (1.0f - t) * (1.0f - t); 
+    w[1] = 2.0f * 2.0f * (1.0f - t) *         t; 
+    w[2] = 2.0f *                t  *         t; 
+
+    p->x = Q[0].x * w[0] + Q[1].x * w[1] + Q[2].x * w[2];
+    p->y = Q[0].y * w[0] + Q[1].y * w[1] + Q[2].y * w[2];
+    p->z = Q[0].z * w[0] + Q[1].z * w[1] + Q[2].z * w[2];
+}
+
+/* Distance from O to point onto Bezier curve = v param.
+ * Distance = 
+ *
+ * d = |dP x (P - O)| / |dP|
+ *
+ * where P is the point on the Bezier curve and dP is the derivative
+ * at P.
+ */
+float
+calculate_distance_to_bezier_curve(
+    point_t  P,
+    point_t dP)
+{
+
+    point_t r;
+    float   r_norm;
+    float   dP_norm;
+
+    r.x = dP.y * P.z - P.y * dP.z;
+    r.y = dP.z * P.x - P.z * dP.x;
+    r.z = dP.x * P.y - P.x * dP.y;
+
+    r_norm = vlength(r);
+    
+    dP_norm = vlength(dP);
+    if (dP_norm > 1.0e-6f) {
+        return r_norm / dP_norm;     
+    } else {
+        return r_norm;
+    }
+}
+
 int
-ri_curve_converge(
-    ri_bezier_curve_t curve,
-    int               depth,
-    float            *t,
-    float             v0,
-    float             vn)
+ri_bezier_curve_converge(
+    ri_curve_intersect_t *isect,
+    ri_bezier_curve_t     curve,
+    int                   depth,
+    float                 v0,
+    float                 vn)
 {
     int         n;
 
-    const float width = 4.0f;
+    const float width = 16.0f;
     const float eps = 1.0e-6f;
     
     float       w;
     float       v;
+    float       dist;
 
     point_t     dP0;
     point_t     dPn;
+    point_t     dP;
     point_t     dir;
     point_t     p;
 
@@ -129,8 +218,10 @@ ri_curve_converge(
     bbox = curve.bbox;
     n    = curve.ncontrol_points;
 
+    g_stat.nsubdivisions++;
+
     /* Check if the bounding box overlaps the (ray) square centered at O. */
-    if ( (bbox.bmin.z >= (*t))  || (bbox.bmax.z <= eps) ||
+    if ( (bbox.bmin.z >= isect->t)  || (bbox.bmax.z <= eps) ||
          (bbox.bmin.x >= width) || (bbox.bmax.x <= -width) ||
          (bbox.bmin.y >= width) || (bbox.bmax.y <= -width) ) {
 
@@ -202,13 +293,30 @@ ri_curve_converge(
         ri_bezier_curve_eval3(&p, curve, v);
 
         if (p.x * p.x + p.y * p.y >= (width * width) ||
-            p.z <= eps || p.z > (*t)) {
+            p.z <= eps || p.z > isect->t) {
             return 0;
         }
 
         /* Found a new intersection         */
-        (*t) = p.z;
-        
+        isect->t = p.z;
+        isect->u = v;
+
+        /* Calculating V coord may require derivative of Bezier curve. */
+        ri_bezier_curve_deriv3(
+            &dP, curve, v);
+
+        /* d = |dP x (P - O)| / |dP| */
+        dist = calculate_distance_to_bezier_curve(p, dP);
+        dist = dist / width;
+        if (dist > 1.0f) dist = 1.0f;
+        if (dist < 0.0f) dist = 0.0f;
+
+        if ( (dP.x * p.y - dP.y * p.x) < 0.0f ) {
+            isect->v = 0.5f - 0.5f * dist;
+        } else {
+            isect->v = 0.5f + 0.5f * dist;
+        }
+
         return 1;
 
     } else {
@@ -220,8 +328,8 @@ ri_curve_converge(
         ri_bezier_curve_t cl, cr;
         ri_bezier_curve_split(&cl, &cr, curve);
 
-        return (ri_curve_converge(cl, depth, t, v0, vm) ||
-                ri_curve_converge(cr, depth, t, vm, vn));
+        return (ri_bezier_curve_converge(isect, cl, depth, v0, vm) ||
+                ri_bezier_curve_converge(isect, cr, depth, vm, vn));
 
     }
 }
@@ -339,3 +447,55 @@ ri_bezier_curve_calculate_max_recursion_depth(
     return r0;
 }
 
+int
+ri_bezier_curve_intersect(
+    ri_curve_intersect_t *isect_out,
+    ri_bezier_curve_t     curve,
+    int                   depth)
+{
+    g_stat.nrays++;
+
+    int ret;
+
+    isect_out->t = 1.0e+30f;
+    ret = ri_bezier_curve_converge(isect_out, curve, depth, 0.0f, 1.0f);
+
+    return ret;
+}    
+
+void
+ri_curve_clear_stat()
+{
+    memset(&g_stat, 0, sizeof(ri_curve_stat_t));
+}
+
+void
+ri_curve_show_stat()
+{
+    double average_subdivisions;
+
+    average_subdivisions = g_stat.nsubdivisions / (double)g_stat.nrays;
+    printf("======= Statistics for curve rendering ======================\n");
+    printf("  nrays              = %llu\n", g_stat.nrays);
+    printf("  subdivisions / ray = %f\n", average_subdivisions);
+    printf("=============================================================\n");
+}
+
+
+/*
+ * Notes on Bezier curve.
+ *
+ * Bezier curve X(u) is defined as
+ *
+ *   X(u) = sum_{i=0}^{n} Bn,i(u) Pi
+ *
+ * where Bn,i(u) is defined as
+ *
+ *   Bn,i(u) = (n! / (i! (n-i)!)) u^i (1 - u)^(n-i)
+ *
+ * and Pi are control points.
+ *
+ * Derivative of Bezier curve X'(u) is defined as
+ *
+ *   X'(u) = sum_{i=0}^{n-1} B_{n-1, i}(u) * n * (P_{i+1} - Pi)
+ */

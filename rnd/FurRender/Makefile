@@ -1,6 +1,6 @@
 FLTK_CONFIG   = fltk-config
 FLTK_CXXFLAGS = `$(FLTK_CONFIG) --cxxflags --use-gl`
-FLTK_LIBS     = `$(FLTK_CONFIG) --ldflags --use-gl`
+FLTK_LIBS     = `$(FLTK_CONFIG) --ldflags --use-gl --libs`
 
 all:
-	gcc -g $(FLTK_CXXFLAGS) curve.c main.cpp $(FLTK_LIBS)
+	g++ -g $(FLTK_CXXFLAGS) curve.c main.cpp $(FLTK_LIBS)

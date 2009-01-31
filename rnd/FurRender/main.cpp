@@ -11,7 +11,7 @@
 
 #define WINDOW_WIDTH  256
 #define WINDOW_HEIGHT 256
-#define NSUBSAMPLES   3
+#define NSUBSAMPLES   1
 
 unsigned char *image;
 
@@ -34,11 +34,11 @@ render()
     curve.P[0].y = -(float)WINDOW_HEIGHT/2 + 30;
     curve.P[0].z =  1.0f;
 
-    curve.P[1].x = -(float)WINDOW_WIDTH/2 + 30;
+    curve.P[1].x = -(float)WINDOW_WIDTH/2 + 60;
     curve.P[1].y =  (float)WINDOW_HEIGHT/2 - 30;
     curve.P[1].z =  1.0f;
 
-    curve.P[2].x =  (float)WINDOW_WIDTH/2 - 30;
+    curve.P[2].x =  (float)WINDOW_WIDTH/2 - 60;
     curve.P[2].y = -(float)WINDOW_HEIGHT/2 + 30;
     curve.P[2].z =  1.0f;
 
@@ -65,11 +65,18 @@ render()
     float   t;
 
     point_t rayorg;
+    ri_curve_intersect_t isect;
 
-    float   color = 0.0f;
+    float   color[3];
+
+    ri_curve_clear_stat();
 
     for (y = 0; y < WINDOW_HEIGHT; y++) {
         for (x = 0; x < WINDOW_WIDTH; x++) {
+
+            color[0] = 0.0f;
+            color[1] = 0.0f;
+            color[2] = 0.0f;
 
             for (v = 0; v < NSUBSAMPLES; v++) {
                 for (u = 0; u < NSUBSAMPLES; u++) {
@@ -95,26 +102,29 @@ render()
 
                     ri_bezier_curve_compute_bbox(&curve_rayspace);
 
-                    t = 1.0e+30f;
-                    if (ri_curve_converge(curve_rayspace,
-                                          depth,
-                                          &t,
-                                          0.0f, 1.0f)) {
+                    if (ri_bezier_curve_intersect(&isect,
+                                                  curve_rayspace,
+                                                  depth)) {
                         
-                        color += 1.0f;
+                        color[0] += isect.u;
+                        color[1] += isect.v;
 
                     }           
 
                 }
             }
 
-            color /= (float)(NSUBSAMPLES * NSUBSAMPLES);
-            image[3*(y*WINDOW_WIDTH+x)+0] = clamp(color);
-            image[3*(y*WINDOW_WIDTH+x)+1] = clamp(color);
-            image[3*(y*WINDOW_WIDTH+x)+2] = clamp(color);
+            color[0] /= (float)(NSUBSAMPLES * NSUBSAMPLES);
+            color[1] /= (float)(NSUBSAMPLES * NSUBSAMPLES);
+            color[2] /= (float)(NSUBSAMPLES * NSUBSAMPLES);
+            image[3*(y*WINDOW_WIDTH+x)+0] = clamp(color[0]);
+            image[3*(y*WINDOW_WIDTH+x)+1] = clamp(color[1]);
+            image[3*(y*WINDOW_WIDTH+x)+2] = clamp(color[2]);
 
         }
     }
+
+    ri_curve_show_stat();
     
 }
 
