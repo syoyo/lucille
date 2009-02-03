@@ -142,15 +142,20 @@ byteorder = sys.byteorder
 # Is Intel Mac?
 #
 if platform == 'darwin' and byteorder == 'little':
+	# Multi-threading using pthread
+	env.Append(CPPDEFINES = ['WITH_PTHREAD'])
+
 	env.Append(CPPDEFINES = ['__x86__'])
-	env.Append(CPPDEFINES = ['WITH_X11'])
-	# env['with_x11'] = 1
+
+	if env['with_x11']:
+		env.Append(CPPDEFINES = ['WITH_X11'])
 
 	if env['enable_sse'] == 1:
 		env.Append(CPPDEFINES = ['WITH_SSE'])
 
 #
-# I don't know how to determine CPU is x86 in linux.
+# I don't know how to determine what kind of processor is running under
+# linux environment.
 # Assume x86 if byteorder is little.
 #
 if platform == 'linux2' and byteorder == 'little':
@@ -163,6 +168,9 @@ if platform == 'linux2' and byteorder == 'little':
 # Common settings for linux target.
 #
 if platform == 'linux2':
+	# Multi-threading using pthread
+	env.Append(CPPDEFINES = ['WITH_PTHREAD'])
+
 	env.Append(CPPDEFINES = ['LINUX'])
 
 	if env['with_x11']:
