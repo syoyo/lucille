@@ -61,6 +61,10 @@
 #include "raster.h"
 #include "log.h"
 
+#ifdef WITH_SSE
+#include <xmmintrin.h>
+#endif
+
 #ifdef WITH_MUDA
 #include "muda/rayaabb.c"
 #endif  /* WITH_MUDA */
@@ -492,13 +496,13 @@ ri_bvh_intersect(
     ray->dir_sign[1] = (ray->dir[1] < 0.0) ? 1 : 0;
     ray->dir_sign[2] = (ray->dir[2] < 0.0) ? 1 : 0;
 
-#ifdef WITH_MUDA
+#if defined(WITH_MUDA) || defined(WITH_SSE)
 
     {
         uint64_t ones;
         uint64_t *ptr;
 
-        ones = 0xffffffffffffffff;
+        ones = 0xffffffffffffffffULL;
         ptr = &ray->dir_signv[0];
 
         (*ptr++) = (ray->dir[0] < 0.0) ? ones : 0;
@@ -894,9 +898,9 @@ test_ray_aabb(
     const double tmax_y = (max_y - ray->org[1]) * ray->invdir[1];
 
     /* Early exit: (tmin_x > tmax_y) || (tmin_y > tmax_x) => false  */
-    if ( (tmin_x > tmax_y) || (tmin_y > tmax_x) ) {
-        return 0;
-    }
+    // if ( (tmin_x > tmax_y) || (tmin_y > tmax_x) ) {
+    //     return 0;
+    // }
 
     tmin = (tmin_x > tmin_y) ? tmin_x : tmin_y;
     tmax = (tmax_x < tmax_y) ? tmax_x : tmax_y;
@@ -908,9 +912,9 @@ test_ray_aabb(
     const double tmax_z = (max_z - ray->org[2]) * ray->invdir[2];
 
     /* Early exit: (tmin > tmax_z) || (tmin_z > tmax) => false  */
-    if ( (tmin > tmax_z) || (tmin_z > tmax) ) {
-        return 0;
-    }
+    // if ( (tmin > tmax_z) || (tmin_z > tmax) ) {
+    //     return 0;
+    // }
 
     tmin = (tmin > tmin_z) ? tmin : tmin_z;
     tmax = (tmax < tmax_z) ? tmax : tmax_z;
@@ -961,7 +965,90 @@ test_ray_node(
     bmax_right[1] = node->bbox[BMAX_Y1];
     bmax_right[2] = node->bbox[BMAX_Z1];
 
-#ifdef WITH_MUDA
+#ifdef WITH_SSE
+
+#define VSEL(a, b, mask) _mm_or_pd(_mm_and_pd(b, mask), _mm_andnot_pd(mask, a))
+
+#if 0
+    __m128d vbmin[3], vbmax[3];
+
+    vbmin[0]   = _mm_loadu_pd(&node->bbox[BMIN_X0]); // 0, 1
+    vbmin[1]   = _mm_loadu_pd(&node->bbox[BMIN_Y0]); // 0, 1
+    vbmin[2]   = _mm_loadu_pd(&node->bbox[BMIN_Z0]); // 0, 1
+    vbmax[0]   = _mm_loadu_pd(&node->bbox[BMAX_X0]); // 0, 1
+    vbmax[1]   = _mm_loadu_pd(&node->bbox[BMAX_Y0]); // 0, 1
+    vbmax[2]   = _mm_loadu_pd(&node->bbox[BMAX_Z0]); // 0, 1
+
+    __m128d vminval[3], vmaxval[3];
+    __m128d vraysign[3];
+
+    vraysign[0] = _mm_set_pd1(ray->dir_signv[0]);
+    vraysign[1] = _mm_set_pd1(ray->dir_signv[1]);
+    vraysign[2] = _mm_set_pd1(ray->dir_signv[2]);
+
+    vminval[0] = VSEL(vbmin[0], vbmax[0], vraysign[0]);
+    vminval[1] = VSEL(vbmin[1], vbmax[1], vraysign[1]);
+    vminval[2] = VSEL(vbmin[2], vbmax[2], vraysign[2]);
+
+    vmaxval[0] = VSEL(vbmax[0], vbmin[0], vraysign[0]);
+    vmaxval[1] = VSEL(vbmax[1], vbmin[1], vraysign[1]);
+    vmaxval[2] = VSEL(vbmax[2], vbmin[2], vraysign[2]);
+
+    __m128d vtmin[3], vtmax[3];
+    __m128d vrayorg[3], vrayinvdir[3];
+
+    vrayorg[0] = _mm_set_pd1(ray->org[0]);
+    vrayorg[1] = _mm_set_pd1(ray->org[1]);
+    vrayorg[2] = _mm_set_pd1(ray->org[2]);
+
+    vrayinvdir[0] = _mm_set_pd1(ray->invdir[0]);
+    vrayinvdir[1] = _mm_set_pd1(ray->invdir[1]);
+    vrayinvdir[2] = _mm_set_pd1(ray->invdir[2]);
+
+    vtmin[0] = _mm_mul_pd(_mm_sub_pd(vminval[0], vrayorg[0]), vrayinvdir[0]);
+    vtmin[1] = _mm_mul_pd(_mm_sub_pd(vminval[1], vrayorg[1]), vrayinvdir[1]);
+    vtmin[2] = _mm_mul_pd(_mm_sub_pd(vminval[2], vrayorg[2]), vrayinvdir[2]);
+
+    vtmax[0] = _mm_mul_pd(_mm_sub_pd(vmaxval[0], vrayorg[0]), vrayinvdir[0]);
+    vtmax[1] = _mm_mul_pd(_mm_sub_pd(vmaxval[1], vrayorg[1]), vrayinvdir[1]);
+    vtmax[2] = _mm_mul_pd(_mm_sub_pd(vmaxval[2], vrayorg[2]), vrayinvdir[2]);
+
+    __m128d vtmin_max = _mm_max_pd(vtmin[0], _mm_max_pd(vtmin[1], vtmin[2]));
+    __m128d vtmax_min = _mm_min_pd(vtmax[0], _mm_min_pd(vtmax[1], vtmax[2]));
+
+    // tmax_min > 0.0 & tmin_max <= tmax_min && tmin_max < tmax
+    __m128d vmask = _mm_and_pd(
+                        _mm_and_pd(
+                            _mm_cmpgt_pd(vtmax_min, _mm_set_pd1(0.0)),
+                            _mm_cmple_pd(vtmin_max, vtmax_min)),
+                        _mm_cmplt_pd(vtmin_max, _mm_set_pd1(tmax)));
+                        
+    retcode = _mm_movemask_pd(vmask);   // 00, 01, 10 or 11
+
+#endif
+
+    hit_left = test_ray_aabb( &tmin_left, &tmax_left,
+                               bmin_left,  bmax_left,
+                               ray );
+
+    hit_right = test_ray_aabb( &tmin_right, &tmax_right,
+                                bmin_right,  bmax_right,
+                                ray );
+
+    if ( hit_left && (tmin_left < tmax) ) {
+        retcode |= 1;
+    }
+
+    if ( hit_right && (tmin_right < tmax) ) {
+        retcode |= 2;
+    }
+
+#else
+
+
+
+
+#if defined(WITH_MUDA)
 
     ray_aabb_mu(&hit_left, &tmin_left, &tmax_left,
                 ray->org, ray->dir_signv, ray->invdir, bmin_left, bmax_left);
@@ -978,7 +1065,7 @@ test_ray_node(
                                 bmin_right,  bmax_right,
                                 ray );
 #endif
-    
+
     if ( hit_left && (tmin_left < tmax) ) {
         retcode |= 1;
     }
@@ -986,6 +1073,9 @@ test_ray_node(
     if ( hit_right && (tmin_right < tmax) ) {
         retcode |= 2;
     }
+
+#endif
+    
 
     (*order_out) = ray->dir_sign[node->axis0];
 

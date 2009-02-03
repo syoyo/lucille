@@ -54,7 +54,7 @@
 #include "qmc.h"
 //#include "pathtrace.h"
 #include "ambientocclusion.h"
-#include "whitted.h"
+//#include "whitted.h"
 #include "hilbert2d.h"
 #include "zorder2d.h"
 #include "spiral.h"
@@ -540,7 +540,7 @@ ri_render_setup(ri_render_t *render)
         }
 
         if ( nthreads > 1 ) {
-            ri_log(LOG_INFO, "number of threads to use = %d\n", nthreads );
+            ri_log(LOG_INFO, "Number of threads to use = %d", nthreads );
         } else {
             ri_log(LOG_INFO, "Single thread rendering");
         }

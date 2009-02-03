@@ -38,6 +38,25 @@ static int nprimes = sizeof(primes) / sizeof(int);
 static int    fibonacci(int k);
 
 double
+halton(int i, int d)
+{
+    int r = i;
+    int k;
+    double m = 1.0 / (double)d;
+    double h = 0.0;
+    
+    while (r > 0) {
+        k = r % d;
+        h += k * m;
+        r = (r - k) / d;
+        m = m / (double)d;
+
+    }    
+
+    return h;
+}
+
+double
 halton2(int i)
 {
 	unsigned long h, f;

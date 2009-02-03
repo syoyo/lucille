@@ -35,9 +35,9 @@ extern "C" {
 /*
  * Flags for (Visual) debugging.
  */
-#define RI_BVH_ENABLE_DIAGNOSTICS
-#define RI_BVH_TRACE_STATISTICS
-#define RI_BVH_TRACE_BEAM_STATISTICS
+//#define RI_BVH_ENABLE_DIAGNOSTICS
+//#define RI_BVH_TRACE_STATISTICS
+//#define RI_BVH_TRACE_BEAM_STATISTICS
 
 #define BMIN_X0    (0      )
 #define BMIN_X1    (1      )

@@ -401,7 +401,7 @@ ri_pointspolygons_parse(RtInt npolys, RtInt nverts[], RtInt verts[],
     for (i = 0; i < (unsigned int)npolys; i++) {
         if (nverts[i] > 4 && !poly_warn) {
             ri_log(LOG_WARN,
-                   "lucille supports only 3 or 4 face polygon.");
+                   "lucille supports only triangle or quad polygon.");
             poly_warn = 1;    /* To display warning only once. */
             continue;
         }
@@ -431,7 +431,7 @@ ri_pointspolygons_parse(RtInt npolys, RtInt nverts[], RtInt verts[],
         j += nverts[i];
     }
 
-    /* because index in RiPointsPolygons()'s verts[] is zero base. */
+    /* +1 Because index in RiPointsPolygons()'s verts[] is zero base. */
     nvertices++;
 
     if (attr->sides == 2) {

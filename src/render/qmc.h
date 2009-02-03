@@ -11,6 +11,9 @@
 extern "C" {
 #endif
 
+/* Halton sequence for base 'd' */
+extern double   halton(int i, int d);
+
 /* Halton sequence with base 2 */
 extern double   halton2(int i);
 

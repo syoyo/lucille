@@ -100,6 +100,8 @@ ri_raytrace_statistics()
            ( double )ntesttris / ( double )nrays );
     printf( "| %-48s:  %20.6f\n", "The number of travs per ray",
            ( double )ngridtravs / ( double )nrays );
+    printf( "| %-48s:  %20.6f\n", "Render time(sec)",
+           elapsed );
     printf( "| %-48s:  %20.6f\n", "M Rays/sec", nmrays /
            ( double )elapsed );
     printf(
