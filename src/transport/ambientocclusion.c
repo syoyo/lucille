@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <assert.h>
 #include <math.h>
 
 #include "ambientocclusion.h"
@@ -39,12 +40,14 @@
 static int
 calculate_occlusion(
     ri_vector_t                    Lo,              /* [out] */
+    const ri_ray_t                *inray,
     const ri_intersection_state_t *isect,
     uint32_t                       ntheta_samples,
     uint32_t                       nphi_samples)
 {
     int                     hit;
     uint32_t                i, j, k;
+    int                     thread_id = 0;
 
     double                  z0, z1;
     double                  cos_theta, phi;
@@ -69,6 +72,11 @@ calculate_occlusion(
     ray.org[1] += isect->Ns[1] * eps;
     ray.org[2] += isect->Ns[2] * eps;
 
+    thread_id = inray->thread_num;
+    assert(thread_id >=  0);
+    assert(thread_id <  16);
+
+    ray.thread_num = thread_id;
 
     for (j = 0; j < nphi_samples; j++) {
         for (i = 0; i < ntheta_samples; i++) {
@@ -78,8 +86,8 @@ calculate_occlusion(
              */
 
             /* Simple stratified sampling */
-            z0 = (i + randomMT()) / (double)ntheta_samples;
-            z1 = (j + randomMT()) / (double)nphi_samples;
+            z0 = (i + randomMT2(thread_id)) / (double)ntheta_samples;
+            z1 = (j + randomMT2(thread_id)) / (double)nphi_samples;
 
             /* Do importance sampling. the probability function is,
              *
@@ -179,6 +187,7 @@ ri_transport_ambientocclusion(
     if (hit) {
 
         ret = calculate_occlusion(result->radiance,
+                                  &eyeray,
                                   &state,
                                   8, 8);
 
