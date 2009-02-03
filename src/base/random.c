@@ -33,6 +33,8 @@
 /* ACM Transactions on Modeling and Computer Simulation,           */
 /* Vol. 8, No. 1, January 1998, pp 3--30.                          */
 
+/* Modification for multi-thread safe MT by Syoyo Fujita           */
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -160,6 +162,11 @@ randomMT()
 
     ri_thread_once(&once, rand_init);
 
+    /*
+     * The lock makes the multi-thread app very slow... Should avoid to call
+     * randomMT() in multi-thread program as much as possible.
+     * Use randomMT2() whenever possible.
+     */
     ri_mutex_lock(&mutex);
 
     if (mti >= N) { /* generate N words at one time */
