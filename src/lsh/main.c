@@ -60,6 +60,8 @@ int     flag_pixelsamples = 0;
 int     pixelsamples      = 0;
 int     flag_maxraydepth  = 0;
 int     maxraydepth       = 0;
+int     flag_nthreads     = 0;
+int     nthreads          = 0;
 int     flag_outputname   = 0;
 const char *outputname    = NULL;
 int     debug_mode        = 0;
@@ -224,7 +226,11 @@ world_begin_cb(void)
 	}
 
 	if (flag_maxraydepth) {
-		opt->max_ray_depth = maxraydepth;
+		opt->max_ray_depth  = maxraydepth;
+	}
+
+	if (flag_nthreads) {
+		opt->nthreads       = nthreads;
 	}
 
 	if (flag_outputname) {
@@ -240,20 +246,21 @@ parse_arg(int argc, char **argv)
 	int ival;
 
 	struct option longopts[] = {
-		{"help", 0, 0, 'h'},
-		{"info", 0, 0, 'i'},
-		{"version", 0, 0, 'v'},
+		{"help"         , 0, 0, 'h' },
+		{"info"         , 0, 0, 'i' },
+		{"version"      , 0, 0, 'v' },
 		/* PRMan specific options */
-		{"recover", 0, 0, 'r'},
-		{"progress", 0, 0, 'p'},
-		{"Progress", 0, 0, 'P'},
+		{"recover"      , 0, 0, 'r' },
+		{"progress"     , 0, 0, 'p' },
+		{"Progress"     , 0, 0, 'P' },
 		/* lucille specific options */
-		{"pixelsamples", 1, 0, 's'},	
-		{"maxraydepth", 1, 0, 'm'},	
-		{"debug", 0, 0, 'd'},
-		{"verbose", 0, 0, 'b'},
-		{"output", 1, 0, 'o'},
-		{0, 0, 0, 0}
+		{"pixelsamples" , 1, 0, 's' },	
+		{"maxraydepth"  , 1, 0, 'm' },	
+		{"debug"        , 0, 0, 'd' },
+		{"verbose"      , 0, 0, 'b' },
+		{"output"       , 1, 0, 'o' },
+		{"nthreads"     , 1, 0, 't' },
+		{0              , 0, 0, 0   }
 	};
 
 	int opt;
@@ -305,6 +312,16 @@ parse_arg(int argc, char **argv)
 
 			maxraydepth = ival;
 			flag_maxraydepth = 1;
+			
+			break;
+
+		case 't':
+
+			ival = atoi(optarg);
+			if (ival > 16) ival = 16;
+
+			nthreads = ival;
+			flag_nthreads = 1;
 			
 			break;
 
@@ -410,8 +427,9 @@ option_list()
 	printf("    --version         Show version and help.\n");
 	printf("    --verbose         Verbose mode.\n");
 	printf("    --debug           Run in debug mode.\n");
+	printf("    --nthreads     N  # of threads to use(max = 16).\n");
 	printf("    --pixelsamples N  Samples per pixel(max = 16).\n");
-	printf("    --maxraydepth N   Maximum ray depth(max = 16).\n");
+	printf("    --maxraydepth  N  Maximum ray depth(max = 16).\n");
 	printf("\n");
 }
 
