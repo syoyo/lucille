@@ -6,7 +6,7 @@ lucille global illumination renderer
 Introduction
 ============
 
-http://lucille.sourceforge.net/img/toprendered.jpg
+.. image:: http://lucille.sourceforge.net/img/toprendered.jpg
 
 lucille is a fast, next-gen, cutting-edge global illumination renderer with programmable shading engine.
 
