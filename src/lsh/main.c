@@ -370,7 +370,7 @@ info()
 
 	printf("  Build options  : ");
 
-#if !defined(NDEBUG) || defined(DEBUG)
+#if defined(DEBUG_BUILD)
 	printf("Debug build");
 #else
 	printf("Release build");
