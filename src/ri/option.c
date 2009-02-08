@@ -683,7 +683,7 @@ parse_and_add_searchpath(ri_option_t *option,    /* [inout] */
 
         } else {
 
-            ri_log(LOG_DEBUG, "Add serach path : %s", buf);
+            ri_log(LOG_DEBUG, "Add search path : %s", buf);
             ri_option_add_searchpath(option, buf);
 
         }
