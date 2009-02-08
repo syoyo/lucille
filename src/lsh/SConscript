@@ -20,6 +20,10 @@ libs=['riri', 'rirender', 'riimageio', 'ritransport', 'ridisplay',  'ribase', 'm
 
 if sys.platform == 'linux2':
 	libs.append(['dl'])
+	libs.append('pthread')
+
+if sys.platform == 'darwin':
+	libs.append('pthread')
 	
 if env['with_zlib']:
 	libs.append([env['ZLIB_LIB_NAME']]) 
@@ -38,7 +42,6 @@ if env['with_jpeglib']:
 if env['with_x11']:
 	libPath.append([env['X11_LIB_PATH']])
 	libs.append('X11')
-	libs.append('pthread')
 
 p = env.CFile(target='parserib.c', source='parserib.y')
 l = env.CFile(target='lexrib.c', source='lexrib.l')
