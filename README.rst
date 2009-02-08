@@ -8,7 +8,7 @@ Introduction
 
 .. image:: http://lucille.sourceforge.net/img/toprendered.jpg
 
-lucille is a fast, next-gen, cutting-edge global illumination renderer with programmable shading engine.
+**lucille** is a fast, next-gen, cutting-edge global illumination renderer with programmable shading engine.
 
 lucille supports RenderMan(R) interface so you can use lucille as a replacement
 of exising RenderMan(R) compiliant renderer.
@@ -31,7 +31,7 @@ Features
 Supported platforms
 ===================
 
-lucille is written in very portable C, thus lucille will run various platform and processors.
+**lucille** is written in very portable C, thus lucille will run various platform and processors.
 At this time, fully tested platforms are,
 
 - Mac OS X ( x86, 32bit and 64bit )
@@ -49,6 +49,33 @@ Edit ''custom.py'' if required, then type ::
 to build the lucille.
 
 See ''INSTALL'' for more help.
+
+
+Quick tutorial
+==============
+
+''bin/lsh'', lucille renderer command, will be build after compilation finishes successfully.
+
+Type following to render example scene.
+
+::
+
+  $ cd bin
+  $ ./lsh ../examples/ambient_occlusion/ambient_occlusion.rib
+
+You'll see ''ambient_occlusion.hdr'' in the current directory. The file is a HDR file. You can see this image with HDR ready image viewer.
+If you build lucille with ''with_x11'' option, you'll see the rendering image during rendering is running. 
+
+**lucille** has its own HDR image viewer called **Rockenfield**, which is located at ``$(lucille)/tools/rockenfield``. To use Rockenfield, you need manually build it by, ::
+
+  $ cd tools/rockenfield
+  $ make
+
+Note that FLTK 1.1.9 is required to build Rockenfield.
+
+To see HDR image with Rockenfield, type, ::
+
+  $ rockenfield <image.hdr>
 
 
 Documentation
