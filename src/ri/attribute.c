@@ -132,7 +132,7 @@ ri_api_attribute_end()
 
     if (ri_stack_depth(ctx->attr_stack) <= 1) {
         /* stack #1 stores default attribute, so can't pop. */
-        ri_log(LOG_WARN, "there is no corresponding RiAttributeBegin()");    
+        ri_log(LOG_WARN, "(Render) There is no corresponding RiAttributeBegin()");    
         return;
     }
 
@@ -151,7 +151,7 @@ ri_api_attribute_end()
     if (attr != NULL) {
         ri_attribute_free(attr);
     } else {    
-        ri_log(LOG_WARN, "attr == NULL");
+        ri_log(LOG_WARN, "(Render) attr == NULL");
     }
 
     ri_stack_pop(ctx->attr_stack);
@@ -173,7 +173,7 @@ ri_api_attribute(RtToken token, RtInt n, RtToken tokens[], RtPointer params[])
     attr = (ri_attribute_t *)ri_stack_get(ctx->attr_stack);
 
     if (attr == NULL) {
-        ri_log(LOG_WARN, "attr == NULL");
+        ri_log(LOG_WARN, "(Render) attr == NULL");
         return;
     }
 
@@ -224,13 +224,13 @@ ri_api_attribute(RtToken token, RtInt n, RtToken tokens[], RtPointer params[])
                 // pmap->set_globalmap(*tokp);
             } else if (strcmp(tokens[i], "estimator") == 0) {
 
-                ri_log(LOG_WARN, "\"estimator\" is not yet supported."); 
+                ri_log(LOG_WARN, "(PMap   ) \"estimator\" is not yet supported."); 
 
             } else if (strcmp(tokens[i], "shadingmodel") == 0 ||
                    strcmp(tokens[i],
                       "string shadingmodel") == 0) {
 
-                ri_log(LOG_WARN, "\"shadingmodel\" is not yet supported."); 
+                ri_log(LOG_WARN, "(PMap   ) \"shadingmodel\" is not yet supported."); 
             }
         }
     }
@@ -252,7 +252,7 @@ ri_api_opacity(RtColor color)
 {
     ri_attribute_t *attr;
 
-    ri_log(LOG_WARN, "RiOpacity is not yet implemented");
+    ri_log(LOG_WARN, "(Render) RiOpacity is not yet implemented");
 
     attr = ri_stack_get(ri_render_get()->context->attr_stack);
 
@@ -265,7 +265,7 @@ ri_api_texture_coordinates(RtFloat s1, RtFloat t1, RtFloat s2, RtFloat t2,
 {
     ri_attribute_t *attr;
 
-    ri_log(LOG_WARN, "RiTextureCoordinates is not yet implemented");
+    ri_log(LOG_WARN, "(Render) RiTextureCoordinates is not yet implemented");
 
     attr = ri_stack_get(ri_render_get()->context->attr_stack);
 
@@ -307,7 +307,7 @@ ri_api_surface(RtToken name, RtInt n, RtToken tokens[], RtPointer params[])
 
     } else {    /* Fixed shading pipeline. */
         for (i = 0; i < n; i++) {
-            ri_log(LOG_DEBUG, "Surface param token = %s\n", tokens[i]);
+            ri_log(LOG_DEBUG, "(RI    ) Surface param token = %s", tokens[i]);
             if (strcmp(tokens[i], "texture") == 0) {
                 tokp = (RtToken *)params[i];
                 attr->material->texture = ri_texture_load(*tokp);
@@ -390,14 +390,14 @@ load_shader(const char *name)
     if (!ri_option_find_file(fullpath,    /* output */
                  ri_render_get()->context->option,
                  buf)) {
-        ri_log(LOG_WARN, "(API) Can't find shader \"%s\". Use default shader.", buf);
+        ri_log(LOG_WARN, "(API   ) Can't find shader \"%s\". Use default shader.", buf);
         ri_mem_free(buf);
         return NULL;
     }
 
     module = dlload(fullpath);
     if (module == NULL) {
-        ri_log(LOG_WARN, "(API) Can't load shader \"%s\". Use default shader.", buf);
+        ri_log(LOG_WARN, "(API   ) Can't load shader \"%s\". Use default shader.", buf);
         ri_mem_free(buf);
         return NULL;
     }
