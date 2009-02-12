@@ -29,24 +29,24 @@ hdr_dd_open(const char *name, int width, int height,
 	if (!gfp) return 0;
 
 	if (strcmp(format, "float") != 0) {
-		ri_log(LOG_ERROR, ".hdr format requires float format for input pixel");
+		ri_log(LOG_ERROR, "(Disp) .hdr format requires float format for input pixel");
 		return 0;
 	}
 
 	if (bits != 32) {
-		ri_log(LOG_ERROR, ".hdr format requires 32 bit per component for input pixel");
+		ri_log(LOG_ERROR, "(Disp) .hdr format requires 32 bit per component for input pixel");
 		return 0;
 	}
 
 	if (strcmp(component, RI_RGB) != 0) {
-		ri_log(LOG_WARN, "component is not RI_RGB");
+		ri_log(LOG_WARN, "(Disp) Component is not RI_RGB");
 	}
 
 	RGBE_WriteHeader(gfp, width, height, NULL);
 	
 	gbuf = (float *)ri_mem_alloc(width * height * sizeof(float) * 3);
 	if (!gbuf) {
-		ri_log(LOG_ERROR, "Can't alloc memory for the buffer.");
+		ri_log(LOG_ERROR, "(Disp) Can't alloc memory for the buffer.");
 		return 0;
 	}
 
@@ -54,7 +54,7 @@ hdr_dd_open(const char *name, int width, int height,
 	gwidth     = width;	
 	gheight    = height;
 
-	ri_log(LOG_INFO, "(HDR dd) Output written to \"%s\"", name);
+	ri_log(LOG_INFO, "(Disp) Output written to \"%s\"", name);
 
 	return 1;
 }
