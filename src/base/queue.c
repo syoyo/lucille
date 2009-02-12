@@ -470,9 +470,11 @@ ri_mt_queue_new()
 
     ri_mt_queue_t *q;
 
-    q        = ri_mem_alloc(sizeof(ri_mt_queue_t));
-    q->nodes = ri_list_new(); 
-    q->mutex = ri_mutex_new(); 
+    q           = ri_mem_alloc(sizeof(ri_mt_queue_t));
+    q->mutex    = ri_mutex_new(); 
+    q->nodes    = ri_list_new(); 
+    q->nnodes   = 0; 
+
     ri_mutex_init(q->mutex);
 
     return q;
@@ -501,6 +503,8 @@ ri_mt_queue_push(
         memcpy(item->data, data, size);
 
         ri_list_append(queue->nodes, item);
+
+        queue->nnodes++; 
     }
 
     ri_mutex_unlock(queue->mutex);
@@ -543,11 +547,33 @@ ri_mt_queue_pop(
          */
         queue->nodes = ri_list_remove_first(queue->nodes);
 
+        queue->nnodes--; 
+
     }
 
     ri_mutex_unlock(queue->mutex);
 
     return 0;
+}
+
+/*
+ * Returns number of items remain in this queue.
+ */
+int
+ri_mt_queue_len(
+    const ri_mt_queue_t  *queue)
+{
+    int nnodes;
+
+    ri_mutex_lock(queue->mutex);
+
+    {
+        nnodes = queue->nnodes;
+    }
+
+    ri_mutex_unlock(queue->mutex);
+
+    return nnodes;
 }
 
 int

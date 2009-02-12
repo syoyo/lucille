@@ -82,7 +82,9 @@ typedef struct _ri_queue_t
 typedef struct _ri_mt_queue_t
 {
     ri_mutex_t *mutex;
+
     ri_list_t  *nodes;
+    int         nnodes;
     
 } ri_mt_queue_t;
 
@@ -122,6 +124,9 @@ extern int            ri_mt_queue_pop (
                             ri_mt_queue_t  *queue,           /* [in]  */ 
                             void          **data_out,        /* [out] */
                             uint32_t       *data_size_out);  /* [out] */
+
+extern int            ri_mt_queue_len (
+                            const ri_mt_queue_t  *queue);
 
 extern int            ri_mt_queue_free(
                             ri_mt_queue_t  *queue);          /* [in]  */
