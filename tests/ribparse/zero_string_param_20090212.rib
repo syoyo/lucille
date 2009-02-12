@@ -1,0 +1,5 @@
+# Issue #322
+version 3.03
+Surface "MOSAICsurface"
+        "uniform float SSSTexBlur" [ 0.0 ]
+        "uniform string ColMap" [ "" ]
