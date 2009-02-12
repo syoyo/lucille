@@ -337,9 +337,9 @@ ri_bvh_build(
         bvh->bmax[1] = bmax[1];
         bvh->bmax[2] = bmax[2];
 
-        ri_log(LOG_INFO, "(BVH   )    bmin (%f, %f, %f)",
+        ri_log(LOG_INFO, "(BVH   )   bmin (%f, %f, %f)",
             bvh->bmin[0], bvh->bmin[1], bvh->bmin[2]);
-        ri_log(LOG_INFO, "(BVH   )    bmax (%f, %f, %f)",
+        ri_log(LOG_INFO, "(BVH   )   bmax (%f, %f, %f)",
             bvh->bmax[0], bvh->bmax[1], bvh->bmax[2]);
     }
     

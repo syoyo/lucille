@@ -141,7 +141,7 @@ ri_texture_load(const char *filename)
     char            fullpath[4096];
 
     if ((filename == '\0') || (strlen(filename) == 0)) {
-        ri_log(LOG_WARN, "(TexLoad ) Null input texture filename.\n");
+        ri_log(LOG_WARN, "(TexLdr) Null input texture filename.");
         return NULL;
     }
 
