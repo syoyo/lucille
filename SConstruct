@@ -74,6 +74,7 @@ env.Append(CXXFLAGS = env['custom_cxxflags'])
 # build mode
 #
 if env['build_target'] == 'debug':
+	env.Append(CPPDEFINES = ['DEBUG_BUILD'])
 	env.Append(CFLAGS   = ['-g'])
 	env.Append(CXXFLAGS = ['-g'])
 

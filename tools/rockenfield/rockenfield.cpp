@@ -936,10 +936,10 @@ MyWindow::handle(int event)
 		movex = Fl::event_x() - margin;
 		movey = Fl::event_y() - (margin + menu_heightmargin);
 		if (pickup_value(&x, &y, vals)) {
-			sprintf(buf, "rockenfield [%d, %d] = (%f, %f, %f)",
+			sprintf(buf, "Rockenfield [%d, %d] = (%f, %f, %f)",
 				x, y, vals[0], vals[1], vals[2]);
 		} else {
-			sprintf(buf, "rokenfield (background)");
+			sprintf(buf, "Rockenfield (background)");
 		}
 		gMainWindow->label(buf);
 

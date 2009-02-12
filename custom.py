@@ -31,8 +31,9 @@ enable_sse = 1
 
 #
 # Specify floating point precision.
+# At this time, only double is supported.
 #
-# 0 : use float
+# 0 : use float(DO NOT USE AT THIS TIME)
 # 1 : use double(default)
 #
 use_double = 1
@@ -65,7 +66,7 @@ ZLIB_LIB_NAME = 'z'
 #
 # If you want to support jpeg image as a texture, enable this.
 #
-with_jpeglib = 1
+with_jpeglib = 0
 JPEGLIB_INC_PATH = '/usr/local/include'
 JPEGLIB_LIB_PATH = '/usr/local/lib'
 JPEGLIB_LIB_NAME = 'jpeg'
