@@ -39,6 +39,12 @@ int lexrib_mode_skip;
 
 //static FILE *gribin = NULL;             /* Used if len(ribstack) == 0 */
 
+void init_string_char()
+{
+    yylval.string[0] = '\0';
+
+}
+
 void add_string_char(char c)
 {
     yylval.string[str_pos++] = c;
@@ -185,7 +191,7 @@ ReadArchive[ \t]*\"[^\"]*\" {
                       return UNKNOWN;                                       }
 <PARAM>"["          { return LBRACKET;                                      }
 <PARAM>"]"          { return RBRACKET;                                      }
-<PARAM>\"           { str_pos = 0; yy_push_state(STR);                      }
+<PARAM>\"           { str_pos = 0; init_string_char(); yy_push_state(STR);  }
 <STR>\\n            { add_string_char('\n');                                }
 <STR>\\t            { add_string_char('\t');                                }
 <STR>\\r            { add_string_char('\r');                                }
