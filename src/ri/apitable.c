@@ -1,4 +1,12 @@
 /*
+ *                                  lucille
+ *                       A global illumination renderer
+ *
+ *                  Copyright (c) 2003 - 2203, Syoyo Fujita.
+ *
+ */
+
+/*
  * $Id: apitable.c,v 1.4 2004/06/13 06:44:50 syoyo Exp $
  */
 #ifdef HAVE_CONFIG_H
@@ -33,7 +41,7 @@ RiEnd(void)
 RtVoid
 RiFrameBegin(RtInt frame)
 {
-    ri_log(LOG_WARN, "RiFrameBegin() is not yet implemented");
+    ri_log(LOG_WARN, "(RI    ) RiFrameBegin() is not yet implemented, ignored.");
     //ri_api_frame_begin(frame);
     (void)frame;
 }
@@ -41,7 +49,7 @@ RiFrameBegin(RtInt frame)
 RtVoid
 RiFrameEnd(void)
 {
-    ri_log(LOG_WARN, "RiFrameEnd() is not yet implemented");
+    ri_log(LOG_WARN, "(RI    ) RiFrameEnd() is not yet implemented, ignored.");
     //ri_api_frame_end();
 }
 
@@ -557,21 +565,21 @@ RiPixelSamples(RtFloat xsamples, RtFloat ysamples)
 RtVoid
 RiShadingRate(RtFloat size)
 {
-    ri_log(LOG_WARN, "RiShadingRate() is not yet implemented");
+    ri_log(LOG_WARN, "(RI    ) RiShadingRate() is not yet implemented");
     (void)size;
 }
 
 RtVoid
 RiShadingInterpolation(RtToken type)
 {
-    ri_log(LOG_WARN, "RiShadingInterpolation() is not yet implemented");
+    ri_log(LOG_WARN, "(RI    ) RiShadingInterpolation() is not yet implemented, ignored.");
     (void)type;
 }
 
 RtVoid
 RiShutter(RtFloat min, RtFloat max)
 {
-    ri_log(LOG_WARN, "RiShutter() is not yet implemented");
+    ri_log(LOG_WARN, "(RI    ) RiShutter() is not yet implemented, ignored.");
     (void)min;
     (void)max;
 }
@@ -579,7 +587,7 @@ RiShutter(RtFloat min, RtFloat max)
 RtVoid
 RiPixelFilter(RtFilterFunc filterfunc, RtFloat xwidth, RtFloat ywidth)
 {
-    ri_log(LOG_WARN, "RiPixelFilter() is not yet implemented");
+    ri_log(LOG_WARN, "(RI    ) RiPixelFilter() is not yet implemented, ignored.");
     (void)filterfunc;
     (void)xwidth;
     (void)ywidth;
@@ -588,7 +596,7 @@ RiPixelFilter(RtFilterFunc filterfunc, RtFloat xwidth, RtFloat ywidth)
 RtVoid
 RiQuantize(RtToken type, RtInt one, RtInt min, RtInt max, RtFloat ampl)
 {
-    ri_log(LOG_WARN, "RiQuantize() is not yet implemented");
+    ri_log(LOG_WARN, "(RI    ) RiQuantize() is not yet implemented, ignored.");
     (void)type;
     (void)one;
     (void)min;
@@ -599,7 +607,7 @@ RiQuantize(RtToken type, RtInt one, RtInt min, RtInt max, RtFloat ampl)
 RtVoid
 RiCoordinateSystem(RtToken space)
 {
-    ri_log(LOG_WARN, "RiCoordinateSystem() is not yet implemented");
+    ri_log(LOG_WARN, "(RI    ) RiCoordinateSystem() is not yet implemented, ignored.");
     (void)space;
 }
 
@@ -663,7 +671,7 @@ RiImagerV(RtToken name, RtInt n, RtToken tokens[], RtPointer params[])
 RtVoid
 RiIlluminate(RtLightHandle light, RtBoolean onoff)
 {
-    ri_log(LOG_WARN, "RiIlluminate() is not yet implemented");
+    ri_log(LOG_WARN, "(RI    ) RiIlluminate() is not yet implemented, ignored.");
     (void)light;
     (void)onoff;
 }
@@ -690,7 +698,7 @@ RiDisplatement(const char *name, ...)
 RtVoid
 RiDisplacementV(const char *name, RtInt n, RtToken tokens[], RtPointer params[])
 {
-    ri_log(LOG_WARN, "RiDisplacementV() is not yet implemented");
+    ri_log(LOG_WARN, "(RI    ) RiDisplacementV() is not yet implemented, ignored.");
     (void)name;
     (void)n;
     (void)tokens;
@@ -721,7 +729,7 @@ RiAtmosphere(const char *name, ...)
 RtVoid
 RiAtmosphereV(const char *name, RtInt n, RtToken tokens[], RtPointer params[])
 {
-    ri_log(LOG_WARN, "RiAtomosphereV() is not yet implemented");
+    ri_log(LOG_WARN, "(RI    ) RiAtomosphereV() is not yet implemented, ignored.");
     (void)name;
     (void)n;
     (void)tokens;
@@ -752,7 +760,7 @@ RiPoints(RtInt npoints, ...)
 RtVoid
 RiPointsV(RtInt npoints, RtInt n, RtToken tokens[], RtPointer params[])
 {
-    ri_log(LOG_WARN, "RiPointsV() is not yet implemented");
+    ri_log(LOG_WARN, "(RI    ) RiPointsV() is not yet implemented, ignored.");
     (void)npoints;
     (void)n;
     (void)tokens;
@@ -762,7 +770,7 @@ RiPointsV(RtInt npoints, RtInt n, RtToken tokens[], RtPointer params[])
 RtVoid
 RiBasis(RtBasis ubasis, RtInt ustep, RtBasis vbasis, RtInt vstep)
 {
-    ri_log(LOG_WARN, "RiBasis() is not yet implemented");
+    ri_log(LOG_WARN, "(RI    ) RiBasis() is not yet implemented, ignored.");
     (void)ubasis;
     (void)ustep;
     (void)vbasis;
@@ -773,14 +781,14 @@ RiBasis(RtBasis ubasis, RtInt ustep, RtBasis vbasis, RtInt vstep)
 RtVoid
 RiMatte(RtBoolean onoff)
 {
-    ri_log(LOG_WARN, "RiMatte() is not yet implemented");
+    ri_log(LOG_WARN, "(RI    ) RiMatte() is not yet implemented, ignored.");
     (void)onoff;
 }
 
 RtVoid
 RiMotionBegin(RtInt n, ...)
 {
-    ri_log(LOG_WARN, "RiMotionBegin() is not yet implemented");
+    ri_log(LOG_WARN, "(RI    ) RiMotionBegin() is not yet implemented, ignored.");
     (void)n;
 
 }
@@ -788,7 +796,7 @@ RiMotionBegin(RtInt n, ...)
 RtVoid
 RiMotionBeginV(RtInt n, RtFloat times[])
 {
-    ri_log(LOG_WARN, "RiMotionBeginV() is not yet implemented");
+    ri_log(LOG_WARN, "(RI    ) RiMotionBeginV() is not yet implemented, ignored.");
     (void)n;
     (void)times;
 }
@@ -796,7 +804,7 @@ RiMotionBeginV(RtInt n, RtFloat times[])
 RtVoid
 RiMotionEnd()
 {
-    ri_log(LOG_WARN, "RiMotionEnd() is not yet implemented");
+    ri_log(LOG_WARN, "(RI    ) RiMotionEnd() is not yet implemented, ignored.");
 }
 
 RtVoid
@@ -804,7 +812,7 @@ RiTrimCurve(RtInt nloops, RtInt ncurves[], RtInt order[], RtFloat knot[],
         RtFloat min[], RtFloat max[], RtInt n[], RtFloat u[], RtFloat v[],
         RtFloat w[])
 {
-    ri_log(LOG_WARN, "RiTrimCurve() will not be implemented");
+    ri_log(LOG_WARN, "(RI    ) RiTrimCurve() will not be implemented, ignored.");
     (void)nloops;
     (void)ncurves;
     (void)order;
@@ -818,11 +826,98 @@ RiTrimCurve(RtInt nloops, RtInt ncurves[], RtInt order[], RtFloat knot[],
 }
 
 RtVoid
+RiPatch(
+    RtToken type,
+    ...)
+{
+    RtInt      n;
+    va_list    args;
+    RtToken   *tokens;
+    RtPointer *params;
+
+    va_start(args, type);
+
+    n = ri_util_paramlist_build(args, &tokens, &params);
+
+    va_end(args);
+
+    RiPatchV(type, n, tokens, params);
+
+    ri_util_paramlist_free(tokens, params);
+
+}
+
+RtVoid
+RiPatchV(
+    RtToken   type,
+    RtInt     n,
+    RtToken   tokens[],
+    RtPointer params[])
+{
+    ri_log(LOG_WARN, "(RI    ) RiPatch() is not yet implemened, ignored.");
+
+    (void)type;
+    (void)n;
+    (void)tokens;
+    (void)params;
+}
+
+RtVoid
+RiPatchMesh(
+    RtToken   type,
+    RtInt     nu,
+    RtToken   uwrap,
+    RtInt     nv,
+    RtToken   vwrap,
+    ...)
+{
+    RtInt      n;
+    va_list    args;
+    RtToken   *tokens;
+    RtPointer *params;
+
+    va_start(args, vwrap);
+
+    n = ri_util_paramlist_build(args, &tokens, &params);
+
+    va_end(args);
+
+    RiPatchMeshV(type, nu, uwrap, nv, vwrap, n, tokens, params);
+
+    ri_util_paramlist_free(tokens, params);
+
+}
+
+RtVoid
+RiPatchMeshV(
+    RtToken   type,
+    RtInt     nu,
+    RtToken   uwrap,
+    RtInt     nv,
+    RtToken   vwrap,
+    RtInt     n,
+    RtToken   tokens[],
+    RtPointer params[])
+{
+    ri_log(LOG_WARN, "(RI    ) RiPatchMesh() is not yet implemened, ignored.");
+    (void)type;
+    (void)nu;
+    (void)uwrap;
+    (void)nv;
+    (void)vwrap;
+    (void)n;
+    (void)tokens;
+    (void)params;
+
+}
+
+
+RtVoid
 RiNuPatchV(RtInt nu, RtInt uorder, RtFloat uknot[], RtFloat umin, RtFloat umax,
        RtInt nv, RtInt vorder, RtFloat vknot[], RtFloat vmin, RtFloat vmax,
        RtInt n, RtToken tokens[], RtPointer params[])
 {
-    ri_log(LOG_WARN, "RiNuPatchV() will not be implemented");
+    ri_log(LOG_WARN, "(RI    ) RiNuPatchV() will not be implemented, ignored.");
     (void)nu;
     (void)uorder;
     (void)uknot;
@@ -842,7 +937,7 @@ RtVoid
 RiCurvesV(RtToken type, RtInt ncurves, RtInt nvertices[], RtToken wrap,
       RtInt n, RtToken tokens[], RtPointer params[])
 {
-    ri_log(LOG_WARN, "RiCurvesV() will not be implemented");
+    ri_log(LOG_WARN, "(RI    ) RiCurvesV() will not be implemented, ignored.");
     (void)type;
     (void)ncurves;
     (void)nvertices;
@@ -855,7 +950,7 @@ RiCurvesV(RtToken type, RtInt ncurves, RtInt nvertices[], RtToken wrap,
 RtVoid
 RiArchiveRecord(RtToken type, char *format, ...)
 {
-    ri_log(LOG_WARN, "RiArchiveRecord() is not yet implemented");
+    ri_log(LOG_WARN, "(RI    ) RiArchiveRecord() is not yet implemented, ignored.");
     (void)type;
     (void)format;
 
@@ -864,7 +959,7 @@ RiArchiveRecord(RtToken type, char *format, ...)
 RtVoid
 RiErrorHandler(RtErrorHandler handler)
 {
-    ri_log(LOG_WARN, "RiErrorHandler() is not yet implemented");
+    ri_log(LOG_WARN, "(RI    ) RiErrorHandler() is not yet implemented, ignored.");
     (void)handler;
 }
 

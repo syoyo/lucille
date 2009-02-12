@@ -1,3 +1,11 @@
+/*
+ *                                  lucille
+ *                       A global illumination renderer
+ *
+ *                  Copyright (c) 2003 - 2203, Syoyo Fujita.
+ *
+ */
+
 #ifndef APITABLE_H
 #define APITABLE_H
 
@@ -135,6 +143,21 @@ extern void ri_api_texture_coordinates(RtFloat s1, RtFloat t1,
                                        RtFloat s3, RtFloat t3,
                                        RtFloat s4, RtFloat t4);
 
+/* patches */
+extern void ri_patch                 (RtToken   type,
+                                      RtInt     n, 
+                                      RtToken   tokens[],
+                                      RtPointer parms[]);
+
+extern void ri_patch_mesh            (RtToken   type,
+                                      RtInt     nu,
+                                      RtToken   uwrap,
+                                      RtInt     nv,
+                                      RtToken   vwrap,
+                                      RtInt     n,
+                                      RtToken   tokens[],
+                                      RtPointer parms[]);
+
 /* transformation block */
 extern void ri_api_transform_begin();
 extern void ri_api_transform_end  ();
@@ -166,6 +189,7 @@ extern void ri_api_sides(RtInt sides);
 
 extern void ri_api_hider(RtToken type,
              RtInt n, RtToken tokens[], RtPointer params[]);
+
 
 #ifdef __cplusplus
 }    /* extern "C" */

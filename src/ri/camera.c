@@ -1,7 +1,8 @@
 /*
- *   lucille | Global Illumination renderer
+ *                                  lucille
+ *                       A global illumination renderer
  *
- *             written by Syoyo Fujita.
+ *                  Copyright (c) 2003 - 2203, Syoyo Fujita.
  *
  */
 
@@ -444,7 +445,7 @@ ri_api_clipping_plane(
     RtFloat x, RtFloat y, RtFloat z,
     RtFloat nx, RtFloat ny, RtFloat nz )
 {
-    ri_log( LOG_WARN, "RiClippingPlane is not yet implemented" );
+    ri_log( LOG_WARN, "(Camera) RiClippingPlane is not yet implemented" );
 
     ( void )x;
     ( void )y;
@@ -470,7 +471,7 @@ void
 ri_api_shutter(
     RtFloat min, RtFloat max )
 {
-    ri_log( LOG_WARN, "RiShutter is not yet implemented" );
+    ri_log( LOG_WARN, "(Camera) RiShutter is not yet implemented" );
 
     ri_render_get()->context->option->camera->shutter_open  = min;
     ri_render_get()->context->option->camera->shutter_close = max;

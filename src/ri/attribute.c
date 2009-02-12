@@ -316,7 +316,7 @@ ri_api_surface(RtToken name, RtInt n, RtToken tokens[], RtPointer params[])
                 valp = (RtFloat *)params[i];
                 scale = *valp;
                 printf("iblscale = %f\n", scale);
-            /* Hack for MOSAIC */
+            /* Hack for libMOSAIC */
             } else if (strcmp(tokens[i], "uniform string ColMap") == 0) {
                 tokp = (RtToken *)params[i];
                 attr->material->texture = ri_texture_load(*tokp);
@@ -390,14 +390,14 @@ load_shader(const char *name)
     if (!ri_option_find_file(fullpath,    /* output */
                  ri_render_get()->context->option,
                  buf)) {
-        ri_log(LOG_WARN, "Can't find shader \"%s\". Use default shader.", buf);
+        ri_log(LOG_WARN, "(API) Can't find shader \"%s\". Use default shader.", buf);
         ri_mem_free(buf);
         return NULL;
     }
 
     module = dlload(fullpath);
     if (module == NULL) {
-        ri_log(LOG_WARN, "Can't load shader \"%s\". Use default shader.", buf);
+        ri_log(LOG_WARN, "(API) Can't load shader \"%s\". Use default shader.", buf);
         ri_mem_free(buf);
         return NULL;
     }
