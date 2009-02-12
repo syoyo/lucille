@@ -140,6 +140,11 @@ ri_texture_load(const char *filename)
     ri_texture_t   *p;
     char            fullpath[4096];
 
+    if ((filename == '\0') || (strlen(filename) == 0)) {
+        ri_log(LOG_WARN, "(TexLoad ) Null input texture filename.\n");
+        return NULL;
+    }
+
     if (!initialized) {
         texture_cache = ri_hash_new();
 #if USE_ZORDER
