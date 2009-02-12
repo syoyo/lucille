@@ -139,9 +139,9 @@ static void     progress_bar(
     ri_float_t           eta,
     ri_float_t           elapsed );
 
-static void     create_bucket_list(
+static int     create_bucket_list(
     const ri_render_t   *render,                            /* [in]     */
-    ri_mt_queue_t       *q);                                /* [out]    */
+    ri_mt_queue_t       *q);                                /* [inout]  */
 
 static int      render_bucket(
     bucket_t            *bucket,                            /* [inout]  */
@@ -330,7 +330,9 @@ ri_render_frame(  )
     ri_scene_setup( scene );
     ri_camera_setup( ri_render_get()->context->option->camera );
 
-    create_bucket_list( ri_render_get(), ri_render_get()->bucket_queue);
+    ri_render_get()->nbuckets = create_bucket_list(
+                                    ri_render_get(),
+                                    ri_render_get()->bucket_queue);
 
     ri_parallel_barrier();
 
@@ -340,7 +342,7 @@ ri_render_frame(  )
         time( &tm );
         strcpy( message, ctime( &tm ) );
         message[strlen( message ) - 1] = '\0';  // strip last '\n'
-        ri_log( LOG_INFO, "Start rendering on %s", message );
+        ri_log( LOG_INFO, "(Render) Start rendering on %s", message );
     }
 
     /*
@@ -426,7 +428,7 @@ ri_render_setup(ri_render_t *render)
     if ( drv == NULL ) {
 #ifdef WIN32
         sprintf( message,
-                 "not supported display driver [ \"%s\" ]. force use [ \"framebuffer\" ]",
+                 "(Render) Unsupported display driver [ \"%s\" ]. force use [ \"framebuffer\" ]",
                  dsp_type );
         ri_log( LOG_WARN, message );
         drv = ( ri_display_drv_t * )
@@ -434,7 +436,7 @@ ri_render_setup(ri_render_t *render)
                             "framebuffer" );
 #else
         sprintf( message,
-                 "not supported display driver [ \"%s\" ]. force use [ \"file\" ]",
+                 "(Render) Unsupported display driver [ \"%s\" ]. force use [ \"file\" ]",
                  dsp_type );
         ri_log( LOG_WARN, message );
         drv = ( ri_display_drv_t * )
@@ -469,7 +471,7 @@ ri_render_setup(ri_render_t *render)
 
             if ( !drv->open( output, w, h, 32, RI_RGB, "float" ) ) {
                     ri_log( LOG_WARN,
-                            "Can't open \"%s\" display driver.\n",
+                            "(Render) Can't open \"%s\" display driver.\n",
                             dsp_type );
                     return;
             }
@@ -480,7 +482,7 @@ ri_render_setup(ri_render_t *render)
 
                 /* Try to open file display driver. */
                 ri_log( LOG_WARN,
-                        "Can't open \"%s\" display driver."
+                        "(Render) Can't open \"%s\" display driver."
                         " Use \"file\" display driver instead.",
                         dsp_type );
 
@@ -513,7 +515,7 @@ ri_render_setup(ri_render_t *render)
      * Create domelight.
      */
 
-        ri_log( LOG_WARN, "there is no light. create domelight." );
+        ri_log( LOG_WARN, "(Render) There is no light. create domelight." );
 
         light = ri_light_new(  );
         light->type = LIGHTTYPE_DOME;
@@ -540,9 +542,10 @@ ri_render_setup(ri_render_t *render)
         }
 
         if ( nthreads > 1 ) {
-            ri_log(LOG_INFO, "Number of threads to use = %d", nthreads );
+            ri_log(LOG_INFO, "(Render) Enable multi-thread rendering");
+            ri_log(LOG_INFO, "(Render)   Number of threads to use = %d", nthreads );
         } else {
-            ri_log(LOG_INFO, "Single thread rendering");
+            ri_log(LOG_INFO, "(Render) Single-thread rendering");
         }
 
         render->nthreads = nthreads;
@@ -571,10 +574,10 @@ ri_render_setup(ri_render_t *render)
  *
  * ------------------------------------------------------------------------- */
 
-static void
+static int
 create_bucket_list(
     const ri_render_t *render,
-    ri_mt_queue_t     *q)            /* [in] */
+    ri_mt_queue_t     *q)            /* [inout] */
 {
 
     int              i, j;
@@ -697,6 +700,8 @@ create_bucket_list(
      * so bucket_list is no longer used.
      */
     ri_mem_free( bucket_list );
+
+    return nbuckets;
 }
 
 /*
@@ -969,8 +974,14 @@ bucket_write(
 }
 
 
+/*
+ * Show progres bar in ascii text format to dispaly renering time.
+ */
 static void
-progress_bar( int progress, ri_float_t eta, ri_float_t elapsed )
+progress_bar(
+    int         progress,           /* [0, 100) */
+    ri_float_t  eta,
+    ri_float_t  elapsed )
 {
     int             h, m, s;
     int             i;
@@ -1001,6 +1012,8 @@ progress_bar( int progress, ri_float_t eta, ri_float_t elapsed )
     m = (tm / 60) % 60;
     h = tm / 3600;
 
+    printf("      ");
+
     if ( h > 99 ) {
         printf( "  ETA >99:99:99" );
 
@@ -1030,6 +1043,12 @@ render_bucket_thread_func(void *arg)
     uint32_t         data_size;
     render_thread_t *info;
 
+    double           elapsed;
+    double           eta;                   /* Estimated time for arrival */
+    int              nbuckets;
+    int              nbuckets_remain;
+    int              progress;
+
     info = (render_thread_t *)arg;
 
     while (1) {
@@ -1049,6 +1068,30 @@ render_bucket_thread_func(void *arg)
          */
         ret = render_bucket(bucket, info->thread_id);
         assert(ret == 0);
+
+        /*
+         * Display rendering progress if this thread is the main thread
+         * (thread_id == 0).
+         *
+         */
+        if (info->thread_id == 0) {
+
+            elapsed = ri_timer_elapsed_current(
+                        ri_render_get()->context->timer, "Render frame");
+
+            nbuckets        = ri_render_get()->nbuckets;
+            nbuckets_remain = ri_mt_queue_len(ri_render_get()->bucket_queue);
+
+            eta  = elapsed / (double)(nbuckets - nbuckets_remain);
+            eta *= (double)(nbuckets_remain);
+
+            progress = (int)(100.0 * (nbuckets - nbuckets_remain) / (double)nbuckets);
+
+            printf("\r");
+            progress_bar(progress, eta, elapsed);
+            fflush(stdout);
+
+        }
 
     }
     
@@ -1079,7 +1122,7 @@ render_bucket(
     bucket->pixels = (ri_vector_t *)ri_mem_alloc_aligned(sizeof(ri_vector_t) * w * h, 32);
     bucket->depths = (ri_float_t *)ri_mem_alloc_aligned(sizeof(ri_float_t) * w * h, 32);
 
-    ri_log(LOG_INFO, "Rendering bucket region [%dx%d]", x, y);
+    //ri_log(LOG_INFO, "(Render) Rendering bucket region [%dx%d]", x, y);
 
     for (v = y; v < y + h; v++) { 
         for (u = x; u < x + w; u++) {
@@ -1188,6 +1231,6 @@ render_frame_cleanup(ri_render_t *render)
     time( &tm );
     strcpy( message, ctime( &tm ) );
     message[strlen( message ) - 1] = '\0';  // strip last '\n'
-    ri_log( LOG_INFO, "End rendering on %s", message );
+    ri_log( LOG_INFO, "(Render) End rendering on %s", message );
 }
 

@@ -292,7 +292,7 @@ ri_bvh_build(
 
     tm = ri_render_get()->context->timer;
 
-    ri_log( LOG_INFO, "Building BVH ... " );
+    ri_log( LOG_INFO, "(BVH   ) Building BVH ... " );
     ri_timer_start( tm, "BVH Construction" );
 
     bvh = ( ri_bvh_t * )ri_mem_alloc( sizeof( ri_bvh_t ) );
@@ -337,13 +337,13 @@ ri_bvh_build(
         bvh->bmax[1] = bmax[1];
         bvh->bmax[2] = bmax[2];
 
-        ri_log(LOG_INFO, "  bmin (%f, %f, %f)",
+        ri_log(LOG_INFO, "(BVH   )    bmin (%f, %f, %f)",
             bvh->bmin[0], bvh->bmin[1], bvh->bmin[2]);
-        ri_log(LOG_INFO, "  bmax (%f, %f, %f)",
+        ri_log(LOG_INFO, "(BVH   )    bmax (%f, %f, %f)",
             bvh->bmax[0], bvh->bmax[1], bvh->bmax[2]);
     }
     
-    ri_log(LOG_INFO, "  # of tris = %d", ntriangles);
+    ri_log(LOG_INFO, "(BVH   )    # of input tris = %d", ntriangles);
 
 
     /*
@@ -370,10 +370,10 @@ ri_bvh_build(
 
     ri_timer_end( tm, "BVH Construction" );
 
-    ri_log( LOG_INFO, "BVH Construction time: %f sec",
+    ri_log( LOG_INFO, "(BVH   ) Construction time: %f sec",
            ri_timer_elapsed( tm, "BVH Construction" ) );
 
-    ri_log( LOG_INFO, "Built BVH." );
+    ri_log( LOG_INFO, "(BVH   ) Built BVH." );
 
     return (void *)bvh;
 }

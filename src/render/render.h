@@ -84,10 +84,17 @@ typedef struct _ri_render_t
      */
     ri_scene_t         *scene;
 
+    /*
+     * Render bucket info and queue data.
+     */
     int                 bucket_size;
     ri_mt_queue_t      *bucket_queue;
+    int                 nbuckets;
     int                 bucket_order;    
 
+    /*
+     * Info for multithread rendering.
+     */
     int                 nthreads;
 
 } ri_render_t;

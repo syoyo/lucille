@@ -92,6 +92,7 @@ ri_raytrace_statistics()
     printf( "\n" );
     printf( "/= Raytracing statistics =================="
         "====================================\n" );
+    printf( "|\n" );
     printf( "| %-48s:  %20llu\n", "Total rays", nrays );
     printf( "| %-48s:  %20llu\n", "Total grid cell traversals", ngridtravs );
     printf( "| %-48s:  %20llu\n", "Total triangle tests", ntesttris );
@@ -104,6 +105,7 @@ ri_raytrace_statistics()
            elapsed );
     printf( "| %-48s:  %20.6f\n", "M Rays/sec", nmrays /
            ( double )elapsed );
+    printf( "|\n" );
     printf(
         "\\------------------------------------------------------------------------------\n" );
     fflush( stdout );

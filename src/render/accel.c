@@ -81,7 +81,7 @@ ri_accel_bind(
 
         case RI_ACCEL_UGRID:
 
-            ri_log(LOG_DEBUG, "Use ugrid");
+            ri_log(LOG_DEBUG, "(Accel ) Use ugrid accelerator");
 
             accel->build     = ri_ugrid_build;
             accel->free      = ri_ugrid_free;
@@ -91,7 +91,7 @@ ri_accel_bind(
 
         case RI_ACCEL_BVH:
 
-            ri_log(LOG_DEBUG, "Use BVH");
+            ri_log(LOG_DEBUG, "(Accel ) Use BVH accelerator");
 
             accel->build     = ri_bvh_build;
             accel->free      = ri_bvh_free;
@@ -101,7 +101,7 @@ ri_accel_bind(
 
         default:
 
-            ri_log(LOG_ERROR, "Unknown accel method");
+            ri_log(LOG_ERROR, "(Accel ) Unknown accel method");
             return -1;
     }
 
