@@ -18,6 +18,7 @@ timer.c
 util.c
 vector.c
 geometric.c
+system.c
 """)
 
 Import('env')

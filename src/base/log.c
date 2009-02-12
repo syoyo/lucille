@@ -22,8 +22,8 @@ static char *level_msg[] = {
     "debug",
     "info ",
     "warn ",
-    "error",
-    "fatal"
+    "ERROR",
+    "FATAL"
 };
 
 
