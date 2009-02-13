@@ -52,10 +52,10 @@ int              g_mouse_x;
 int              g_mouse_y;
 float            g_offt_x;
 float            g_offt_y;
-int              g_enable_specialization = 1;
+int              g_enable_specialization = 0;
 int              g_cached = 0;
 int              g_skip   = 1;
-int              g_mode   = MODE_SPECIALIZE_COARSE_UPDATE;
+int              g_mode   = MODE_FULL_UPDATE;
 
 bool             g_run_interpreter = false;
 
@@ -716,7 +716,7 @@ gui_main()
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     surface = SDL_SetVideoMode(WINDOW_WIDTH, WINDOW_HEIGHT, 32, SDL_OPENGL);
     
-    img = (unsigned char *)malloc(WINDOW_WIDTH * WINDOW_HEIGHT * 3);
+    // img = (unsigned char *)malloc(WINDOW_WIDTH * WINDOW_HEIGHT * 3);
 
     while (1) {
         while (SDL_PollEvent(&event)) {
@@ -756,6 +756,7 @@ quit_app:
 void
 init_render()
 {
+    img = (unsigned char *)malloc(WINDOW_WIDTH * WINDOW_HEIGHT * 3);
     init_render_scene();
     gtex = texture_load("muda512.ppm");
 }

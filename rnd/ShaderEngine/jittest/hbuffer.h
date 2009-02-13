@@ -52,14 +52,12 @@
 extern "C" {
 #endif
 
-#include <stdint.h>
-
 typedef struct _ri_hbuffer_t
 {
     void          *buffer;
-    uint32_t       width;
-    uint32_t       height;
-    uint32_t       id;
+    unsigned int   width;
+    unsigned int   height;
+    unsigned int   id;
 } ri_hbuffer_t;
 
 

@@ -7,6 +7,7 @@ matte()
 	normal Nf = faceforward(normalize(N), I);
 	vector V = -normalize(I);
 
+	/*
 	//color sum;
 	//float scale = 1.0;
 
@@ -23,5 +24,9 @@ matte()
 	//Ci = turb(10.0*P) * texture("muda") * (diffuse(Nf) + ambient());
 	Ci = (0.25 + 0.75 * turb(10.0*P)) * texture("muda") * (Kd * diffuse(Nf) + ambient() + specular(Nf, V, roughness));
 	//Ci = (Kd * diffuse(Nf) + ambient());
+	*/
+	//Ci = turb(10.0*P) * texture("muda") * (Kd * diffuse(Nf) + ambient() + specular(Nf, V, roughness));
+	//Ci = P * texture("muda") * (Kd * diffuse(Nf) + ambient() + specular(Nf, V, roughness));
+	Ci = turb(P);
 
 }

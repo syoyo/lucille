@@ -7,6 +7,8 @@
 
 #include <string>
 
+#define WINDOW_SIZE 256
+
 const char *defaultShaderFile = "matte.sl";
 const char *outputLLFile      = "output.ll";
 
@@ -15,7 +17,6 @@ init()
 {
     rslTextBuf  = new Fl_Text_Buffer(30000);
     llvmTextBuf = new Fl_Text_Buffer(30000);
-    jitTextBuf  = new Fl_Text_Buffer(30000);
 
     const char *llext = "ll";
     char *p;
@@ -48,20 +49,50 @@ init()
     }
 }
 
+const char *getBitcodeName(const char *shaderName)
+{
+    const char *bcext = ".bc";
+    char *p;
+    int  len;
+    char buf[1024];
+    char *basename;
+    char bitcodeName[1024];
+
+    p = strrchr(shaderName, '.');
+    assert(p != NULL);
+
+    len = p - shaderName + 1;
+    strncpy(buf, shaderName, len);
+
+    buf[len-1] = '\0';
+    basename = buf;
+
+    sprintf(bitcodeName, "%s.bc", basename);
+
+    return strdup(bitcodeName);
+}
+
 int
 main(int argc, char **argv)
 {
+    const char *bitcodeName;
+
     init(); // Should call here.
+
+    int ret;
+    bitcodeName = getBitcodeName(defaultShaderFile);
+    ret = jitInit(bitcodeName, WINDOW_SIZE, WINDOW_SIZE);
+    assert(ret == 0);
 
     //
     // Create a window.
     //
     Fl_Double_Window *renderWindow = makeRenderWindow();
+    GLWindow->resize(GLWindow->x(), GLWindow->y(), WINDOW_SIZE, WINDOW_SIZE);
     Fl_Double_Window *shaderWindow = makeShaderWindow();
 
-    rslTextDisplay->buffer(rslTextBuf);
     llvmTextDisplay->buffer(llvmTextBuf);
-    jitTextDisplay->buffer(jitTextBuf);
+    rslTextDisplay->buffer(rslTextBuf);
     
     renderWindow->show();
 

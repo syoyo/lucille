@@ -1,11 +1,14 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <assert.h>
 
 #include "MyGLWindow.h"
 
-#include "renderer.h"
+#include "render.h"
 #include "timer.h"
 #include "trackball.h"
+#include "callbacks.h"
 
 //
 // -- static functions
@@ -394,14 +397,16 @@ MyGLWindow::renderImage()
 
     mytimer_t s, e;
     
-    
     assert(this->fimage);
 
     //
     // Render!
     // 
+    printf("[render] render...\n");
     get_time(&s);
-    render( this->fimage, this->imageWidth, this->imageHeight, eye, lookat, up );
+    dummy_render(this->imageWidth, this->imageHeight);
+    //render( this->fimage, this->imageWidth, this->imageHeight, eye, lookat, up );
+    memcpy(this->image, get_render_image(), this->imageWidth * this->imageHeight * 3);
     get_time(&e);
 
     double elap = elapsed_time(&s, &e);
@@ -410,7 +415,7 @@ MyGLWindow::renderImage()
     //
     // Apply tonemap
     //
-    tonemap(this->image, this->fimage, this->imageWidth, this->imageHeight, 0.0f, 1.0f);
+    //tonemap(this->image, this->fimage, this->imageWidth, this->imageHeight, 0.0f, 1.0f);
 
     get_time(&s);
     this->showImage();

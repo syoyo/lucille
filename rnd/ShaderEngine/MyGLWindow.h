@@ -20,12 +20,12 @@
 class MyGLWindow : public Fl_Gl_Window {
 
     void draw();
-    void resize(int x, int y, int w, int h);
     void resizeImageBuffer(int x, int y, int w, int h);
     int  handle(int e);
     bool handleKey(int k);
 	
 public:
+    void resize(int x, int y, int w, int h);
 
     MyGLWindow(int x, int y, int w, int h, const char *l = 0) : Fl_Gl_Window(x, y, w, h, l) {
 

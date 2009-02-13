@@ -22,7 +22,7 @@ compileShader(const char *fname)
     printf(cmd.c_str());
 
     ret = system(cmd.c_str());
-
+    printf("retcode = %d\n", ret);
 
     return 0;
 }

@@ -53,17 +53,19 @@ Fl_Double_Window* makeRenderWindow() {
 
 Fl_Double_Window *shaderWindow=(Fl_Double_Window *)0;
 
+Fl_Tabs *shaderDisplayTab=(Fl_Tabs *)0;
+
 Fl_Text_Display *rslTextDisplay=(Fl_Text_Display *)0;
 
 Fl_Text_Display *llvmTextDisplay=(Fl_Text_Display *)0;
 
-Fl_Text_Display *jitTextDisplay=(Fl_Text_Display *)0;
+Fl_Output *outputCompileResult=(Fl_Output *)0;
 
 Fl_Double_Window* makeShaderWindow() {
   Fl_Double_Window* w;
-  { Fl_Double_Window* o = shaderWindow = new Fl_Double_Window(550, 425);
+  { Fl_Double_Window* o = shaderWindow = new Fl_Double_Window(550, 480);
     w = o;
-    { Fl_Tabs* o = new Fl_Tabs(5, 5, 540, 415);
+    { Fl_Tabs* o = shaderDisplayTab = new Fl_Tabs(5, 5, 540, 415);
       { Fl_Group* o = new Fl_Group(5, 35, 540, 385, "RSL");
         { Fl_Text_Display* o = rslTextDisplay = new Fl_Text_Display(10, 40, 530, 375);
           o->labelfont(13);
@@ -78,12 +80,11 @@ Fl_Double_Window* makeShaderWindow() {
         llvmTextDisplay = new Fl_Text_Display(10, 40, 530, 375);
         o->end();
       }
-      { Fl_Group* o = new Fl_Group(5, 35, 540, 385, "JIT-ted Assembler");
-        o->hide();
-        jitTextDisplay = new Fl_Text_Display(10, 40, 530, 375);
-        o->end();
-      }
       o->end();
+    }
+    new Fl_Button(10, 440, 80, 25, "Compile");
+    { Fl_Output* o = outputCompileResult = new Fl_Output(105, 440, 120, 25);
+      o->box(FL_THIN_DOWN_BOX);
     }
     o->end();
   }
@@ -91,4 +92,3 @@ Fl_Double_Window* makeShaderWindow() {
 }
 Fl_Text_Buffer *rslTextBuf;
 Fl_Text_Buffer *llvmTextBuf;
-Fl_Text_Buffer *jitTextBuf;

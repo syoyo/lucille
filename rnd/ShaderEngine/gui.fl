@@ -48,9 +48,9 @@ Function {makeRenderWindow()} {open
 Function {makeShaderWindow()} {open
 } {
   Fl_Window shaderWindow {open
-    xywh {472 54 550 425} type Double visible
+    xywh {432 199 550 480} type Double visible
   } {
-    Fl_Tabs {} {open
+    Fl_Tabs shaderDisplayTab {open selected
       xywh {5 5 540 415}
     } {
       Fl_Group {} {
@@ -69,14 +69,13 @@ Function {makeShaderWindow()} {open
           xywh {10 40 530 375}
         }
       }
-      Fl_Group {} {
-        label {JIT-ted Assembler} open
-        xywh {5 35 540 385} hide
-      } {
-        Fl_Text_Display jitTextDisplay {
-          xywh {10 40 530 375}
-        }
-      }
+    }
+    Fl_Button {} {
+      label Compile
+      xywh {10 440 80 25}
+    }
+    Fl_Output outputCompileResult {
+      xywh {105 440 120 25} box THIN_DOWN_BOX
     }
   }
 } 
@@ -85,7 +84,4 @@ decl {Fl_Text_Buffer *rslTextBuf;} {public
 } 
 
 decl {Fl_Text_Buffer *llvmTextBuf;} {public
-} 
-
-decl {Fl_Text_Buffer *jitTextBuf;} {selected public
 } 

@@ -13,12 +13,14 @@ Fl_Double_Window* makeRenderWindow();
 extern Fl_Menu_Item menu_[];
 extern Fl_Double_Window *shaderWindow;
 #include <FL/Fl_Tabs.H>
+extern Fl_Tabs *shaderDisplayTab;
 #include <FL/Fl_Text_Display.H>
 extern Fl_Text_Display *rslTextDisplay;
 extern Fl_Text_Display *llvmTextDisplay;
-extern Fl_Text_Display *jitTextDisplay;
+#include <FL/Fl_Button.H>
+#include <FL/Fl_Output.H>
+extern Fl_Output *outputCompileResult;
 Fl_Double_Window* makeShaderWindow();
 extern Fl_Text_Buffer *rslTextBuf;
 extern Fl_Text_Buffer *llvmTextBuf;
-extern Fl_Text_Buffer *jitTextBuf;
 #endif
