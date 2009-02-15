@@ -31,11 +31,12 @@ MY_LIBS      = $(LLVM_LIBS) -lm
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
-	gcc -o $(TARGET) $(OBJS) $(MY_LDFLAGS) $(LDFLAGS) $(MY_LIBS) -pthread -ldl -lstdc++
+	g++ -o $(TARGET) $(OBJS) $(MY_LDFLAGS) $(LDFLAGS) $(MY_LIBS) -pthread -ldl -lstdc++
 
 gen:
 	python gen.py
-	clang -emit-llvm-bc shaderlib.c noise.c
+	./clang -emit-llvm-bc noise.c
+	./clang -emit-llvm-bc shaderlib.c
 
 clean:
 	rm -rf $(TARGET) 
@@ -47,6 +48,9 @@ gui.cpp gui.h: gui.fl
 
 .cpp.o:
 	$(CXX) -c $(MY_CXXFLAGS) $(LLVM_CXXFLAGS) $(CXXFLAGS) $<
+
+mkdist:
+	./dist_make.sh
 
 depend:
 	$(CXX) $(FLTK_CXXFLAGS) $(LLVM_CXXFLAGS) $(CXXFLAGS) $(OPT_FLAGS) -MM $(SRCS) > depend.mk

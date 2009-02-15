@@ -1,5 +1,5 @@
 # data file for the Fltk User Interface Designer (fluid)
-version 1.0107 
+version 1.0109 
 header_name {.h} 
 code_name {.cxx}
 decl {\#include <stdio.h>} {} 
@@ -11,7 +11,7 @@ decl {\#include "callbacks.h"} {}
 Function {makeRenderWindow()} {open
 } {
   Fl_Window renderWindow {open
-    xywh {360 143 405 320} type Double visible
+    xywh {467 219 405 320} type Double visible
   } {
     Fl_Menu_Bar {} {open
       xywh {0 0 565 25}
@@ -21,14 +21,19 @@ Function {makeRenderWindow()} {open
         xywh {0 0 100 20}
       } {
         MenuItem {} {
-          label {Open RSL}
-          callback {handleOpenRSL();}
-          xywh {0 0 100 20} shortcut 0x6f
-        }
-        MenuItem {} {
           label Quit
           callback {exit(1);}
           xywh {0 0 100 20} shortcut 0x71
+        }
+      }
+      Submenu {} {
+        label Help open
+        xywh {0 0 100 20}
+      } {
+        MenuItem {} {
+          label Help
+          callback {help_cb();} selected
+          xywh {0 0 100 20}
         }
       }
     }
@@ -41,6 +46,19 @@ Function {makeRenderWindow()} {open
         code0 {\#include "MyGLWindow.h"}
         class MyGLWindow
       }
+      Fl_Light_Button buttonSpecialization {
+        label Specialization
+        callback {specialization_cb();}
+        xywh {270 60 110 25} box THIN_UP_BOX
+      }
+      Fl_Light_Button button4x4Update {
+        label {4x4 update}
+        callback {coarse_update_cb();}
+        xywh {270 95 110 25} box THIN_UP_BOX
+      }
+      Fl_Output secDisplay {
+        xywh {270 260 110 25} box THIN_DOWN_BOX
+      }
     }
   }
 } 
@@ -48,9 +66,9 @@ Function {makeRenderWindow()} {open
 Function {makeShaderWindow()} {open
 } {
   Fl_Window shaderWindow {open
-    xywh {432 199 550 480} type Double visible
+    xywh {798 159 550 480} type Double visible
   } {
-    Fl_Tabs shaderDisplayTab {open selected
+    Fl_Tabs shaderDisplayTab {open
       xywh {5 5 540 415}
     } {
       Fl_Group {} {
@@ -69,13 +87,6 @@ Function {makeShaderWindow()} {open
           xywh {10 40 530 375}
         }
       }
-    }
-    Fl_Button {} {
-      label Compile
-      xywh {10 440 80 25}
-    }
-    Fl_Output outputCompileResult {
-      xywh {105 440 120 25} box THIN_DOWN_BOX
     }
   }
 } 

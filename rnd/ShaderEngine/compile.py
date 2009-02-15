@@ -4,10 +4,10 @@ import os, sys
 import subprocess
 
 # config
-LLVM_AS                 = "llvm-as" 
-LLVM_LINLK              = "llvm-link" 
-LLVM_OPT                = "opt"
-RSL2LLVM                = "../HaskellRSLCompiler/lslc" 
+LLVM_AS                 = "./llvm-as" 
+LLVM_LINLK              = "./llvm-link" 
+LLVM_OPT                = "./opt"
+RSL2LLVM                = "./lslc" 
 OUTPUT_SHADER_MODULE    = "shader.bc"
 SHADER_LL               = "output.ll"
 SHADERENV_LL            = "shader_env.ll"
@@ -65,16 +65,16 @@ def compile(fname):
     ret = subprocess.call(cmd, shell=True)
 
     # Opt
-    outname = basename + ".bc"
-    cmd  = LLVM_OPT
-    cmd += " -f "
-    cmd += " -std-compile-opts "
-    cmd += " -o " + outname
-    cmd += " " + outname
+    # outname = basename + ".bc"
+    # cmd  = LLVM_OPT
+    # cmd += " -f "
+    # cmd += " -std-compile-opts "
+    # cmd += " -o " + outname
+    # cmd += " " + outname
 
-    print "Optimizing shader modules..." 
-    print cmd
-    ret = subprocess.call(cmd, shell=True)
+    # print "Optimizing shader modules..." 
+    # print cmd
+    # ret = subprocess.call(cmd, shell=True)
 
 
 def usage():
@@ -90,7 +90,7 @@ def main():
         usage()
         sys.exit(1);
 
-    update_runtimelib()
+    # update_runtimelib()
     compile(sys.argv[1])
 
     sys.exit(0)

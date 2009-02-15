@@ -9,6 +9,7 @@
 #include "timer.h"
 #include "trackball.h"
 #include "callbacks.h"
+#include "jit.h"
 
 //
 // -- static functions
@@ -183,6 +184,8 @@ MyGLWindow::handle(int e)
 
                     add_quats(this->prevQuat, this->currQuat, this->currQuat);
 
+                    lx += (mx - (float)x) / 50.0f;
+                    ly += (my - (float)y) / 50.0f;
 
                 } else if (this->pressedButton == FL_MIDDLE_MOUSE) {
 
@@ -305,8 +308,8 @@ MyGLWindow::draw()
 void
 MyGLWindow::resizeImageBuffer(int X,int Y,int W,int H)
 {
-    delete this->image;
-    delete this->fimage;
+    delete [] this->image;
+    delete [] this->fimage;
 
     this->imageWidth  = W;
     this->imageHeight = H;
@@ -368,17 +371,17 @@ MyGLWindow::getView( float eye[4], float lookat[4], float up[4] )
     vmatmul(lookat, m, localTarget);
     vmatmul(up    , m, localUp);
 
-    int i, j;
-    for (j = 0; j < 4; j++) {
-        for (i = 0; i < 4; i++) {
-            printf("%f ", m[i][j]);
-        }
-        printf("\n");
-    }
+    // int i, j;
+    // for (j = 0; j < 4; j++) {
+    //     for (i = 0; i < 4; i++) {
+    //         printf("%f ", m[i][j]);
+    //     }
+    //     printf("\n");
+    // }
 
-    printf("global eye    = %f, %f, %f\n", eye[0], eye[1], eye[2]);
-    printf("global lookat = %f, %f, %f\n", lookat[0], lookat[1], lookat[2]);
-    printf("global up     = %f, %f, %f\n", up[0], up[1], up[2]);
+    // printf("global eye    = %f, %f, %f\n", eye[0], eye[1], eye[2]);
+    // printf("global lookat = %f, %f, %f\n", lookat[0], lookat[1], lookat[2]);
+    // printf("global up     = %f, %f, %f\n", up[0], up[1], up[2]);
     
 }
 
@@ -391,7 +394,7 @@ MyGLWindow::renderImage()
 
     float eye[4], lookat[4], up[4];
 
-    printf("[render] renderImage()\n");
+    // printf("[render] renderImage()\n");
 
     this->getView( eye, lookat, up );
 
@@ -399,18 +402,22 @@ MyGLWindow::renderImage()
     
     assert(this->fimage);
 
+
     //
     // Render!
     // 
-    printf("[render] render...\n");
+    // printf("[render] render...\n");
     get_time(&s);
-    dummy_render(this->imageWidth, this->imageHeight);
+
+    updateLightPos(lx, ly, 0.0f);
+    render_with_jit_shader(this->imageWidth, this->imageHeight);
     //render( this->fimage, this->imageWidth, this->imageHeight, eye, lookat, up );
     memcpy(this->image, get_render_image(), this->imageWidth * this->imageHeight * 3);
     get_time(&e);
 
     double elap = elapsed_time(&s, &e);
-    printf("[render] renderImage() finished: %f sec\n", elap);
+    // printf("[render] renderImage() finished: %f sec\n", elap);
+    showRenderTime(elap);
 
     //
     // Apply tonemap
@@ -422,6 +429,6 @@ MyGLWindow::renderImage()
     get_time(&e);
 
     elap = elapsed_time(&s, &e);
-    printf("[tonemap] tone mapping: %f sec\n", elap);
+    // printf("[tonemap] tone mapping: %f sec\n", elap);
 
 }

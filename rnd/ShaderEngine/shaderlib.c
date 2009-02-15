@@ -26,7 +26,7 @@
 #include <math.h>
 
 #include "texture.h"
-#include "noise.h"
+//#include "noise.h"
 #include "hbuffer.h"
 
 // clang specific type definition.
@@ -40,9 +40,9 @@ extern void bora(); // defined in the renderer side
 
 //extern void texture_map(float *out, float u, float v);
 
-//extern float noise1(float u);
-//extern float noise2(float u, float v);
-//extern float noise3(float u, float v, float w);
+extern float noise1(float u);
+extern float noise2(float u, float v);
+extern float noise3(float u, float v, float w);
 
 extern float  rsl_gets();
 extern float  rsl_gett();
@@ -266,13 +266,8 @@ noise_ff(float *ret, float f)
 {
     float r;
 
-    printf("noise_ff\n");
-    printf("noise1 addr = %p\n", noise1);
-
     r = noise1(f);
 
-    printf("noise1() call ok\n");
-    
     (*ret) = r;
 }
 
@@ -517,8 +512,7 @@ turb_cp(float4 *ret, float4 p)
         x = p.x / scale;
         y = p.y / scale;
         z = p.z / scale;
-        //octave = scale * noise3(x, y, z);
-        octave = noise3(x, y, z);
+        octave = scale * noise3(x, y, z);
         sum = sum + octave;
         scale *= 0.5f;
     }

@@ -45,6 +45,9 @@ public:
         image         = 0;
         fimage        = 0;
 
+        lx = 0.0f;
+        ly = 0.0f;
+
         this->resizeImageBuffer(x, y, w, h);
 
     };
@@ -60,6 +63,8 @@ public:
 
     }
 
+    void      renderImage();
+
     void      getView( float eye[4], float lookat[4], float up[4] );
     void      restore();
 
@@ -73,7 +78,6 @@ private:
 
     void glInit();
 
-    void renderImage();
 
     // GLMmodel       *obj;
 
@@ -90,6 +94,9 @@ private:
     int            imageHeight;
 
     bool           displayImage;
+
+    // light pos(intaracted by mouse movement)
+    float          lx, ly;
 
 };
     

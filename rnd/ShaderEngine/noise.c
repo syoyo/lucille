@@ -56,13 +56,10 @@ float noise1(float arg)
         int bx0, bx1;
         float rx0, rx1, sx, t, u, v, vec[1];
 
-        printf("noise\n");
-
         vec[0] = (float)arg;
         if (start) {
-            printf("noise start\n");
-            start = 0;
-            init();
+                start = 0;
+                init();
         }
 
         setup(0, bx0,bx1, rx0,rx1);

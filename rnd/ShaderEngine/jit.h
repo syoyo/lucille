@@ -10,5 +10,10 @@ llvm::ExecutionEngine *createJITEngine(llvm::Module *M);
 // JIT compile LLVM bitcode then return pointer to the function.
 void *JITCompileFunction(llvm::ExecutionEngine *EE, llvm::Function *F);
 
+void render_with_jit_shader(int w, int h);
+void updateLightPos(float x, float y, float z);
+void setSpecialized(int val);
+void setCoarseUpdate(int val);
+
 
 #endif  // LUCILLE_JIT_H

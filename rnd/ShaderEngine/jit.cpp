@@ -32,6 +32,7 @@
 #include "texture.h"
 #include "render.h"
 #include "cachelib.h"
+#include "callbacks.h"
 
 #include <iostream>
 #include "timer.h"
@@ -45,8 +46,6 @@ static int              g_mouse_button;
 static int              g_mouse_pressed = 0;
 static int              g_mouse_x;
 static int              g_mouse_y;
-static float            g_offt_x;
-static float            g_offt_y;
 static int              g_enable_specialization = 0;
 static int              g_cached = 0;
 static int              g_skip   = 1;
@@ -55,10 +54,13 @@ static bool             g_run_interpreter = false;
 static bool             g_initialized = false;
 static int              g_width, g_height;
 
+static float            g_light_offt[3];
+
 using namespace llvm;
 
-static FunctionPassManager *TheFPM;
-static ExecutionEngine     *TheEE;
+static FunctionPassManager      *TheFPM;
+static ExecutionEngine          *TheEE;
+static ExistingModuleProvider   *TheMP;
 
 #ifdef __cplusplus
 extern "C" {
@@ -74,8 +76,6 @@ get_texture()
     return gtex;
 }
 
-extern void bora();
-
 #ifdef __cplusplus
 }
 #endif
@@ -85,6 +85,8 @@ typedef void (*ShaderCacheGenFunP)(void);
 typedef void (*ShaderDynamicFunP)(void);
 typedef void (*ShaderEnvSetFunP)(ri_shader_env_t *env);
 typedef void (*ShaderEnvGetFunP)(ri_shader_env_t *env);
+
+typedef float (*noisefun)(float);
 
 typedef struct _ri_shader_jit_t
 {
@@ -123,12 +125,6 @@ clamp(float f)
 
 }
 
-void
-bora()
-{
-    printf("bora called\n");
-}
-
 static double vdot(vec v0, vec v1)
 {
     return v0.x * v1.x + v0.y * v1.y + v0.z * v1.z;
@@ -164,7 +160,7 @@ init_shader_env()
 void
 dump_shader_env()
 {
-    printf("Ci = %f, %f, %f\n", genv.Ci[0], genv.Ci[1], genv.Ci[2]);
+    // printf("Ci = %f, %f, %f\n", genv.Ci[0], genv.Ci[1], genv.Ci[2]);
 }
 
 
@@ -174,7 +170,6 @@ dump_shader_env()
 void *customSymbolResolver(const std::string &name)
 {
     cout << "Resolving " << name << "\n";
-    if (name == "bora") return (void *)bora;
     if (name == "get_texture") return (void *)get_texture;
     if (name == "texture_map") return (void *)texture_map;
     if (name == "lse_save_cache_iiic") return (void *)lse_save_cache_iiic;
@@ -213,7 +208,7 @@ dummy_rerender(int width, int height, int skip)
     float       texcol[4];
     isect_t     isect;
 
-    printf("dummy rerender\n");
+    // printf("dummy rerender\n");
 
     //ri_shader_env_t *ret_env;    // FIXME: check align.
 
@@ -292,8 +287,8 @@ dummy_rerender(int width, int height, int skip)
                 genv.N[0] = Ncache[0];
                 genv.N[1] = Ncache[1];
                 genv.N[2] = Ncache[2];
-                genv.L[0] = 1.0f + g_offt_x;
-                genv.L[1] = 1.0f + g_offt_y;
+                genv.L[0] = 1.0f + g_light_offt[0];
+                genv.L[1] = 1.0f + g_light_offt[1];
                 genv.L[2] = 1.0f;
                 genv.P[0] = Pcache[0];
                 genv.P[1] = Pcache[1];
@@ -351,8 +346,8 @@ dummy_rerender(int width, int height, int skip)
 
     elap = elapsed_time(&start_time, &end_time); 
 
-    printf("\r[Re-render] elapsed = %f (sec)", elap);
-    fflush(stdout);
+    // printf("\r[Re-render] elapsed = %f (sec)", elap);
+    // fflush(stdout);
 
 
 }
@@ -372,7 +367,7 @@ dummy_render(int width, int height)
     isect_t     isect;
     ray_t       ray;
 
-    printf("dummy render\n");
+    // printf("dummy render\n");
 
     //ri_shader_env_t *ret_env;    // FIXME: check align.
 
@@ -408,7 +403,7 @@ dummy_render(int width, int height)
             shader_fun = g_shader_jit.shader_cache_gen_fun;
         }
     } else {
-        printf("full update shader fun\n");
+        // printf("full update shader fun\n");
         shader_fun = g_shader_jit.shader_fun;
     }
         
@@ -457,8 +452,8 @@ dummy_render(int width, int height)
                 genv.N[0] = isect.n.x;
                 genv.N[1] = isect.n.y;
                 genv.N[2] = isect.n.z;
-                genv.L[0] = 1.0f + g_offt_x;
-                genv.L[1] = 1.0f + g_offt_y;
+                genv.L[0] = 1.0f + g_light_offt[0];
+                genv.L[1] = 1.0f + g_light_offt[1];
                 genv.L[2] = 1.0f;
                 genv.P[0] = isect.p.x;
                 genv.P[1] = isect.p.y;
@@ -526,8 +521,8 @@ dummy_render(int width, int height)
 
     elap = elapsed_time(&start_time, &end_time); 
 
-    printf("\r[Exec] elapsed = %f (sec)", elap);
-    fflush(stdout);
+    // printf("\r[Exec] elapsed = %f (sec)", elap);
+    // fflush(stdout);
     
 }
 
@@ -539,10 +534,12 @@ ExecutionEngine *
 createJITEngine(Module *M, bool ForceInterpreter)
 {
     
-    ExistingModuleProvider* MP = new ExistingModuleProvider(M);
-    ExecutionEngine* EE = ExecutionEngine::create(MP, ForceInterpreter);
+    TheMP = new ExistingModuleProvider(M);
+    ExecutionEngine* EE = ExecutionEngine::create(TheMP, ForceInterpreter);
 
-    FunctionPassManager *FPM = new FunctionPassManager(MP);
+    // EE->DisableLazyCompilation(true);
+
+    FunctionPassManager *FPM = new FunctionPassManager(TheMP);
 
     // Add some code optimizer
     FPM->add(new TargetData(*EE->getTargetData()));
@@ -573,7 +570,7 @@ JITCompileFunction(ExecutionEngine *EE, Function *F)
     cout << "========= After optimization  ===================\n";
     F->dump();
 
-    ptr = EE->getPointerToFunction(F);
+    ptr = EE->recompileAndRelinkFunction(F);
     assert(ptr != NULL);
 
     // Debug
@@ -582,6 +579,21 @@ JITCompileFunction(ExecutionEngine *EE, Function *F)
     //cout << s << "\n";
 
     return ptr;
+}
+
+void
+render_with_jit_shader(int w, int h)
+{
+    if (g_cached && g_enable_specialization) {
+
+        dummy_rerender(w, h, g_skip);
+
+    } else {
+
+        dummy_render(w, h);
+        g_cached = 1;
+
+    }
 }
 
 #if 0
@@ -701,6 +713,18 @@ unsigned char *get_render_image()
     return img;
 }
 
+void
+jitReleaseCode()
+{
+
+    TheEE->freeMachineCodeForFunction(g_shader_jit.shader_env_set_f);
+    TheEE->freeMachineCodeForFunction(g_shader_jit.shader_env_get_f);
+    TheEE->freeMachineCodeForFunction(g_shader_jit.shader_fun_f);
+    TheEE->freeMachineCodeForFunction(g_shader_jit.shader_cache_gen_fun_f);
+    TheEE->freeMachineCodeForFunction(g_shader_jit.shader_dynamic_fun_f);
+
+}
+
 int
 jitInit(const char *shaderModuleFilename, int w, int h)
 {
@@ -716,6 +740,10 @@ jitInit(const char *shaderModuleFilename, int w, int h)
 
     g_width = w;
     g_height = h;
+
+    if (g_initialized) {
+        // jitReleaseCode();
+    }
 
     p = strrchr(shaderModuleFilename, '.');
     assert(p != NULL);
@@ -749,7 +777,27 @@ jitInit(const char *shaderModuleFilename, int w, int h)
 
     cout << "bitcode read OK.\n";
 
-    TheEE = createJITEngine(M.get(), g_run_interpreter);
+    if (!g_initialized) {
+
+        TheEE = createJITEngine(M.get(), g_run_interpreter);
+
+    } else {
+
+        TheEE->deleteModuleProvider(TheMP);
+        TheMP = new ExistingModuleProvider(M.get());
+        TheEE->addModuleProvider(TheMP);
+
+        FunctionPassManager *FPM = new FunctionPassManager(TheMP);
+
+        // Add some code optimizer
+        FPM->add(new TargetData(*TheEE->getTargetData()));
+        FPM->add(createInstructionCombiningPass());
+        FPM->add(createCFGSimplificationPass());
+
+        TheFPM = FPM;
+
+    }
+    
     TheEE->InstallLazyFunctionCreator(customSymbolResolver);
 
     Function *F, *CacheGenF, *DynamicF;
@@ -773,20 +821,6 @@ jitInit(const char *shaderModuleFilename, int w, int h)
         return 1;
     }
 
-    {
-        Function *GF;
-        GlobalVariable *GV;
-
-        const char *bora_name = "bora";
-
-        GF = (M.get())->getFunction("bora");
-        if (GV == NULL) {
-            cerr << "can't find bora()\n";
-            return 1;
-        }
-        cout << "bora OK\n";
-        
-    }
 
     init_shader_env();
 
@@ -801,13 +835,33 @@ jitInit(const char *shaderModuleFilename, int w, int h)
             return 1;
         }
 
-        ptr = TheEE->getPointerToFunction(ShaderEnvSetF);
+        ptr = TheEE->recompileAndRelinkFunction(ShaderEnvSetF);
         assert(ptr != NULL);
 
         
         g_shader_jit.shader_env_set = (ShaderEnvSetFunP)ptr;
         g_shader_jit.shader_env_set_f = ShaderEnvSetF;
     }
+
+#if 0
+    {
+        Function *F;
+        const char *fun_name = "noise1";
+        void *ptr;
+
+        F = (M.get())->getFunction(fun_name);
+        if (F == NULL) {
+            cerr << "can't find the function [ " << fun_name << " ] from the module\n";
+            return 1;
+        }
+
+        ptr = TheEE->recompileAndRelinkFunction(F);
+        assert(ptr != NULL);
+
+        printf("noise val = %f\n", ((noisefun)ptr)(1.0f));
+        //exit(1);
+    }
+#endif
 
     FunP = JITCompileFunction(TheEE, F); 
     printf("FunP = 0x%08x\n", FunP);
@@ -838,7 +892,7 @@ jitInit(const char *shaderModuleFilename, int w, int h)
             return 1;
         }
 
-        ptr = TheEE->getPointerToFunction(ShaderEnvGetF);
+        ptr = TheEE->recompileAndRelinkFunction(ShaderEnvGetF);
         assert(ptr != NULL);
 
         g_shader_jit.shader_env_get = (ShaderEnvGetFunP)ptr;
@@ -854,12 +908,12 @@ jitInit(const char *shaderModuleFilename, int w, int h)
 
         init_render(g_width, g_height);
 
-        srand48(13);
-
         lse_init(g_width, g_height);
 
         g_initialized = true;
     }
+
+    jitTest();
 
 #if 0
   // Call the `foo' function with no arguments:
@@ -870,4 +924,49 @@ jitInit(const char *shaderModuleFilename, int w, int h)
   std::cout << "Result: " << gv.IntVal.toStringUnsigned(10) << "\n";
 #endif
   return 0;
+}
+
+void
+jitTest()
+{
+    printf("test\n");
+
+    g_shader_jit.shader_env_set(&genv);
+
+    g_shader_jit.shader_fun();
+    g_shader_jit.shader_cache_gen_fun();
+    g_shader_jit.shader_dynamic_fun();
+
+    g_shader_jit.shader_env_get(&genv);
+
+    printf("test OK\n");
+
+    // shader_fun();
+    // g_shader_jit.shader_env_get(&genv);
+}
+
+void
+updateLightPos(float x, float y, float z)
+{
+    g_light_offt[0] = x;
+    g_light_offt[1] = y;
+    g_light_offt[2] = z;
+}
+
+void
+setSpecialized(int val)
+{
+    g_enable_specialization = val;
+
+    g_cached = 0;
+}
+
+void
+setCoarseUpdate(int val)
+{
+    if (val == 0) {
+        g_skip = 1;
+    } else {
+        g_skip = 4;
+    }
 }

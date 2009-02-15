@@ -1,5 +1,7 @@
 #include "gui.h"        // FLTK resources
 #include "callbacks.h"
+#include "jit.h"
+#include "constants.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,27 +9,24 @@
 
 #include <string>
 
-#define WINDOW_SIZE 256
-
 const char *defaultShaderFile = "matte.sl";
 const char *outputLLFile      = "output.ll";
 
 void
-init()
+slengine_init(const char *shaderFile)
 {
-    rslTextBuf  = new Fl_Text_Buffer(30000);
-    llvmTextBuf = new Fl_Text_Buffer(30000);
-
     const char *llext = "ll";
     char *p;
     char buf[1024];
 
     int ret;
     int len;
-    ret = openRSLAndAddToDisplay(defaultShaderFile);
+
+    setShaderFile(shaderFile);
+    ret = openRSLAndAddToDisplay(shaderFile);
 
     if (ret == 0) {
-        ret = compileShader(defaultShaderFile);
+        ret = compileShader(shaderFile);
     }
 
     if (ret == 0) {
@@ -76,11 +75,19 @@ int
 main(int argc, char **argv)
 {
     const char *bitcodeName;
+    const char *shaderFile = defaultShaderFile;
 
-    init(); // Should call here.
+    if (argc > 1) {
+        shaderFile = argv[1];
+    }
+
+    rslTextBuf  = new Fl_Text_Buffer(30000);
+    llvmTextBuf = new Fl_Text_Buffer(30000);
+
+    slengine_init(shaderFile); // Should call here.
 
     int ret;
-    bitcodeName = getBitcodeName(defaultShaderFile);
+    bitcodeName = getBitcodeName(shaderFile);
     ret = jitInit(bitcodeName, WINDOW_SIZE, WINDOW_SIZE);
     assert(ret == 0);
 
@@ -88,7 +95,7 @@ main(int argc, char **argv)
     // Create a window.
     //
     Fl_Double_Window *renderWindow = makeRenderWindow();
-    GLWindow->resize(GLWindow->x(), GLWindow->y(), WINDOW_SIZE, WINDOW_SIZE);
+    //GLWindow->resize(GLWindow->x(), GLWindow->y(), WINDOW_SIZE, WINDOW_SIZE);
     Fl_Double_Window *shaderWindow = makeShaderWindow();
 
     llvmTextDisplay->buffer(llvmTextBuf);
@@ -103,6 +110,10 @@ main(int argc, char **argv)
 
     renderWindow->show();
 
+    // To prevent a possibly but unknown bug, call jitTest() here.
+    jitTest();
+
+    GLWindow->renderImage();
     Fl::focus(renderWindow);
 
     return Fl::run();
