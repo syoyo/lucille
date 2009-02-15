@@ -13,5 +13,7 @@ extern void dummy_rerender(int width, int height, int skip);
 extern void dummy_render  (int width, int height);
 extern unsigned char *get_render_image();
 
+extern void jitTest();
+
 
 #endif
