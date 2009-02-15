@@ -50,7 +50,7 @@ Function {makeShaderWindow()} {open
   Fl_Window shaderWindow {open
     xywh {432 199 550 480} type Double visible
   } {
-    Fl_Tabs shaderDisplayTab {open selected
+    Fl_Tabs shaderDisplayTab {open
       xywh {5 5 540 415}
     } {
       Fl_Group {} {
@@ -72,6 +72,7 @@ Function {makeShaderWindow()} {open
     }
     Fl_Button {} {
       label Compile
+      callback {compile_cb();} selected
       xywh {10 440 80 25}
     }
     Fl_Output outputCompileResult {

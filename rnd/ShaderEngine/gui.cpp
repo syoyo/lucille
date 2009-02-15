@@ -59,6 +59,10 @@ Fl_Text_Display *rslTextDisplay=(Fl_Text_Display *)0;
 
 Fl_Text_Display *llvmTextDisplay=(Fl_Text_Display *)0;
 
+static void cb_Compile(Fl_Button*, void*) {
+  compile_cb();
+}
+
 Fl_Output *outputCompileResult=(Fl_Output *)0;
 
 Fl_Double_Window* makeShaderWindow() {
@@ -82,7 +86,9 @@ Fl_Double_Window* makeShaderWindow() {
       }
       o->end();
     }
-    new Fl_Button(10, 440, 80, 25, "Compile");
+    { Fl_Button* o = new Fl_Button(10, 440, 80, 25, "Compile");
+      o->callback((Fl_Callback*)cb_Compile);
+    }
     { Fl_Output* o = outputCompileResult = new Fl_Output(105, 440, 120, 25);
       o->box(FL_THIN_DOWN_BOX);
     }

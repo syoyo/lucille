@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 
 #include <string>
 
@@ -9,6 +10,10 @@
 #include "callbacks.h"
 
 using namespace std;
+
+static const char *outputLLFile = "output.ll";
+static const char *shaderFileName = NULL;
+static int compileSuccess = 0;
 
 int
 compileShader(const char *fname)
@@ -39,6 +44,7 @@ openRSLAndAddToDisplay(const char *fname)
         return -1;
     }
 
+    rslTextBuf->remove(0, rslTextBuf->length());
     while (fgets(buf, 1024, fp) != NULL) {
         rslTextBuf->append(buf);
     }
@@ -63,6 +69,7 @@ openLLAndAddToDisplay(const char *fname)
         return -1;
     }
 
+    llvmTextBuf->remove(0, llvmTextBuf->length());
     while (fgets(buf, 1024, fp) != NULL) {
         llvmTextBuf->append(buf);
     }
@@ -90,7 +97,32 @@ handleOpenRSL()
     }
 
     if (fc->count() > 0) {
+        setShaderFile(fc->value());
         openRSLAndAddToDisplay(fc->value());
     }
 }
 
+void
+setShaderFile(const char *fname)
+{
+    shaderFileName = fname;
+}
+
+void
+compile_cb()
+{
+    int ret;
+    printf("compile button pressed\n");
+    assert(shaderFileName && "shader is not set\n");
+    ret = compileShader(shaderFileName);
+
+    if (ret == 0) {
+        outputCompileResult->value("OK");
+        compileSuccess = 1;
+        openLLAndAddToDisplay(outputLLFile);
+    } else {
+        outputCompileResult->value("FAILED");
+        compileSuccess = 0;
+    }
+    
+}

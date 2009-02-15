@@ -13,7 +13,7 @@ const char *defaultShaderFile = "matte.sl";
 const char *outputLLFile      = "output.ll";
 
 void
-init()
+slengine_init()
 {
     rslTextBuf  = new Fl_Text_Buffer(30000);
     llvmTextBuf = new Fl_Text_Buffer(30000);
@@ -24,6 +24,8 @@ init()
 
     int ret;
     int len;
+
+    setShaderFile(defaultShaderFile);
     ret = openRSLAndAddToDisplay(defaultShaderFile);
 
     if (ret == 0) {
@@ -77,7 +79,7 @@ main(int argc, char **argv)
 {
     const char *bitcodeName;
 
-    init(); // Should call here.
+    slengine_init(); // Should call here.
 
     int ret;
     bitcodeName = getBitcodeName(defaultShaderFile);
