@@ -19,7 +19,7 @@ lucille をビルドするには、以下の開発環境および依存ライブ
 * flex/bison
 * scons 1.0 以上(ビルドツール)
 
-scons は Python で記述されたビルドツールです. lucille はビルドに scons を利用しています. scons はバージョン 1.0 以上を利用してください. また、scons は ``--standard-lib`` を指定して、管理者権限でインストールしておいてください.
+scons は Python で記述されたビルドツールです. lucille はビルドにこの scons を利用しています. scons はバージョン 1.0 以上を利用してください. それ以下のバージョンではビルドエラーが生じます. また、scons は ``--standard-lib`` を指定して、管理者権限でインストールしておいてください.
 
 依存ライブラリ(オプション)
 --------------------------
@@ -43,7 +43,7 @@ libzlib があると、圧縮ファイルや圧縮テクスチャを扱うこと
 
   $ git clone git://github.com/syoyo/lucille.git
 
-もしくは、http://github.com/syoyo/lucille/tree/master から download ボタンで最新スナップショットを取得することができます.
+もしくは、 ``http://github.com/syoyo/lucille/tree/master`` から download ボタンで最新スナップショットを取得することができます(ただし、ときどき github の都合で正しくスナップショットが生成されないときがあります. そのときは数日置いてアクセスし直してみてください).
 
 
 コンフィグ
@@ -53,8 +53,8 @@ libzlib があると、圧縮ファイルや圧縮テクスチャを扱うこと
 
 * build_target : ビルドターゲットを指定します. ``debug``, ``release``, ``speed`` から選択します.
 * enable_sse : SSE 命令を使うかどうか指定します. デフォルトは 1 です.
-* use_double : double 精度で演算を行うかどうか指定します. デフォルトは 1 です.
-* enable_64bit : 64bit バイナリを生成するかどうか指定します. デフォルトは 0 です.
+* use_double : double 精度で演算を行うかどうか指定します. 1 を指定すると double 精度で、0 を指定すると float 精度で演算を行います. デフォルトは 1 です(0 を指定しても現在は無効になります).
+* enable_64bit : 64bit バイナリを生成するかどうか指定します. 64bit 環境でコンパイルする場合は 1 を指定してください. デフォルトは 0 です.
 * with_zlib : 圧縮ファイルをサポートします. 有効にした場合は、ZLIB_LIC_PATH, ZLIB_LIBPATH, ZLIB_LIB_NAME で zlib のライブラリパスなどを指定できます.
 * with_jpeglib : jpeg ファイルをサポートします. 有効にした場合は、JPEGLIB_LIC_PATH, JPEGLIB_LIBPATH, JPEGLIB_LIB_NAME で libjpeg のライブラリパスなどを指定できます.
 
@@ -62,7 +62,7 @@ libzlib があると、圧縮ファイルや圧縮テクスチャを扱うこと
 ビルド
 ======
 
-```custom.py``` の編集が終了したら、scons を利用してビルドを行います. ::
+``custom.py`` の編集が終了したら、scons を利用してビルドを行います. ::
 
   $ scons
 
@@ -73,5 +73,5 @@ libzlib があると、圧縮ファイルや圧縮テクスチャを扱うこと
   $ sudo scons --prefix=/PATH/TO/PREFIX
 
 としてください. このコマンドの実行には管理者権限が必要になります. バイナリが ``/PATH/TO/PREFIX/bin`` に、ライブラリが ``/PATH/TO/PREFIX/lib`` にインストールされます.
-(scons を --standard-libs 付きでインストールしていない場合、管理者権限での実行時に scons でエラーがでることがあります)
+(scons を --standard-lib 付きでインストールしていない場合、管理者権限での実行時に scons でエラーがでることがあります)
 
