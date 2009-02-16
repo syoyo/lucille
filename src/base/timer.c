@@ -17,7 +17,7 @@
 #ifdef WIN32
 #include <windows.h>
 #endif
-#if defined(LINUX) || defined(__MACH__) || defined(SPARC) || defined(SGI)
+#if defined(LINUX) || defined(__MACH__) || defined(SPARC) || defined(SGI) || defined(__FreeBSD__)
 #include <sys/time.h>
 #endif
 
