@@ -2,7 +2,7 @@ Haskell + parsec version of RSL compiler.
 =========================================
 
   Started: Dec 9th, 2008
-  Updated: Jan 5th, 2009
+  Updated: Feb 20th, 2009
 
 What is this?
 -------------
@@ -12,9 +12,20 @@ This is a prototype implementation of RenderMan Shading Language compiler writte
 The compiler will be merged with lucille core and be used as a practical RSL shader compiler in the next release of lucille.
 
 
+Requirements
+-------------
+
+ * Haskell libraries
+   - fgl, functional graph libraray
+     http://hackage.haskell.org/cgi-bin/hackage-scripts/package/fgl
+
+ * mcpp: A portable C preprocessor with Validation Suite
+   http://mcpp.sourceforge.net/index.html
+
 Compilation phases
 ------------------
 
+ * (preprocess RSL source file by mcpp)
  * Parse RSL program source with parsec and build partially-typed AST(Abstract Syntax Tree)
  * Apply syntax fixing, semantic checking and typing for partially-typed AST, and build a completely-typed and verified AST.
  * (Optional) Do some symbolic optimization(e.g. SPMD -> SIMD)

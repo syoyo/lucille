@@ -78,6 +78,7 @@ emitTy ty = case ty of
   TyPoint   -> "<4 x float>"
   TyNormal  -> "<4 x float>"
   TyMatrix  -> "<16 x float>"
+  TyBool    -> "i1"
 
 class AST a where
 
@@ -346,9 +347,9 @@ emitTypeCast toTy fromTy dst src = case (toTy, fromTy) of
 
 emitCacheSaver :: Int -> Int -> Symbol -> String
 emitCacheSaver n layer sym = concat
-  [ indent n ++ tempX ++ " = call i32 @rsl_getx()\n"
-  , indent n ++ tempY ++ " = call i32 @rsl_gety()\n"
-  , indent n ++ "call void @save_cache_iiic("
+  [ indent n ++ tempX ++ " = call i32 @rsl_getsx()\n"
+  , indent n ++ tempY ++ " = call i32 @rsl_getsy()\n"
+  , indent n ++ "call void @save_cache_iii" ++ (getSuffix (getTyOfSym sym)) ++ "("
   , "i32 " ++ (show layer) ++ ", "
   , "i32 " ++ tempX ++ ", " 
   , "i32 " ++ tempY ++ ", " 
@@ -364,10 +365,10 @@ emitCacheSaver n layer sym = concat
 
 emitCacheLoader :: Int -> Int -> Symbol -> String
 emitCacheLoader n layer sym = concat
-  [ indent n ++ tmpX ++ " = call i32 @rsl_getx();\n"
-  , indent n ++ tmpY ++ " = call i32 @rsl_gety();\n"
+  [ indent n ++ tmpX ++ " = call i32 @rsl_getsx();\n"
+  , indent n ++ tmpY ++ " = call i32 @rsl_getsy();\n"
   , indent n ++ tmpReg ++ " = alloca " ++ ty ++ ";\n"
-  , indent n ++ "call void @load_cache_ciii("
+  , indent n ++ "call void @load_cache_" ++ (getSuffix (getTyOfSym sym)) ++ "iii("
   , ty ++ "* " ++ tmpReg ++ ", "
   , "i32 " ++ (show layer) ++ ", "
   , "i32 " ++ tmpX ++ ", " 
@@ -507,12 +508,13 @@ instance AST Expr where
       , gen n e1
       , emitDotOp n sym e0 e1
       ]
+
     BinOp (Just sym) op e0 e1            -> concat
       [ gen n e0
       , gen n e1
       , indent n ++ "%" ++ getNameOfSym sym ++ " = "
       , emitOp op ++ " "
-      , emitTy (getTyOfSym sym) ++ " " ++ getReg e0 ++ " , "
+      , emitTy (getTyOfExpr e0) ++ " " ++ getReg e0 ++ " , "
       , getReg e1
       , ";\n"
       ]
@@ -858,12 +860,13 @@ instance AST Expr where
       , gen n e1
       , emitDotOp n sym e0 e1
       ]
+
     BinOp (Just sym) op e0 e1            -> concat
       [ genStatic n e0
       , genStatic n e1
       , indent n ++ "%" ++ getNameOfSym sym ++ " = "
       , emitOp op ++ " "
-      , emitTy (getTyOfSym sym) ++ " " ++ getReg e0 ++ " , "
+      , emitTy (getTyOfExpr e0) ++ " " ++ getReg e0 ++ " , "
       , getReg e1
       , ";\n"
       ]
@@ -1180,12 +1183,13 @@ instance AST Expr where
       , gen n e1
       , emitDotOp n sym e0 e1
       ]
+
     BinOp (Just sym) op e0 e1            -> concat
       [ genDynamic n e0
       , genDynamic n e1
       , indent n ++ "%" ++ getNameOfSym sym ++ " = "
       , emitOp op ++ " "
-      , emitTy (getTyOfSym sym) ++ " " ++ getReg e0 ++ " , "
+      , emitTy (getTyOfExpr e0) ++ " " ++ getReg e0 ++ " , "
       , getReg e1
       , ";\n"
       ]

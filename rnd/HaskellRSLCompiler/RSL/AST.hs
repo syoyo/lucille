@@ -56,6 +56,7 @@ data Type
   | TyPoint
   | TyNormal
   | TyMatrix
+  | TyBool            -- Internal
   | TyQualified Qual Type
     deriving (Show, Eq, Typeable, Data)
 

@@ -3,6 +3,7 @@
 import os, sys
 import subprocess
 import re
+import glob
 
 errLineRE = re.compile("Parse err")
 
@@ -66,7 +67,13 @@ def run_test(fname):
         print "Test %s OK" % fname
 
 def main():
+
+    for f in glob.glob("*.sl"):
+        
+        run_test(f)
     
+    return
+
     for sl in slfiles:
         
         fname = os.path.join(slfilepath, sl)

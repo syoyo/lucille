@@ -48,6 +48,11 @@ getReturnTypeOfFuncWithArgumentSignature name argTys = trace (show argTys) $ cas
 getArgumentTypeSignature :: [Expr] -> [Type]
 getArgumentTypeSignature exprs = map getTyOfExpr exprs
 
+insertItoF :: Expr -> TyperState Expr
+insertItoF expr      = do { tmpName <- getUniqueName
+                          ; let sym = (SymVar tmpName TyFloat Uniform KindVariable)
+                          ; return (TypeCast (Just sym) TyFloat "" expr)
+                          }
 
 insertFtoV :: Type -> Expr -> TyperState Expr
 insertFtoV toTy expr = do { tmpName <- getUniqueName
@@ -83,6 +88,7 @@ upcastBinary e0 e1 = case (getTyOfExpr e0, getTyOfExpr e1) of
   (TyPoint , _      ) -> do {                                return (e0 , e1 ) }
   (TyNormal, _      ) -> do {                                return (e0 , e1 ) }
   (TyColor , _      ) -> do {                                return (e0 , e1 ) }
+  (TyBool  , TyBool ) -> do {                                return (e0 , e1 ) }
   _                   -> error $ "[Typer] upcastBinary: TODO: " ++ show e0 ++ " , " ++ show e1
 
 --
@@ -109,8 +115,19 @@ forceCast e0 e1 = case (getTyOfExpr e0, getTyOfExpr e1) of
   (TyPoint , _      ) -> do {                                return (e0 , e1 ) }
   (TyNormal, _      ) -> do {                                return (e0 , e1 ) }
   (TyColor , _      ) -> do {                                return (e0 , e1 ) }
+  (TyBool  , TyBool ) -> do {                                return (e0 , e1 ) }
   _                   -> error $ "[Typer] forceCast: TODO: " ++ show e0 ++ " , " ++ show e1
 
+typeBinOp :: Op -> Expr -> Type
+typeBinOp op expr = case op of
+  OpDot -> TyFloat
+  OpGe  -> TyBool
+  OpGt  -> TyBool
+  OpLe  -> TyBool
+  OpLt  -> TyBool
+  OpEq  -> TyBool
+  OpNeq -> TyBool
+  _     -> getTyOfExpr expr
 
 instance Typer Expr where
   typing e = case e of
@@ -151,7 +168,7 @@ instance Typer Expr where
           ; e1' <- typing e1
           ; (e0'', e1'') <- upcastBinary e0' e1'
           ; tmpName <- getUniqueName
-          ; let ty  = if op == OpDot then TyFloat else getTyOfExpr e0''
+          ; let ty  = typeBinOp op e0''
           ; let sym = (SymVar tmpName ty Uniform KindVariable)
           ; return (BinOp (Just sym) op e0'' e1'')
 

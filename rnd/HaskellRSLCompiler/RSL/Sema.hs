@@ -33,11 +33,13 @@ builtinShaderVariables =
   , (SymVar "Cs" TyColor  Varying KindBuiltinVariable)
   , (SymVar "Os" TyColor  Varying KindBuiltinVariable)
   , (SymVar "P"  TyPoint  Varying KindBuiltinVariable)
+  , (SymVar "Ps" TyPoint  Varying KindBuiltinVariable)
   , (SymVar "I"  TyVector Varying KindBuiltinVariable)
   , (SymVar "E"  TyPoint  Uniform KindBuiltinVariable)
   , (SymVar "L"  TyVector Uniform KindBuiltinVariable)
   , (SymVar "N"  TyNormal Varying KindBuiltinVariable)
   , (SymVar "Ng" TyNormal Varying KindBuiltinVariable)
+  , (SymVar "Ns" TyNormal Varying KindBuiltinVariable)
   , (SymVar "Cl" TyColor  Varying KindBuiltinVariable)
   , (SymVar "Ol" TyColor  Varying KindBuiltinVariable)
   , (SymVar "s"  TyFloat  Varying KindBuiltinVariable)
@@ -45,10 +47,12 @@ builtinShaderVariables =
 
   -- extension for lucille.
   
-  , (SymVar "x"  TyInt    Varying KindBuiltinVariable)
-  , (SymVar "y"  TyInt    Varying KindBuiltinVariable)
-  , (SymVar "z"  TyInt    Varying KindBuiltinVariable)
-  , (SymVar "w"  TyInt    Varying KindBuiltinVariable)
+  , (SymVar "x"  TyFloat  Varying KindBuiltinVariable)
+  , (SymVar "y"  TyFloat  Varying KindBuiltinVariable)
+  , (SymVar "z"  TyFloat  Varying KindBuiltinVariable)
+  , (SymVar "w"  TyFloat  Varying KindBuiltinVariable)
+  , (SymVar "sx" TyInt    Varying KindBuiltinVariable)
+  , (SymVar "sy" TyInt    Varying KindBuiltinVariable)
 
   -- Constant
   , (SymVar "PI" TyFloat  Uniform KindBuiltinVariable)
@@ -159,6 +163,12 @@ builtinShaderFunctions =
   -- , (SymBuiltinFunc "setcomp"        void [c, f, f]    []) 
   , (SymBuiltinFunc "mix"            c [c, c, f] []) 
 
+  -- [15.5] String Functions
+  --
+  -- FIXME: Need a special treatment for string functions.
+  --
+  , (SymBuiltinFunc "printf"         void [s] []) 
+
   -- [15.6] Shading and Lighting Functions
   , (SymBuiltinFunc "ambient"        c []        [])
   , (SymBuiltinFunc "diffuse"        c [n]       [])
@@ -178,7 +188,9 @@ builtinShaderFunctions =
 
   -- extension for lucille 
   , (SymBuiltinFunc "save_cache" void [i, i, i, c]      [])
+  , (SymBuiltinFunc "save_cache" void [i, i, i, f]      [])
   , (SymBuiltinFunc "load_cache" c    [i, i, i]         [])
+  , (SymBuiltinFunc "load_cache" f    [i, i, i]         [])
   , (SymBuiltinFunc "turb"       c    [p]               [])
   , (SymBuiltinFunc "occlusion"  f    [p, n]            [])
   , (SymBuiltinFunc "occlusion"  f    [p, n, f]         [])
