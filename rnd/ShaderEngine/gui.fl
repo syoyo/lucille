@@ -21,6 +21,11 @@ Function {makeRenderWindow()} {open
         xywh {0 0 100 20}
       } {
         MenuItem {} {
+          label {Open RSL}
+          callback {open_rsl_cb();} selected
+          xywh {0 0 100 20} shortcut 0x4006f
+        }
+        MenuItem {} {
           label Quit
           callback {exit(1);}
           xywh {0 0 100 20} shortcut 0x71
@@ -32,7 +37,7 @@ Function {makeRenderWindow()} {open
       } {
         MenuItem {} {
           label Help
-          callback {help_cb();} selected
+          callback {help_cb();}
           xywh {0 0 100 20}
         }
       }

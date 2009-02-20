@@ -142,6 +142,7 @@ MyGLWindow::handle(int e)
             break;
     
         case FL_PUSH:
+            printf("push\n");
 
             this->pressed = 1;
             this->pressedButton = Fl::event_button();
@@ -174,6 +175,10 @@ MyGLWindow::handle(int e)
 
             if (this->pressed) {
 
+                if (getCoarseUpdateState()) {
+                    setCoarseUpdateStepValue(4);
+                }
+
                 if (this->pressedButton == FL_LEFT_MOUSE) {
 
                     trackball(this->prevQuat,
@@ -184,7 +189,7 @@ MyGLWindow::handle(int e)
 
                     add_quats(this->prevQuat, this->currQuat, this->currQuat);
 
-                    lx += (mx - (float)x) / 50.0f;
+                    lx -= (mx - (float)x) / 50.0f;
                     ly += (my - (float)y) / 50.0f;
 
                 } else if (this->pressedButton == FL_MIDDLE_MOUSE) {
@@ -214,6 +219,8 @@ MyGLWindow::handle(int e)
         case FL_RELEASE:
         case FL_LEAVE:
             this->pressed = 0;
+            setCoarseUpdateStepValue(1);
+            needRedraw = 1;
             break;
 
         
@@ -399,7 +406,7 @@ MyGLWindow::renderImage()
     this->getView( eye, lookat, up );
 
     mytimer_t s, e;
-    
+
     assert(this->fimage);
 
 
@@ -408,6 +415,10 @@ MyGLWindow::renderImage()
     // 
     // printf("[render] render...\n");
     get_time(&s);
+
+    if (this->pressed == 0) {
+        setCoarseUpdateStepValue(1);
+    }
 
     updateLightPos(lx, ly, 0.0f);
     render_with_jit_shader(this->imageWidth, this->imageHeight);

@@ -18,17 +18,21 @@ shader_env_def = [
   , ("normal", "Ng",  False)
   , ("vector", "E" ,  False)
   , ("vector", "P" ,  False)
+  , ("vector", "L" ,  False)        # Hack
+  , ("color" , "Cl",  False)
+  , ("color" , "Ol",  False)
   , ("float" , "u" ,  False)
   , ("float" , "v" ,  False)
   , ("float" , "s" ,  False)
   , ("float" , "t" ,  False)
-  , ("int"   , "x" ,  False)        # LSE only. raster pos.
-  , ("int"   , "y" ,  False)        # LSE only. raster pos.
-  , ("int"   , "z" ,  False)        # LSE only. raster pos.
-  , ("int"   , "w" ,  False)        # LSE only. raster pos.
-  , ("vector", "L" ,  False)        # Hack
-  , ("color" , "Cl",  False)
-  , ("color" , "Ol",  False)
+  , ("float" , "x" ,  False)        # LSE only. raster pos.
+  , ("float" , "y" ,  False)        # LSE only. raster pos.
+  , ("float" , "z" ,  False)        # LSE only. raster pos.
+  , ("float" , "w" ,  False)        # LSE only. raster pos.
+  , ("int"   , "sx" , False)        # LSE only. raster pos.
+  , ("int"   , "sy" , False)        # LSE only. raster pos.
+  , ("int"   , "sz" , False)        # LSE only. Padding.
+  , ("int"   , "sw" , False)        # LSE only. Padding.
   ]
 
 def gen_llvm_code(fname):

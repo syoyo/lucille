@@ -6,7 +6,6 @@ extern int  openRSLAndAddToDisplay(const char *fname);
 extern int  openLLAndAddToDisplay(const char *fname);
 extern int  compileShader(const char *fname);
 
-extern void handleOpenRSL();
 
 extern int  jitInit(const char *shaderModuleFilename, int w, int h);
 
@@ -21,9 +20,10 @@ extern void showRenderTime(float sec);
 //
 // CB for FLTK GUI
 //
-void compile_cb();
-void coarse_update_cb();
-void specialization_cb();
-void help_cb();
+extern void open_rsl_cb();
+extern void compile_cb();
+extern void coarse_update_cb();
+extern void specialization_cb();
+extern void help_cb();
 
 #endif

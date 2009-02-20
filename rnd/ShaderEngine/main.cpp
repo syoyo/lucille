@@ -106,6 +106,7 @@ main(int argc, char **argv)
     shaderWindow->position( renderWindow->x() + renderWindow->w() + 15,
                             renderWindow->y() );
 
+    button4x4Update->deactivate();
     shaderWindow->show();
 
     renderWindow->show();

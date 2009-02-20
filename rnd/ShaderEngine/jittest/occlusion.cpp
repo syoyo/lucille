@@ -181,7 +181,7 @@ lse_occlusion(
 
             ray_sphere_intersect(&occIsect, &ray, &scene_spheres[0]); 
             ray_sphere_intersect(&occIsect, &ray, &scene_spheres[1]); 
-            ray_sphere_intersect(&occIsect, &ray, &scene_spheres[2]); 
+            //ray_sphere_intersect(&occIsect, &ray, &scene_spheres[2]); 
             //ray_plane_intersect (&occIsect, &ray, &plane); 
 
             if (occIsect.t < 1.0e-30f) occlusion += 1.0;

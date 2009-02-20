@@ -25,8 +25,19 @@ This release is a technical preview. Many features are not implemented yet. matt
 Creit
 -----
 
- - source
+ - JIT ShaderEngine source
    http://github.com/syoyo/lucille/tree/master
 
  - blog
    http://lucille.atso-net.jp/blog/
+
+
+Softwares used in ShaderEngine
+------------------------------
+
+  - GHC(Haskell)
+    http://www.haskell.org/ghc/
+
+  - LLVM and clang
+    http://llvm.org/
+   

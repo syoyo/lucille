@@ -41,12 +41,15 @@
  * Implements simple ambient occlusion.
  */
 
+#include <stdio.h>
+
 #include <math.h>
 #include <stdlib.h>
 
+#include "occlusion.h"
 #include "render.h"
 
-#define NAO_SAMPLES  8
+#define NAO_SAMPLES  16
 
 static double vdot(vec v0, vec v1)
 {
@@ -122,8 +125,8 @@ orthoBasis(vec *basis, vec n)
 
 float
 lse_occlusion(
-    float *pvalue,
-    float *nvalue)
+    float *pvalue,      // pos
+    float *nvalue)      // normal
 {
     int    i, j;
     int    ntheta = NAO_SAMPLES;
@@ -181,10 +184,9 @@ lse_occlusion(
 
             ray_sphere_intersect(&occIsect, &ray, &scene_spheres[0]); 
             ray_sphere_intersect(&occIsect, &ray, &scene_spheres[1]); 
-            ray_sphere_intersect(&occIsect, &ray, &scene_spheres[2]); 
             //ray_plane_intersect (&occIsect, &ray, &plane); 
 
-            if (occIsect.t < 1.0e-30f) occlusion += 1.0;
+            if (occIsect.t < 1.0e+30f) occlusion += 1.0;
             
         }
     }

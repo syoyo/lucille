@@ -36,6 +36,17 @@ lse_save_cache_iiic(int layer, int x, int y, float *val)
 }
 
 void
+lse_save_cache_iiif(int layer, int x, int y, float val)
+{
+    float *buf;
+
+    buf = (float *)g_hbuffer[layer]->buffer;
+
+    buf[4 * (y * g_hbuffer[layer]->width + x) + 0] = val;
+
+}
+
+void
 lse_load_cache_iiic(int layer, int x, int y, float *val)
 {
     float *buf;
@@ -46,6 +57,17 @@ lse_load_cache_iiic(int layer, int x, int y, float *val)
     val[1] = buf[4 * (y * g_hbuffer[layer]->width + x) + 1];
     val[2] = buf[4 * (y * g_hbuffer[layer]->width + x) + 2];
     val[3] = buf[4 * (y * g_hbuffer[layer]->width + x) + 3];
+
+}
+
+void
+lse_load_cache_iiif(int layer, int x, int y, float *val)
+{
+    float *buf;
+
+    buf = (float *)g_hbuffer[layer]->buffer;
+
+    (*val) = buf[4 * (y * g_hbuffer[layer]->width + x) + 0];
 
 }
 

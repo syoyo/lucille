@@ -69,13 +69,13 @@ init_render_scene()
 {
     scene_spheres[0].center.x =  0.0;
     scene_spheres[0].center.y =  0.0;
-    scene_spheres[0].center.z = -2.0;
-    scene_spheres[0].radius   = 1.25;
+    scene_spheres[0].center.z = -1.25;
+    scene_spheres[0].radius   =  0.75;
 
-    scene_spheres[1].center.x = -0.75;
-    scene_spheres[1].center.y =  0.0;
-    scene_spheres[1].center.z = -0.5;
-    scene_spheres[1].radius   = 0.5;
+    scene_spheres[1].center.x =  0.0;
+    scene_spheres[1].center.y = -40-0.75;
+    scene_spheres[1].center.z = -2.0;
+    scene_spheres[1].radius   =  40.0;
 
     scene_spheres[2].center.x =  1.0;
     scene_spheres[2].center.y =  0.0;

@@ -56,7 +56,7 @@ gui.cpp gui.h: gui.fl
 	$(CXX) -c $(MY_CXXFLAGS) $(SDL_CXXFLAGS) $(LLVM_CXXFLAGS) $(CXXFLAGS) $<
 
 depend:
-	$(CXX) $(SDL_CXXFLAGS) $(LLVM_CXXFLAGS) $(CXXFLAGS) $(OPT_FLAGS) -MM $(CXX_SRCS) > depend.mk
+	$(CXX) $(SDL_CXXFLAGS) $(LLVM_CXXFLAGS) $(CXXFLAGS) $(OPT_FLAGS) -MM $(SRCS) > depend.mk
 
 -include depend.mk
 

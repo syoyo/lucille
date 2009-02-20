@@ -4,9 +4,10 @@ import os, sys
 import subprocess
 
 # config
-LLVM_AS                 = "./llvm-as" 
-LLVM_LINLK              = "./llvm-link" 
-LLVM_OPT                = "./opt"
+CLANG                   = "clang"
+LLVM_AS                 = "llvm-as" 
+LLVM_LINLK              = "llvm-link" 
+LLVM_OPT                = "opt"
 RSL2LLVM                = "./lslc" 
 OUTPUT_SHADER_MODULE    = "shader.bc"
 SHADER_LL               = "output.ll"
@@ -18,6 +19,18 @@ def get_bc_name(fname):
     basename = os.path.splitext(fname)[0]
 
     return basename + ".bc"
+
+def compileSupporLib():
+
+    libfiles = ["shaderlib.c", "noise.c"]
+    for f in libfiles:
+        cmd = CLANG + " -emit-llvm-bc " + f
+
+        print cmd
+        ret = subprocess.call(cmd, shell=True)
+        if ret is not 0:
+            print "Failed to compilation"
+            sys.exit(1)
 
 def compile(fname):
 
@@ -51,6 +64,9 @@ def compile(fname):
     print cmd
     ret = subprocess.call(cmd, shell=True)
 
+    # Compile support lib
+    compileSupporLib()
+
     # Link
     outname = basename + ".bc"
     cmd  = LLVM_LINLK
@@ -65,16 +81,16 @@ def compile(fname):
     ret = subprocess.call(cmd, shell=True)
 
     # Opt
-    # outname = basename + ".bc"
-    # cmd  = LLVM_OPT
-    # cmd += " -f "
-    # cmd += " -std-compile-opts "
-    # cmd += " -o " + outname
-    # cmd += " " + outname
+    outname = basename + ".bc"
+    cmd  = LLVM_OPT
+    cmd += " -f "
+    cmd += " -std-compile-opts "
+    cmd += " -o " + outname
+    cmd += " " + outname
 
-    # print "Optimizing shader modules..." 
-    # print cmd
-    # ret = subprocess.call(cmd, shell=True)
+    print "Optimizing shader modules..." 
+    print cmd
+    ret = subprocess.call(cmd, shell=True)
 
 
 def usage():

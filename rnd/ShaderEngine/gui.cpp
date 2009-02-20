@@ -7,6 +7,10 @@
 
 Fl_Double_Window *renderWindow=(Fl_Double_Window *)0;
 
+static void cb_Open(Fl_Menu_*, void*) {
+  open_rsl_cb();
+}
+
 static void cb_Quit(Fl_Menu_*, void*) {
   exit(1);
 }
@@ -17,6 +21,7 @@ static void cb_Help(Fl_Menu_*, void*) {
 
 Fl_Menu_Item menu_[] = {
  {"File", 0,  0, 0, 64, FL_NORMAL_LABEL, 0, 14, 0},
+ {"Open RSL", 0x4006f,  (Fl_Callback*)cb_Open, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
  {"Quit", 0x71,  (Fl_Callback*)cb_Quit, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
  {0,0,0,0,0,0,0,0,0},
  {"Help", 0,  0, 0, 64, FL_NORMAL_LABEL, 0, 14, 0},

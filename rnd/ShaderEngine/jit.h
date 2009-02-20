@@ -13,7 +13,9 @@ void *JITCompileFunction(llvm::ExecutionEngine *EE, llvm::Function *F);
 void render_with_jit_shader(int w, int h);
 void updateLightPos(float x, float y, float z);
 void setSpecialized(int val);
-void setCoarseUpdate(int val);
+void setCoarseUpdateStepValue(int val);
+void setCoarseUpdateState(int onoff);
+int  getCoarseUpdateState();
 
 
 #endif  // LUCILLE_JIT_H

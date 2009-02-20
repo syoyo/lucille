@@ -132,28 +132,6 @@ openLLAndAddToDisplay(const char *fname)
 }
 
 void
-handleOpenRSL()
-{
-    Fl_File_Chooser *fc;
-    char buf[1024];
-    const char *shaderName;
-
-    fc = new Fl_File_Chooser(".", "*.sl", Fl_File_Chooser::SINGLE, "Open RenderMan Shading Language source");
-
-    fc->show();
-
-    while (fc->visible()) {
-        Fl::wait();
-    }
-
-    if (fc->count() > 0) {
-        shaderName = getBaseShaderFileName(fc->value());
-        setShaderFile(shaderName);
-        openRSLAndAddToDisplay(fc->value());
-    }
-}
-
-void
 setShaderFile(const char *fname)
 {
     shaderFileName = fname;
@@ -172,6 +150,35 @@ showRenderTime(float sec)
 //
 // GUI callback event handler
 //
+
+void
+open_rsl_cb()
+{
+    Fl_File_Chooser *fc;
+    char buf[1024];
+    const char *shaderName;
+
+    fc = new Fl_File_Chooser(".", "*.sl", Fl_File_Chooser::SINGLE, "Open RenderMan Shading Language source");
+
+    fc->show();
+
+    while (fc->visible()) {
+        Fl::wait();
+    }
+
+    if (fc->count() > 0) {
+        shaderName = getBaseShaderFileName(fc->value());
+        setShaderFile(shaderName);
+        openRSLAndAddToDisplay(fc->value());
+
+        compile_cb();
+
+        // Force redraw
+        GLWindow->renderImage();
+        Fl::redraw();
+    }
+}
+
 
 void
 compile_cb()
@@ -201,6 +208,13 @@ void specialization_cb()
     printf("specialization %d\n", onoff);
 
     setSpecialized(onoff);
+
+    if (onoff == 0) {   // specialization off
+        button4x4Update->deactivate();
+    } else {
+        button4x4Update->activate();
+    }
+        
 }
 
 void coarse_update_cb()
@@ -208,7 +222,7 @@ void coarse_update_cb()
     int onoff = button4x4Update->value();
     printf("coarse = %d\n", onoff);
 
-    setCoarseUpdate(onoff);
+    setCoarseUpdateState(onoff);
 }
 
 void help_cb()

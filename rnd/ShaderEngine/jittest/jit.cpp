@@ -307,8 +307,10 @@ dummy_rerender(int width, int height, int skip)
                 genv.I[3] = 1.0f;
                 genv.s = UVTcache[0];
                 genv.t = UVTcache[1];
-                genv.x = x;
-                genv.y = y;
+                genv.x = (float)x;
+                genv.y = (float)y;
+                genv.sx = x;
+                genv.sy = y;
 
                 g_shader_jit.shader_env_set(&genv);
                 shader_fun();
@@ -370,7 +372,6 @@ dummy_render(int width, int height)
     double      elap;
 
     float       texcol[4];
-    //sphere_t    sphere;
     isect_t     isect;
     ray_t       ray;
 
@@ -380,11 +381,6 @@ dummy_render(int width, int height)
     GenericValue ResultGV;
 
     ret_env = (ri_shader_env_t *)malloc32(sizeof(ri_shader_env_t));
-
-    //sphere.center.x = 0.0;
-    //sphere.center.y = 0.0;
-    //sphere.center.z = -2.0;
-    //sphere.radius    = 0.75;
 
     get_time(&start_time);
 
@@ -431,7 +427,7 @@ dummy_render(int width, int height)
             vnormalize(&ray.dir);
 
             ray_sphere_intersect(&isect, &ray, &scene_spheres[0]);
-            //ray_sphere_intersect(&isect, &ray, &scene_spheres[1]);
+            ray_sphere_intersect(&isect, &ray, &scene_spheres[1]);
 
             hit = isect.t < 1.0e+30f;
 
@@ -470,8 +466,10 @@ dummy_render(int width, int height)
                 genv.I[3] = 1.0f;
                 genv.s = tu;
                 genv.t = tv;
-                genv.x = x;
-                genv.y = y;
+                genv.x = (float)x;
+                genv.y = (float)y;
+                genv.sx = x;
+                genv.sy = y;
 
                 // cache P
                 cacheval[0] = isect.p.x;

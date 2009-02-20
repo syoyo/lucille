@@ -477,7 +477,19 @@ xcomp_fp(float *ret, float4 v)
 }
 
 void
+xcomp_fv(float *ret, float4 v)
+{
+    (*ret) = v[0];
+}
+
+void
 ycomp_fp(float *ret, float4 v)
+{
+    (*ret) = v[1];
+}
+
+void
+ycomp_fv(float *ret, float4 v)
 {
     (*ret) = v[1];
 }
@@ -489,7 +501,20 @@ zcomp_fp(float *ret, float4 v)
 }
 
 void
+zcomp_fv(float *ret, float4 v)
+{
+    (*ret) = v[2];
+}
+
+void
 wcomp_fp(float *ret, float4 v)
+{
+    // TODO:
+    (*ret) = v[3];
+}
+
+void
+wcomp_fv(float *ret, float4 v)
 {
     // TODO:
     (*ret) = v[3];

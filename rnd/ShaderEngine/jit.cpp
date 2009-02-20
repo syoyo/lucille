@@ -1,3 +1,5 @@
+#include <vector>
+
 #include <stdio.h>
 #include <math.h>
 
@@ -33,6 +35,7 @@
 #include "render.h"
 #include "cachelib.h"
 #include "callbacks.h"
+#include "occlusion.h"
 
 #include <iostream>
 #include "timer.h"
@@ -49,6 +52,7 @@ static int              g_mouse_y;
 static int              g_enable_specialization = 0;
 static int              g_cached = 0;
 static int              g_skip   = 1;
+static int              g_coarse_update  = 0;
 static int              g_mode   = MODE_FULL_UPDATE;
 static bool             g_run_interpreter = false;
 static bool             g_initialized = false;
@@ -60,7 +64,15 @@ using namespace llvm;
 
 static FunctionPassManager      *TheFPM;
 static ExecutionEngine          *TheEE;
-static ExistingModuleProvider   *TheMP;
+//static ExistingModuleProvider   *TheMP;
+
+typedef struct _ModuleInfo
+{
+    Module                  *M;
+    ExistingModuleProvider  *MP;
+} ModuleInfo;
+
+std::vector<ModuleInfo> MIs;
 
 #ifdef __cplusplus
 extern "C" {
@@ -173,8 +185,12 @@ void *customSymbolResolver(const std::string &name)
     if (name == "get_texture") return (void *)get_texture;
     if (name == "texture_map") return (void *)texture_map;
     if (name == "lse_save_cache_iiic") return (void *)lse_save_cache_iiic;
+    if (name == "lse_save_cache_iiif") return (void *)lse_save_cache_iiif;
     if (name == "lse_load_cache_iiic") return (void *)lse_load_cache_iiic;
+    if (name == "lse_load_cache_iiif") return (void *)lse_load_cache_iiif;
+    if (name == "lse_occlusion") return (void *)lse_occlusion;
 
+    cout << "Failed to resolve symbol : " << name << "\n";
     return NULL;    // fail
 }
 
@@ -302,6 +318,8 @@ dummy_rerender(int width, int height, int skip)
                 genv.t = UVTcache[1];
                 genv.x = x;
                 genv.y = y;
+                genv.sx = (int)x;
+                genv.sy = (int)y;
 
                 g_shader_jit.shader_env_set(&genv);
                 shader_fun();
@@ -426,7 +444,7 @@ dummy_render(int width, int height)
             vnormalize(&ray.dir);
 
             ray_sphere_intersect(&isect, &ray, &scene_spheres[0]);
-            //ray_sphere_intersect(&isect, &ray, &scene_spheres[1]);
+            ray_sphere_intersect(&isect, &ray, &scene_spheres[1]);
 
             hit = isect.t < 1.0e+30f;
 
@@ -467,6 +485,8 @@ dummy_render(int width, int height)
                 genv.t = tv;
                 genv.x = x;
                 genv.y = y;
+                genv.sx = (int)x;
+                genv.sy = (int)y;
 
                 // cache P
                 cacheval[0] = isect.p.x;
@@ -531,15 +551,14 @@ dummy_render(int width, int height)
 // (i.e., the JIT engine is bounded with the module)
 //
 ExecutionEngine *
-createJITEngine(Module *M, bool ForceInterpreter)
+createJITEngine(ModuleProvider *MP, bool ForceInterpreter)
 {
     
-    TheMP = new ExistingModuleProvider(M);
-    ExecutionEngine* EE = ExecutionEngine::create(TheMP, ForceInterpreter);
+    ExecutionEngine* EE = ExecutionEngine::create(MP, ForceInterpreter);
 
     // EE->DisableLazyCompilation(true);
 
-    FunctionPassManager *FPM = new FunctionPassManager(TheMP);
+    FunctionPassManager *FPM = new FunctionPassManager(MP);
 
     // Add some code optimizer
     FPM->add(new TargetData(*EE->getTargetData()));
@@ -714,16 +733,62 @@ unsigned char *get_render_image()
 }
 
 void
-jitReleaseCode()
+jitRelease()
+{
+    std::string ErrorMessage;
+    
+    TheEE->clearAllGlobalMappings();
+
+    //TheEE->freeMachineCodeForFunction(g_shader_jit.shader_env_set_f);
+    //TheEE->freeMachineCodeForFunction(g_shader_jit.shader_env_get_f);
+    //TheEE->freeMachineCodeForFunction(g_shader_jit.shader_fun_f);
+    //TheEE->freeMachineCodeForFunction(g_shader_jit.shader_cache_gen_fun_f);
+    //TheEE->freeMachineCodeForFunction(g_shader_jit.shader_dynamic_fun_f);
+
+    //TheEE->removeModuleProvider(TheMP, &ErrorMessage);
+
+    if (ErrorMessage.size()) {
+        cerr << "deleteModuleProvider: ";
+        cerr << ErrorMessage << "\n";
+        exit(1);
+    }
+}
+
+int
+loadShaderModule(const char *moduleName)
 {
 
-    TheEE->freeMachineCodeForFunction(g_shader_jit.shader_env_set_f);
-    TheEE->freeMachineCodeForFunction(g_shader_jit.shader_env_get_f);
-    TheEE->freeMachineCodeForFunction(g_shader_jit.shader_fun_f);
-    TheEE->freeMachineCodeForFunction(g_shader_jit.shader_cache_gen_fun_f);
-    TheEE->freeMachineCodeForFunction(g_shader_jit.shader_dynamic_fun_f);
+    std::string ErrorMessage;
 
+    // Load the input module...
+    //std::auto_ptr<Module> M;
+    Module *M = 0;
+    if (MemoryBuffer *Buffer = MemoryBuffer::getFileOrSTDIN(moduleName, &ErrorMessage)) {
+        M = ParseBitcodeFile(Buffer, &ErrorMessage);
+        delete Buffer;
+    }
+
+    if (M == 0) {
+        cerr << "slengine: ";
+        if (ErrorMessage.size())
+            cerr << ErrorMessage << "\n";
+        else
+            cerr << "bitcode didn't read correctly.\n";
+        return -1;
+    }
+
+    ModuleInfo MI;
+
+    MI.M = M;
+    MI.MP = new ExistingModuleProvider(M);
+
+    MIs.push_back(MI);
+
+    cout << "bitcode read OK.\n";
+
+    return 0;
 }
+
 
 int
 jitInit(const char *shaderModuleFilename, int w, int h)
@@ -742,7 +807,6 @@ jitInit(const char *shaderModuleFilename, int w, int h)
     g_height = h;
 
     if (g_initialized) {
-        // jitReleaseCode();
     }
 
     p = strrchr(shaderModuleFilename, '.');
@@ -759,35 +823,23 @@ jitInit(const char *shaderModuleFilename, int w, int h)
     sprintf(cacheGenPassFName, "%s_cache_gen_pass", basename);
     sprintf(dynamicPassFName, "%s_dynamic_pass", basename);
         
-    // Load the input module...
-    std::auto_ptr<Module> M;
-    if (MemoryBuffer *Buffer = MemoryBuffer::getFileOrSTDIN(shaderModuleFilename, &ErrorMessage)) {
-        M.reset(ParseBitcodeFile(Buffer, &ErrorMessage));
-        delete Buffer;
+    if (loadShaderModule(shaderModuleFilename) != 0) {
+        exit(1);
     }
-
-    if (M.get() == 0) {
-        cerr << "slengine: ";
-        if (ErrorMessage.size())
-            cerr << ErrorMessage << "\n";
-        else
-            cerr << "bitcode didn't read correctly.\n";
-        return 1;
-    }
-
-    cout << "bitcode read OK.\n";
 
     if (!g_initialized) {
 
-        TheEE = createJITEngine(M.get(), g_run_interpreter);
+        TheEE = createJITEngine((MIs.back()).MP, g_run_interpreter);
+        TheEE->InstallLazyFunctionCreator(customSymbolResolver);
 
     } else {
 
-        TheEE->deleteModuleProvider(TheMP);
-        TheMP = new ExistingModuleProvider(M.get());
-        TheEE->addModuleProvider(TheMP);
+        //jitRelease();
 
-        FunctionPassManager *FPM = new FunctionPassManager(TheMP);
+        //TheMP = new ExistingModuleProvider(M.get());
+        TheEE->addModuleProvider((MIs.back()).MP);
+
+        FunctionPassManager *FPM = new FunctionPassManager((MIs.back()).MP);
 
         // Add some code optimizer
         FPM->add(new TargetData(*TheEE->getTargetData()));
@@ -798,24 +850,24 @@ jitInit(const char *shaderModuleFilename, int w, int h)
 
     }
     
-    TheEE->InstallLazyFunctionCreator(customSymbolResolver);
+    Module *M = (MIs.back()).M;
 
     Function *F, *CacheGenF, *DynamicF;
     void *FunP, *CacheGenFunP, *DynamicFunP;
 
-    F = (M.get())->getFunction(basename);
+    F = M->getFunction(basename);
     if (F == NULL) {
         cerr << "can't find the function [ " << basename << " ] from the module\n";
         return 1;
     }
 
-    CacheGenF = (M.get())->getFunction(cacheGenPassFName);
+    CacheGenF = M->getFunction(cacheGenPassFName);
     if (CacheGenF == NULL) {
         cerr << "can't find the function [ " << cacheGenPassFName << " ] from the module\n";
         return 1;
     }
 
-    DynamicF = (M.get())->getFunction(dynamicPassFName);
+    DynamicF = M->getFunction(dynamicPassFName);
     if (DynamicF == NULL) {
         cerr << "can't find the function [ " << dynamicPassFName << " ] from the module\n";
         return 1;
@@ -829,7 +881,7 @@ jitInit(const char *shaderModuleFilename, int w, int h)
         const char *shader_env_init_func_name = "set_shader_env";
         void *ptr;
 
-        ShaderEnvSetF = (M.get())->getFunction(shader_env_init_func_name);
+        ShaderEnvSetF = M->getFunction(shader_env_init_func_name);
         if (ShaderEnvSetF == NULL) {
             cerr << "can't find the function [ " << shader_env_init_func_name << " ] from the module\n";
             return 1;
@@ -843,25 +895,6 @@ jitInit(const char *shaderModuleFilename, int w, int h)
         g_shader_jit.shader_env_set_f = ShaderEnvSetF;
     }
 
-#if 0
-    {
-        Function *F;
-        const char *fun_name = "noise1";
-        void *ptr;
-
-        F = (M.get())->getFunction(fun_name);
-        if (F == NULL) {
-            cerr << "can't find the function [ " << fun_name << " ] from the module\n";
-            return 1;
-        }
-
-        ptr = TheEE->recompileAndRelinkFunction(F);
-        assert(ptr != NULL);
-
-        printf("noise val = %f\n", ((noisefun)ptr)(1.0f));
-        //exit(1);
-    }
-#endif
 
     FunP = JITCompileFunction(TheEE, F); 
     printf("FunP = 0x%08x\n", FunP);
@@ -878,15 +911,13 @@ jitInit(const char *shaderModuleFilename, int w, int h)
     g_shader_jit.shader_dynamic_fun   = (ShaderDynamicFunP)DynamicFunP;
     g_shader_jit.shader_dynamic_fun_f = DynamicF;
 
-    //std::vector<GenericValue> noargs;
-    //GenericValue gv = EE->runFunction(F, noargs);
 
     {
         Function *ShaderEnvGetF;
         const char *shader_env_get_func_name = "get_shader_env";
         void *ptr;
 
-        ShaderEnvGetF = (M.get())->getFunction(shader_env_get_func_name);
+        ShaderEnvGetF = M->getFunction(shader_env_get_func_name);
         if (ShaderEnvGetF == NULL) {
             cerr << "can't find the function [ " << shader_env_get_func_name << " ] from the module\n";
             return 1;
@@ -900,7 +931,7 @@ jitInit(const char *shaderModuleFilename, int w, int h)
 
     }
 
-    dump_shader_env();
+    // dump_shader_env();
 
     if (g_initialized) {
         return 0;
@@ -962,11 +993,22 @@ setSpecialized(int val)
 }
 
 void
-setCoarseUpdate(int val)
+setCoarseUpdateStepValue(int val)
 {
-    if (val == 0) {
-        g_skip = 1;
-    } else {
-        g_skip = 4;
-    }
+    if (val < 1) val = 1;
+    if (val > 4) val = 4;
+
+    g_skip = val;
+}
+
+void
+setCoarseUpdateState(int onoff)
+{
+    g_coarse_update = onoff;
+}
+
+int
+getCoarseUpdateState()
+{
+    return g_coarse_update;
 }
