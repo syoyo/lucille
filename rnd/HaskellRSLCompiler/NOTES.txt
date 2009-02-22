@@ -4,13 +4,62 @@ Notes
 Revision
 --------
 
+ - Feb 22, 2009
  - Jan 25, 2009.  Initial
+
+
+Shader Parameter
+----------------
+
+シェーダパラメータは初期値(デフォルト値)を取ることができる.
+シェーダパラメータの扱いは以下のように実現してはどうか?
+
+動作
+~~~~
+
+LLVM 側には、コンパイル時にシェーダパラメータの構造体を生成する. ::
+
+surface matte(float Ka; float Kb) {}
+
+->
+
+typedef struct _shader_param_matte_t {
+    float Ka;
+    float Kb;
+} shader_param_matte_t;
+
+ただしこれは C 側には見えない.
+シェーダパラメータを格納するための構造体のサイズを返す関数を用意する.::
+
+size_t get_shader_param_size_matte(){
+	return x;
+}
+
+C 側はこのサイズを用いてバッファを確保する. ::
+
+size_t sz = runFunction("get_shader_param_size_matte");
+void *shader_param_buf = malloc(sz);
+　 
+LLVM 側にはシェーダパラメータをデフォルト値で初期化する関数を用意する.
+
+void init_shader_param_matte();
+
+C 側では、init_shader_param_matte() を呼んだのち、必要に応じてシェーダパラメータを設定する. LLVM 側には各シェーダパラメータを設定する関数を用意する.
+
+void set_param_matte(string param_name, void *value);
+
+ただし、この API だと、parameter 名から実際の構造体へのオフセットへのマッピングをハッシュ表などを用いて求めないといけない. param 名からオフセット値の取得は別途用意しておくのもいいだろう.
+
+シェーダ設定関数は、たとえばこれは JIT で生成してしまうのも手である.
+特に specialization を行うことを考えると、C と LLVM 間でのパラメータのバインディングなどは JIT で行ってしまうのがいいだろう.
+
 
 
 Refactoring
 -----------
 
 コードをもっと綺麗にする. 重複している部分をまとめる.
+SYB を使う. 型処理は Typing Haskell in Haskell や Haskell Rules などを参考にしてみる.
 
 
 LLVM codegen
@@ -97,4 +146,4 @@ http://www.program-transformation.org/Stratego/WebHome
 Builtin
 -------
 
-Builtin 関数の定義をより code less にする. ベクトル型はまとめるなど. 
+Builtin 関数の定義をより code less にする. ベクトル型(color, vector, normal)はまとめるなど. 
