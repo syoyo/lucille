@@ -40,6 +40,7 @@ ri_scene_new()
     p->light_list   = ri_list_new();
 
     p->envmap_light = NULL;
+    p->sunsky_light = NULL;
 
     p->accel        = ri_accel_new();
 

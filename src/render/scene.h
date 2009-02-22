@@ -39,6 +39,11 @@ typedef struct _ri_scene_t
     ri_light_t     *envmap_light;
 
     /*
+     * for SunSky
+     */
+    ri_light_t     *sunsky_light;
+
+    /*
      * Scene bounding box
      */
     ri_vector_t     bmin;
