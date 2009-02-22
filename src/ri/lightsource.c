@@ -27,133 +27,134 @@ static ri_sunsky_t  *setup_sunsky(RtInt n, RtToken tokens[], RtPointer params[])
 
 RtLightHandle
 ri_api_light_source(RtToken name, RtInt n,
-		    RtToken tokens[], RtPointer params[])
+            RtToken tokens[], RtPointer params[])
 {
-	int i;
-	int rh;
-	ri_light_t  *light;
-	ri_vector_t  v;
-	ri_matrix_t *m;
-	ri_matrix_t  om;
-	ri_matrix_t  c2w;
-	ri_matrix_t  o2c;
-	ri_matrix_t  orientation;
-	RtPoint *from;
-	RtFloat *intensity;
-	RtColor *lightcol;
+    int i;
+    int rh;
+    ri_light_t  *light;
+    ri_vector_t  v;
+    ri_matrix_t *m;
+    ri_matrix_t  om;
+    ri_matrix_t  c2w;
+    ri_matrix_t  o2c;
+    ri_matrix_t  orientation;
+    RtPoint *from;
+    RtFloat *intensity;
+    RtColor *lightcol;
 
-	light = ri_light_new();
+    light = ri_light_new();
 
-	if (strcmp(name, "domelight") == 0) {
-		light->type = LIGHTTYPE_DOME;
-	}
+    if (strcmp(name, "domelight") == 0) {
+        light->type = LIGHTTYPE_DOME;
+    }
 
-	if (n != 0) {
-		if (strcmp(ri_render_get()->context->option->orientation,
-			   RI_RH) == 0) {
-			rh = 1;	
-		} else {
-			rh = 0;
-		}
+    if (n != 0) {
+        if (strcmp(ri_render_get()->context->option->orientation,
+               RI_RH) == 0) {
+            rh = 1;    
+        } else {
+            rh = 0;
+        }
 
-		ri_matrix_identity(&orientation);
-		if (rh) {
-			orientation.f[2][2] = -orientation.f[2][2];
-		}
+        ri_matrix_identity(&orientation);
+        if (rh) {
+            orientation.f[2][2] = -orientation.f[2][2];
+        }
 
-		/* get transformation matrix */
-		m = (ri_matrix_t *)ri_stack_get(ri_render_get()->context->trans_stack);
+        /* get transformation matrix */
+        m = (ri_matrix_t *)ri_stack_get(ri_render_get()->context->trans_stack);
 
-		/* om = orientation . modelview */
-		ri_matrix_mul(&om, m, &orientation);
+        /* om = orientation . modelview */
+        ri_matrix_mul(&om, m, &orientation);
 
-		/* Camera to world */
-		ri_matrix_copy(&c2w,
-			       &(ri_render_get()->context->world_to_camera));
-		ri_matrix_inverse(&c2w);
+        /* Camera to world */
+        ri_matrix_copy(&c2w,
+                   &(ri_render_get()->context->world_to_camera));
+        ri_matrix_inverse(&c2w);
 
-		/* Object to camera */
-		ri_matrix_mul(&o2c, &c2w, &om); 
+        /* Object to camera */
+        ri_matrix_mul(&o2c, &c2w, &om); 
 
-		for (i = 0; i < n; i++) {
-			if (strcmp(tokens[i], "from") == 0) {
+        for (i = 0; i < n; i++) {
+            if (strcmp(tokens[i], "from") == 0) {
 
-				from = (RtPoint *)params[i];
-				ri_vector_set_from_rman(v, *from);
-				ri_vector_transform(light->pos, v, &o2c);
+                from = (RtPoint *)params[i];
+                ri_vector_set_from_rman(v, *from);
+                ri_vector_transform(light->pos, v, &o2c);
 
-			} else if (strcmp(tokens[i], "intensity") == 0) {
+            } else if (strcmp(tokens[i], "intensity") == 0) {
 
-				intensity = (RtFloat *)params[i];
-				light->intensity = *intensity;
+                intensity = (RtFloat *)params[i];
+                light->intensity = *intensity;
 
-			} else if (strcmp(tokens[i], "lightcolor") == 0) {
+            } else if (strcmp(tokens[i], "lightcolor") == 0) {
 
-				lightcol = (RtColor *)params[i];
-				
-				ri_vector_set_from_rman(light->col, *lightcol);
+                lightcol = (RtColor *)params[i];
+                
+                ri_vector_set_from_rman(light->col, *lightcol);
 
-			}
-		}
-	}
+            }
+        }
+    }
 
     ri_scene_add_light(ri_render_get()->scene, light);
 
-	return NULL; 
+    return NULL; 
 }
 
 RtLightHandle
 ri_api_area_light_source(RtToken name,
-		         RtInt n, RtToken tokens[], RtPointer params[])
+                 RtInt n, RtToken tokens[], RtPointer params[])
 {
-	int          i;
-	ri_light_t  *light, *sunlight;
-	ri_sunsky_t *sunsky;
-	RtFloat       *valp;
-	RtToken       *tokp;
-	float          scale = 1.0;
-	float          rgb[3];
+    int          i;
+    ri_light_t  *light, *sunlight;
+    ri_sunsky_t *sunsky;
+    RtFloat       *valp;
+    RtToken       *tokp;
+    float          scale = 1.0;
+    float          rgb[3];
 
-	(void)name;
+    (void)name;
 
-	light = ri_light_new();
+    light = ri_light_new();
 
-	if (strcmp(name, "sunsky") == 0) {
+    if (strcmp(name, "sunsky") == 0) {
 
-		sunsky = setup_sunsky(n, tokens, params);
-		light->sunsky = sunsky;	
-		light->texture = create_sunsky_image(light->sunsky);
-		light->type = LIGHTTYPE_SUNSKY;
+        sunsky = setup_sunsky(n, tokens, params);
+        light->sunsky = sunsky;    
+        light->texture = create_sunsky_image(light->sunsky);
+        light->type = LIGHTTYPE_SUNSKY;
+        light->iblsampler = IBL_SAMPLING_COSWEIGHT;
 
-		for (i = 0; i < n; i++) {
-			if (strcmp(tokens[i], "sampling") == 0) {
-				tokp = (RtToken *)params[i];
+        for (i = 0; i < n; i++) {
+            if (strcmp(tokens[i], "sampling") == 0) {
+                tokp = (RtToken *)params[i];
 
-				if (strcmp(*tokp, "cosweight") == 0) {
-					light->iblsampler = IBL_SAMPLING_COSWEIGHT;
-				} else if (strcmp(*tokp, "importance") == 0) {
-					light->iblsampler = IBL_SAMPLING_IMPORTANCE;
-				} else if (strcmp(*tokp, "stratified") == 0) {
-					light->iblsampler = IBL_SAMPLING_STRATIFIED;
-				} else if (strcmp(*tokp, "structured") == 0) {
-					light->iblsampler = IBL_SAMPLING_STRUCTURED;
-				} else if (strcmp(*tokp, "bruteforce") == 0) {
-					light->iblsampler = IBL_SAMPLING_BRUTEFORCE;
-				}
-			}
-		}
+                if (strcmp(*tokp, "cosweight") == 0) {
+                    light->iblsampler = IBL_SAMPLING_COSWEIGHT;
+                } else if (strcmp(*tokp, "importance") == 0) {
+                    light->iblsampler = IBL_SAMPLING_IMPORTANCE;
+                } else if (strcmp(*tokp, "stratified") == 0) {
+                    light->iblsampler = IBL_SAMPLING_STRATIFIED;
+                } else if (strcmp(*tokp, "structured") == 0) {
+                    light->iblsampler = IBL_SAMPLING_STRUCTURED;
+                } else if (strcmp(*tokp, "bruteforce") == 0) {
+                    light->iblsampler = IBL_SAMPLING_BRUTEFORCE;
+                }
+            }
+        }
 
-		/* Set sunsky map to background map */
-		ri_render_get()->scene->envmap_light = light;
+        /* Set sunsky to background light */
+        ri_render_get()->scene->sunsky_light = light;
 
-		/*
-		 * Create sunlight(as directional light)
-		 */
+        /*
+         * Create sunlight(as directional light)
+         */
         {
             sunlight = ri_light_new();
-            sunlight->type = LIGHTTYPE_DIRECTIONAL;
+            sunlight->type = LIGHTTYPE_SUNLIGHT;
             sunlight->direction[0] = sunsky->sun_dir[0];
-            sunlight->direction[1] = sunsky->sun_dir[2];	/* swap y and z */
+            sunlight->direction[1] = sunsky->sun_dir[2];    /* swap y and z */
             sunlight->direction[2] = sunsky->sun_dir[1];
 
             ri_log(LOG_INFO, "sundir = %f, %f, %f\n",
@@ -166,86 +167,88 @@ ri_api_area_light_source(RtToken name,
             sunlight->col[1] = rgb[1];
             sunlight->col[2] = rgb[2];
 
+            /* Add sunlight to the light list. */
             ri_scene_add_light(ri_render_get()->scene, sunlight);
 
-		    ri_log(LOG_INFO, "Added sunsky");
+            ri_log(LOG_INFO, "Added sunsky");
         }
 
-	} else {
+    } else {
 
-		for (i = 0; i < n; i++) {
+        for (i = 0; i < n; i++) {
 
-			if (strcmp(tokens[i], "direction") == 0) {
+            if (strcmp(tokens[i], "direction") == 0) {
 
-				valp = (RtFloat *)params[i];
-				light->direction[0] = (ri_float_t)(*valp++);
-				light->direction[1] = (ri_float_t)(*valp++);
-				light->direction[2] = (ri_float_t)(*valp);
-				light->direction[3] = 1.0;
+                valp = (RtFloat *)params[i];
+                light->direction[0] = (ri_float_t)(*valp++);
+                light->direction[1] = (ri_float_t)(*valp++);
+                light->direction[2] = (ri_float_t)(*valp);
+                light->direction[3] = 1.0;
 
-				ri_vector_normalize(light->direction);
-				ri_log(LOG_DEBUG, "dir = (%f, %f, %f)\n",
+                ri_vector_normalize(light->direction);
+                ri_log(LOG_DEBUG, "dir = (%f, %f, %f)\n",
                                    light->direction[0],
-							       light->direction[1],
-							       light->direction[2]);
-		
-				light->type = LIGHTTYPE_DIRECTIONAL;
+                                   light->direction[1],
+                                   light->direction[2]);
+        
+                light->type = LIGHTTYPE_DIRECTIONAL;
 
-			} else if (strcmp(tokens[i], "ibl") == 0) {
+            } else if (strcmp(tokens[i], "ibl") == 0) {
 
-				tokp = (RtToken *)params[i];
-				light->texture  = ri_texture_load(*tokp);
-				light->type     = LIGHTTYPE_IBL;
+                tokp = (RtToken *)params[i];
+                light->texture  = ri_texture_load(*tokp);
+                light->type     = LIGHTTYPE_IBL;
 
-				ri_log(LOG_INFO, "Added EnvMap [ %s ]\n", *tokp);
+                ri_log(LOG_INFO, "Added EnvMap [ %s ]\n", *tokp);
 
-			} else if (strcmp(tokens[i], "iblscale") == 0) {
+            } else if (strcmp(tokens[i], "iblscale") == 0) {
 
-				valp = (RtFloat *)params[i];
-				scale = *valp;
+                valp = (RtFloat *)params[i];
+                scale = *valp;
 
-			} else if (strcmp(tokens[i], "sisfile") == 0) {
+            } else if (strcmp(tokens[i], "sisfile") == 0) {
 
-				tokp = (RtToken *)params[i];
-				light->sisfile = strdup((*tokp));
-				light->iblsampler = IBL_SAMPLING_STRUCTURED;
+                tokp = (RtToken *)params[i];
+                light->sisfile = strdup((*tokp));
+                light->iblsampler = IBL_SAMPLING_STRUCTURED;
 
-			} else if (strcmp(tokens[i], "eihdrifile") == 0) {
+            } else if (strcmp(tokens[i], "eihdrifile") == 0) {
 
-				tokp = (RtToken *)params[i];
-				light->eihdrifile = strdup((*tokp));
-				//printf("sisfile = [ %s ] \n", *tokp);
-				light->iblsampler = IBL_SAMPLING_STRUCTURED;
+                tokp = (RtToken *)params[i];
+                light->eihdrifile = strdup((*tokp));
+                //printf("sisfile = [ %s ] \n", *tokp);
+                light->iblsampler = IBL_SAMPLING_STRUCTURED;
 
-			} else if (strcmp(tokens[i], "sampling") == 0) {
+            } else if (strcmp(tokens[i], "sampling") == 0) {
 
-				tokp = (RtToken *)params[i];
-				if (strcmp(*tokp, "cosweight") == 0) {
-					light->iblsampler = IBL_SAMPLING_COSWEIGHT;
-				} else if (strcmp(*tokp, "importance") == 0) {
-					light->iblsampler = IBL_SAMPLING_IMPORTANCE;
-				} else if (strcmp(*tokp, "stratified") == 0) {
-					light->iblsampler = IBL_SAMPLING_STRATIFIED;
-				} else if (strcmp(*tokp, "structured") == 0) {
-					printf("structured\n");
-					light->iblsampler = IBL_SAMPLING_STRUCTURED;
-				} else if (strcmp(*tokp, "bruteforce") == 0) {
-					printf("bruteforce\n");
-					light->iblsampler = IBL_SAMPLING_BRUTEFORCE;
-				}
+                tokp = (RtToken *)params[i];
+                if (strcmp(*tokp, "cosweight") == 0) {
+                    light->iblsampler = IBL_SAMPLING_COSWEIGHT;
+                } else if (strcmp(*tokp, "importance") == 0) {
+                    light->iblsampler = IBL_SAMPLING_IMPORTANCE;
+                } else if (strcmp(*tokp, "stratified") == 0) {
+                    light->iblsampler = IBL_SAMPLING_STRATIFIED;
+                } else if (strcmp(*tokp, "structured") == 0) {
+                    printf("structured\n");
+                    light->iblsampler = IBL_SAMPLING_STRUCTURED;
+                } else if (strcmp(*tokp, "bruteforce") == 0) {
+                    printf("bruteforce\n");
+                    light->iblsampler = IBL_SAMPLING_BRUTEFORCE;
+                }
 
-				//printf("sampling = [ %s ] \n", *tokp);
+                //printf("sampling = [ %s ] \n", *tokp);
 
-			}
-				
-		}
+            }
+                
+        }
 
-		if (light->type == LIGHTTYPE_IBL) {
-			ri_texture_scale(light->texture, scale);
-		}
-	}
+        if (light->type == LIGHTTYPE_IBL) {
+            ri_texture_scale(light->texture, scale);
+        }
 
-	ri_scene_add_light(ri_render_get()->scene, light);
+        ri_scene_add_light(ri_render_get()->scene, light);
+
+    }
 
     /*
      * Begin arealight block.
@@ -254,9 +257,9 @@ ri_api_area_light_source(RtToken name,
      * Arealight block ends when RiAttributeEnd() was invoked.
      * (See attribute.c:ri_api_attribute_end()).
      */
-	ri_render_get()->context->arealight_block = 1;
+    ri_render_get()->context->arealight_block = 1;
 
-	return NULL;    /* TODO */
+    return NULL;    /* TODO */
 }
 
 /* ---------------------------------------------------------------------------
@@ -271,61 +274,61 @@ ri_api_area_light_source(RtToken name,
 static ri_sunsky_t *
 setup_sunsky(RtInt n, RtToken tokens[], RtPointer params[])
 {
-	int i;
-	ri_sunsky_t *sunsky;
+    int i;
+    ri_sunsky_t *sunsky;
 
-	/*
-	 * Default parameter.
-	 *
-	 *   Jan 20, 10:30
-	 *   Tokyo, Japan.
-	 * 
-	 *   julian day        = 20( Jan 20 )
-	 *   standard meridian = 135( = timezone 9 )
-	 *   time of day       = 10.5 (10:30)
-	 *   latitude          = 35.39
-	 *   longitude         = 139.44
-	 *
-	 */ 
-	float    time_of_day = 10.5;
-	float    turbidity = 2.0;
-	float    latitude  = 35.39; // in degree
-	float    longitude = 139.44; //  in degree
-	int      julian_day = 20;
+    /*
+     * Default parameter.
+     *
+     *   Jan 20, 10:30
+     *   Tokyo, Japan.
+     * 
+     *   julian day        = 20( Jan 20 )
+     *   standard meridian = 135( = timezone 9 )
+     *   time of day       = 10.5 (10:30)
+     *   latitude          = 35.39
+     *   longitude         = 139.44
+     *
+     */ 
+    float    time_of_day = 10.5;
+    float    turbidity = 2.0;
+    float    latitude  = 35.39; // in degree
+    float    longitude = 139.44; //  in degree
+    int      julian_day = 20;
 
     // in degree. sm = timezone * 15. sm may be computed by rint(longitude/15) ?
-	float    standard_meridian = 135.0 / 15;        
+    float    standard_meridian = 135.0 / 15;        
 
-	sunsky = ri_sunsky_new();
+    sunsky = ri_sunsky_new();
 
-	for (i = 0; i < n; i++) {
-		if (strcmp(tokens[i], "latitude") == 0) {
-			latitude = *(RtFloat *)params[i];
-		} else if (strcmp(tokens[i], "longitude") == 0) {
-			longitude = *(RtFloat *)params[i];
-		} else if (strcmp(tokens[i], "standard_meridian") == 0) {
-			standard_meridian = *(RtFloat *)params[i];
-		} else if (strcmp(tokens[i], "julian_day") == 0) {
-			julian_day = *(RtInt *)params[i];
-		} else if (strcmp(tokens[i], "time_of_day") == 0) {
-			time_of_day = *(RtFloat *)params[i];
-		} else if (strcmp(tokens[i], "turbidity") == 0) {
-			turbidity = *(RtFloat *)params[i];
-		}
-	}
+    for (i = 0; i < n; i++) {
+        if (strcmp(tokens[i], "latitude") == 0) {
+            latitude = *(RtFloat *)params[i];
+        } else if (strcmp(tokens[i], "longitude") == 0) {
+            longitude = *(RtFloat *)params[i];
+        } else if (strcmp(tokens[i], "standard_meridian") == 0) {
+            standard_meridian = *(RtFloat *)params[i];
+        } else if (strcmp(tokens[i], "julian_day") == 0) {
+            julian_day = *(RtInt *)params[i];
+        } else if (strcmp(tokens[i], "time_of_day") == 0) {
+            time_of_day = *(RtFloat *)params[i];
+        } else if (strcmp(tokens[i], "turbidity") == 0) {
+            turbidity = *(RtFloat *)params[i];
+        }
+    }
 
-	ri_log(LOG_INFO, "[sunsky] latitude  = %f", latitude);
-	ri_log(LOG_INFO, "[sunsky] longitude = %f", longitude);
-	ri_log(LOG_INFO, "[sunsky] sm        = %f", standard_meridian);
-	ri_log(LOG_INFO, "[sunsky] day       = %d", julian_day);
-	ri_log(LOG_INFO, "[sunsky] timeofday = %f", time_of_day);
-	ri_log(LOG_INFO, "[sunsky] turbidity = %f", turbidity);
+    ri_log(LOG_INFO, "[sunsky] latitude  = %f", latitude);
+    ri_log(LOG_INFO, "[sunsky] longitude = %f", longitude);
+    ri_log(LOG_INFO, "[sunsky] sm        = %f", standard_meridian);
+    ri_log(LOG_INFO, "[sunsky] day       = %d", julian_day);
+    ri_log(LOG_INFO, "[sunsky] timeofday = %f", time_of_day);
+    ri_log(LOG_INFO, "[sunsky] turbidity = %f", turbidity);
 
-	ri_sunsky_init(sunsky, latitude, longitude, standard_meridian,
-		julian_day, time_of_day, turbidity, 0);
+    ri_sunsky_init(sunsky, latitude, longitude, standard_meridian,
+        julian_day, time_of_day, turbidity, 0);
 
 
-	return sunsky;
+    return sunsky;
 }
 
 /*
@@ -334,64 +337,64 @@ setup_sunsky(RtInt n, RtToken tokens[], RtPointer params[])
 static ri_texture_t *
 create_sunsky_image(const ri_sunsky_t *sunsky)
 {
-	const int size = 512;
+    const int size = 512;
 
-	ri_texture_t *texture;
-	int i, j;
-	float u, v, r;
-	float theta, phi;
-	float rgb[3];
-	float dir[3];
+    ri_texture_t *texture;
+    int i, j;
+    float u, v, r;
+    float theta, phi;
+    float rgb[3];
+    float dir[3];
 
-	/*
-	 * Precompute sunsky image(in angular map)
-	 */
-	texture = ri_mem_alloc(sizeof(ri_texture_t));
-	texture->width  = size;
-	texture->height = size;
-	texture->data = ri_mem_alloc(sizeof(float) * size * size * 4);
+    /*
+     * Precompute sunsky image(in angular map)
+     */
+    texture = ri_mem_alloc(sizeof(ri_texture_t));
+    texture->width  = size;
+    texture->height = size;
+    texture->data = ri_mem_alloc(sizeof(float) * size * size * 4);
 
-	for (j = 0; j < size; j++) {
-		for (i = 0; i < size; i++) {
-			u = (size / 2.0 - i) / (size / 2.0);
-			v = (j - size / 2.0) / (size / 2.0);
-			r = sqrt(u * u + v * v);
+    for (j = 0; j < size; j++) {
+        for (i = 0; i < size; i++) {
+            u = (size / 2.0 - i) / (size / 2.0);
+            v = (j - size / 2.0) / (size / 2.0);
+            r = sqrt(u * u + v * v);
 
-			if (r > 1.0) {
-				texture->data[4 * (j * size + i) + 0] = 0.0;
-				texture->data[4 * (j * size + i) + 1] = 0.0;
-				texture->data[4 * (j * size + i) + 2] = 0.0;
-			} else {
-				theta = atan2(v, u);
-				phi   = M_PI * r;
+            if (r > 1.0) {
+                texture->data[4 * (j * size + i) + 0] = 0.0;
+                texture->data[4 * (j * size + i) + 1] = 0.0;
+                texture->data[4 * (j * size + i) + 2] = 0.0;
+            } else {
+                theta = atan2(v, u);
+                phi   = M_PI * r;
 
-				/* quote from www.debevec.org/Probes,
-				 *   The unit vector pointing in the correspon-
-				 *   ding direction is obtained by rotating 
-				 *   (0,0,-1) by phi degrees around the y (up)
-				 *   axis and then theta degrees around the 
-				 *   -z (forward) axis.
-				 * quote end.
-				 *
-				 * Thus, the meaning of theta and phi is
-				 * exchanged in the angular map case,
-				 * in contrast to usual spherical mapping case.
-				 */
-				dir[0] = -sin(phi) * cos(theta);
-				dir[1] = -sin(phi) * sin(theta);
-				dir[2] = -cos(phi);
+                /* quote from www.debevec.org/Probes,
+                 *   The unit vector pointing in the correspon-
+                 *   ding direction is obtained by rotating 
+                 *   (0,0,-1) by phi degrees around the y (up)
+                 *   axis and then theta degrees around the 
+                 *   -z (forward) axis.
+                 * quote end.
+                 *
+                 * Thus, the meaning of theta and phi is
+                 * exchanged in the angular map case,
+                 * in contrast to usual spherical mapping case.
+                 */
+                dir[0] = -sin(phi) * cos(theta);
+                dir[1] = -sin(phi) * sin(theta);
+                dir[2] = -cos(phi);
 
-				ri_sunsky_get_sky_rgb(rgb, sunsky, dir);
+                ri_sunsky_get_sky_rgb(rgb, sunsky, dir);
 
-				// Question: Should I consider differential solid angle?
-				texture->data[4 * (j * size + i) + 0] = rgb[0];
-				texture->data[4 * (j * size + i) + 1] = rgb[1];
-				texture->data[4 * (j * size + i) + 2] = rgb[2];
+                // Question: Should I consider differential solid angle?
+                texture->data[4 * (j * size + i) + 0] = rgb[0];
+                texture->data[4 * (j * size + i) + 1] = rgb[1];
+                texture->data[4 * (j * size + i) + 2] = rgb[2];
 
-			}
-		}
-	}
+            }
+        }
+    }
 
-	return texture;
+    return texture;
 
 }
