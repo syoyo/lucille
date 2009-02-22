@@ -1,5 +1,5 @@
-#ifndef SUNSKY_H
-#define SUNSKY_H
+#ifndef LUCILLE_SUNSKY_H
+#define LUCILLE_SUNSKY_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -85,4 +85,4 @@ extern void ri_sunsky_get_sunlight_rgb(
 #endif
 
 
-#endif
+#endif  /* LUCILLE_SUNSKY_H */
