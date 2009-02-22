@@ -1,0 +1,68 @@
+Dual Scattering Approximation for Fast Multiple Scattering in Hair
+------------------------------------------------------------------
+
+Abst
+~~~~
+
+multiple fiber scattering を高速に行う. Pathtracing の結果とほとんど同一.
+Physically plausible であり、パラメータを tweak する必要もない.
+
+Background
+~~~~~~~~~~
+
+* Merschner et al 2003: Physically based rendering of human hair.
+* Moon and Marscher 2006, Zinke and Weber 2006: photon mapping を使って scattering 計算を高速化.
+* Zinke and Weber 2007
+
+BFSDF: Bidirectional Fiber Scattering Distribution Function
+BCSDF: Bidirectional Curves Scattering Distribution Function
+
+
+Multiple scattering を global multiple scattering と local multiple scattering に分離する. global multiple scattering は計算してマップ化するようにして、処理の高速化を図ることができる.
+
+Global multiple scattering
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+scattering はシェーディング点から光源までの straight line における散乱点(他の fiber との交点など)のみで考える. これを shadow path と呼ぶ.
+これは実際には、正確な散乱経路ではなくて散乱の回数のほうが重要であるためである. また幾何的な条件(fiber 間の距離)なども無視できる.
+
+Global multiple scattering G は、　transmittance T と spread function S で近似する.
+
+G(x, wd, wi) = T(x, wd) S(x, wd, wi)
+
+Forward scattering transmittance
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Transmittance function T はシェーディング点 x に前方散乱で入射する光の減衰を与える. よって、 T は shadow path に沿っての散乱回数 n と平均減衰 ave(a) に依存する.
+
+Forward scattering spread
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Spread function S は front scattered light の角分布を近似し、wi から x へ入射する放射輝度の確率を表現する.
+
+
+Local multiple scattering
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+local multiple scattering は x の周りの multiple scattering を考慮する. forward scattering は global multiple scattering に含まれるので、local multiple scattering の light paths は少なくとも一つの backward scattering を含まなければならない.
+
+
+backscattering function f_back は wi, wo のみに依存する関数で、位置 x には依存しない.
+
+Average backscattering attenuation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Average backscattering spread
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Light Scattering from Human Hair Fibers
+---------------------------------------
+
+BCSDF を提案している.
+
+Light Scatterings from Filaments
+--------------------------------
+
+
+
+
