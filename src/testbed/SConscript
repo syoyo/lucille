@@ -112,7 +112,10 @@ fltk_post_cmd = "fltk-config --post " + target
 env['LINKCOM'] += " ; " + fltk_post_cmd
 
 incPath=['../base', '../imageio', '../transport', '../render', '../ri', '../../include']
-libs=['rirender', 'ritransport', 'riimageio', 'riri', 'ridisplay',  'ribase', 'm']
+
+# FIXME: Specify 'rirender' twice to resolve linking symbol problem. 
+# FIXME: Need to find a solution.
+libs=['rirender', 'ritransport', 'rirender', 'riimageio', 'riri', 'ridisplay',  'ribase', 'm']
 if sys.platform == 'linux2':
 	libs.append(['dl'])
 libPath=['../base', '../display', '../transport', '../imageio', '../render', '../ri']
