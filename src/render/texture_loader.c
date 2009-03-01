@@ -31,7 +31,7 @@
  *  o Use rip-map for anisotropic texturing.
  *
  *
- * $Id: texture.c,v 1.9 2004/08/15 05:19:39 syoyo Exp $
+ * $Id$
  *
  */
 
@@ -166,7 +166,7 @@ ri_texture_load(const char *filename)
          * Disable file search.
          */
 
-        ri_log(LOG_WARN, "ri_texture_load was called before initializing the renderer. Finding a texture file from search path is disabled.\n");
+        ri_log(LOG_WARN, "(TexLdr) ri_texture_load was called before initializing the renderer. Finding a texture file from search path is disabled.\n");
 
         strcpy(fullpath, filename);
     
@@ -175,8 +175,8 @@ ri_texture_load(const char *filename)
         if (!ri_option_find_file(fullpath,
                                  ri_render_get()->context->option,
                                  filename)) {
-            ri_log(LOG_FATAL, "Can't find textue file \"%s\"", filename);
-            ri_log(LOG_FATAL, "Searched from following path.");
+            ri_log(LOG_FATAL, "(TexLdr) Can't find textue file \"%s\"", filename);
+            ri_log(LOG_FATAL, "(TexLdr) Searched from following path.");
             ri_option_show_searchpath(ri_render_get()->context->option);
             exit(-1);
         }
@@ -191,7 +191,7 @@ ri_texture_load(const char *filename)
 
         image = ri_image_load(fullpath, &width, &height, &component);
         if (!image) {
-            ri_log(LOG_WARN, "Can't load textue file \"%s\"", fullpath);
+            ri_log(LOG_WARN, "(TexLdr) Can't load textue file \"%s\"", fullpath);
             exit(-1);
         }    
 
@@ -203,7 +203,7 @@ ri_texture_load(const char *filename)
         p->height = height;
         p->data   = image;
 
-        ri_log(LOG_INFO, "Loaded texture [ %s ] size = %d x %d", fullpath, width, height);
+        ri_log(LOG_INFO, "(TexLdr) Loaded texture [ %s ] size = %d x %d", fullpath, width, height);
     }
 
 
