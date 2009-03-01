@@ -2,6 +2,8 @@
 
 RtToken RI_P            = "P";
 RtToken RI_N            = "N";
+RtToken RI_S            = "S";
+RtToken RI_T            = "T";
 RtToken RI_ST           = "ST";
 RtToken RI_CS           = "Cs";
 RtToken RI_FILE         = "file";
