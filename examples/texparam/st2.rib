@@ -1,0 +1,13 @@
+##RenderMan RIB-Structure 1.0
+version 3.03
+Option "searchpath" "shader" ".:&"
+Display "muda.tif" "file" "rgb"
+Format 256 256 1
+WorldBegin
+Surface "bora" 
+PointsPolygons [ 4 ] [ 0 3 2 1 ] "P" [ 0.500000 0.500000 0.500000 0.500000 -0.500000 0.500000 -0.500000 -0.500000 0.500000 -0.500000 0.500000 0.500000 ]
+	"facevarying float s" [0.0 1.0 1.0 0.0]
+	"facevarying float t" [0.0 0.0 1.0 1.0]
+
+
+WorldEnd
