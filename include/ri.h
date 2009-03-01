@@ -1,5 +1,5 @@
 /*
- * $Id: ri.h,v 1.2 2004/01/30 04:43:57 syoyo Exp $
+ * $Id$
  */
 
 /*
@@ -50,7 +50,7 @@ typedef RtPointer RtContextHandle;
 
 extern RtToken  RI_FRAMEBUFFER, RI_FILE;
 extern RtToken  RI_RGB, RI_RGBA, RI_RGBZ, RI_A, RI_Z, RI_AZ;
-extern RtToken  RI_P, RI_N, RI_ST, RI_CS;
+extern RtToken  RI_P, RI_N, RI_S, RI_T, RI_ST, RI_CS;
 extern RtToken  RI_PERSPECTIVE, RI_ORTHOGRAPHIC;
 extern RtToken  RI_LH, RI_RH;
 /* ... */
