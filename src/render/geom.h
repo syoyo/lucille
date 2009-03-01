@@ -1,7 +1,7 @@
 /*
  * geometry routine
  *
- * $Id: geom.h,v 1.3 2004/06/13 06:44:51 syoyo Exp $
+ * $Id$
  *
  */
 
@@ -35,14 +35,14 @@ typedef struct _ri_geom_t {
     unsigned int        ncolors;
     ri_vector_t        *opacities;  /* vertex opacity(Os)                   */
     unsigned int        nopacities;
-    RtFloat            *texcoords;  /* texture coordinates
+    ri_float_t         *texcoords;  /* texture coordinates
                                      * (st, 2 floats)                       */
     unsigned int        ntexcoords;
     unsigned int       *indices;    /* vertex index                         */
     unsigned int        nindices;
 
-    RtFloat             kd;         /* diffuse coefficient                  */
-    RtFloat             ks;         /* specular coefficient                 */
+    ri_float_t          kd;         /* diffuse coefficient                  */
+    ri_float_t          ks;         /* specular coefficient                 */
     char               *shadername; /* surface shader name                  */
     ri_shader_t        *shader;     /* surface shader                       */
     ri_material_t      *material;
@@ -110,7 +110,7 @@ extern void         ri_geom_add_opacities(
 extern void         ri_geom_add_texcoords(
     ri_geom_t           *geom,
     unsigned int         ntexcoords,
-    const RtFloat       *texcoords );
+    const ri_float_t    *texcoords );
 
 extern void         ri_geom_add_indices(
     ri_geom_t           *geom,

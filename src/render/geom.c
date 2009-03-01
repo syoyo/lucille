@@ -1,5 +1,5 @@
 /*
- * $Id: geom.c,v 1.5 2004/06/13 06:44:51 syoyo Exp $
+ * $Id$
  */
 
 #ifdef HAVE_CONFIG_H
@@ -225,19 +225,19 @@ ri_geom_add_opacities(
  */
 void
 ri_geom_add_texcoords(
-    ri_geom_t      *geom,
-    unsigned int    ntexcoords,
-    const RtFloat  *texcoords )
+    ri_geom_t          *geom,
+    unsigned int        ntexcoords,
+    const ri_float_t   *texcoords )
 {
-    RtFloat     *p;
-    size_t       size;
+    ri_float_t      *p;
+    size_t           size;
 
     ri_log_and_return_if( ntexcoords == 0 );
     ri_log_and_return_if( texcoords  == NULL );
 
-    size = sizeof( RtFloat ) * ntexcoords * 2; /* st */
+    size = sizeof( ri_float_t ) * ntexcoords * 2; /* st */
 
-    p = ( RtFloat * )ri_mem_alloc( ( long )size );
+    p = ( ri_float_t * )ri_mem_alloc( ( long )size );
 
     memcpy( p, texcoords, size );
 
