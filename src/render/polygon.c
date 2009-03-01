@@ -1,8 +1,12 @@
 /*
  * Polygon parser.
  *
- * $Id: polygon.c,v 1.9 2004/06/13 06:44:51 syoyo Exp $
+ * $Id$
  *
+ */
+
+/*
+ * TODO: Refactor source code.
  */
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -39,12 +43,12 @@ ri_polygon_parse(RtInt nverts, RtInt n, RtToken tokens[], RtPointer params[])
     ri_context_t   *ctx;
     ri_attribute_t *attr;
     ri_geom_t      *p;
-    RtFloat        *param;
-    RtFloat        *texcoords;
-    ri_vector_t    *positions;
-    ri_vector_t    *normals;
-    ri_vector_t    *colors = NULL;
-    ri_vector_t    *opacities;
+    RtFloat        *param       = NULL;
+    ri_float_t     *texcoords   = NULL;
+    ri_vector_t    *positions   = NULL;
+    ri_vector_t    *normals     = NULL;
+    ri_vector_t    *colors      = NULL;
+    ri_vector_t    *opacities   = NULL;
     ri_vector_t     refcol;
     ri_vector_t     v;
     ri_matrix_t    *m;
@@ -92,7 +96,12 @@ ri_polygon_parse(RtInt nverts, RtInt n, RtToken tokens[], RtPointer params[])
 
         param = (RtFloat *)params[i];
 
-        if (strcmp(tokens[i], RI_P) == 0) { /* position */
+        /* -------------------------------------------------------------------
+         *
+         * Position?
+         *
+         * ---------------------------------------------------------------- */
+        if (strcmp(tokens[i], RI_P) == 0) {
             if(!two_sided) {
                 positions = (ri_vector_t *)ri_mem_alloc(
                         sizeof(ri_vector_t) * nverts);
@@ -124,7 +133,12 @@ ri_polygon_parse(RtInt nverts, RtInt n, RtToken tokens[], RtPointer params[])
             }
 
             
-        } else if (strcmp(tokens[i], RI_N) == 0) { /* normal */
+        /* -------------------------------------------------------------------
+         *
+         * Normal?
+         *
+         * ---------------------------------------------------------------- */
+        } else if (strcmp(tokens[i], RI_N) == 0) {
             if(!two_sided) {
                 normals = (ri_vector_t *)ri_mem_alloc(
                         sizeof(ri_vector_t) * nverts);
@@ -184,14 +198,92 @@ ri_polygon_parse(RtInt nverts, RtInt n, RtToken tokens[], RtPointer params[])
                                     (const ri_vector_t *)normals);
             }
                 
+        /* -------------------------------------------------------------------
+         *
+         * Texture coordinate(S only)?
+         *
+         * ---------------------------------------------------------------- */
+        } else if (strcmp(tokens[i], RI_S) == 0 ||
+                   strcmp(tokens[i], "facevertex float s")  == 0)  {
+
+            if (!texcoords) {
+
+                /*texcoords is not yet initialized by other parameter. */
+
+                if(!two_sided) {
+                    texcoords = (ri_float_t *)ri_mem_alloc(
+                            sizeof(ri_float_t) * nverts * 2);
+                } else {
+                    texcoords = (ri_float_t *)ri_mem_alloc(
+                            sizeof(ri_float_t) * nverts * 4);
+                }
+
+            }
+
+            for (j = 0; j < nverts; j++) {
+                texcoords[2 * j + 0] = param[j];
+                if (two_sided) {
+                    texcoords[2 * (j + nverts) + 0] = param[j];
+                }
+            }
+
+            /*
+             * Adding texcoords to the geometry 'p' is delayed until
+             * all parameter was parsed.
+             *
+             */
+
+        /* -------------------------------------------------------------------
+         *
+         * Texture coordinate(T only)?
+         *
+         * ---------------------------------------------------------------- */
+        } else if (strcmp(tokens[i], RI_T) == 0 ||
+                   strcmp(tokens[i], "facevertex float t")  == 0)  {
+
+            if (!texcoords) {
+
+                /*texcoords is not yet initialized by other parameter. */
+
+                if(!two_sided) {
+                    texcoords = (ri_float_t *)ri_mem_alloc(
+                            sizeof(ri_float_t) * nverts * 2);
+                } else {
+                    texcoords = (ri_float_t *)ri_mem_alloc(
+                            sizeof(ri_float_t) * nverts * 4);
+                }
+
+            }
+
+            for (j = 0; j < nverts; j++) {
+                texcoords[2 * j + 1] = param[j];
+                if (two_sided) {
+                    texcoords[2 * (j + nverts) + 1] = param[j];
+                }
+            }
+
+            /*
+             * Adding texcoords to the geometry 'p' is delayed until
+             * all parameter was parsed.
+             *
+             */
+
+        /* -------------------------------------------------------------------
+         *
+         * Texture coordinate?
+         *
+         * ---------------------------------------------------------------- */
         } else if (strcmp(tokens[i], RI_ST) == 0 ||
                strcmp(tokens[i], "st")  == 0) { /* tex coords */
-            if(!two_sided) {
-                texcoords = (RtFloat *)ri_mem_alloc(
-                        sizeof(RtFloat) * nverts * 2);
-            } else {
-                texcoords = (RtFloat *)ri_mem_alloc(
-                        sizeof(RtFloat) * nverts * 4);
+
+            if (!texcoords) {
+                if(!two_sided) {
+                    texcoords = (ri_float_t *)ri_mem_alloc(
+                            sizeof(ri_float_t) * nverts * 2);
+                } else {
+                    texcoords = (ri_float_t *)ri_mem_alloc(
+                            sizeof(ri_float_t) * nverts * 4);
+                }
             }
 
             for (j = 0; j < nverts; j++) {
@@ -205,13 +297,18 @@ ri_polygon_parse(RtInt nverts, RtInt n, RtToken tokens[], RtPointer params[])
                 }
             }
 
-            if(!two_sided) {
-                ri_geom_add_texcoords(p, nverts, texcoords);
-            } else {
-                ri_geom_add_texcoords(p, nverts * 2, texcoords);
-            }
+            /*
+             * Adding texcoords to the geometry 'p' is delayed until
+             * all parameter was parsed.
+             *
+             */
 
-        } else if (strcmp(tokens[i], RI_CS) == 0) { /* vertex col */ 
+        /* -------------------------------------------------------------------
+         *
+         * Vertex color?
+         *
+         * ---------------------------------------------------------------- */
+        } else if (strcmp(tokens[i], RI_CS) == 0) {
             
             if(!two_sided) {
                 colors = (ri_vector_t *)ri_mem_alloc(
@@ -230,6 +327,14 @@ ri_polygon_parse(RtInt nverts, RtInt n, RtToken tokens[], RtPointer params[])
             }
 
             has_color = 1;
+        }
+    }
+
+    if (texcoords) {
+        if(!two_sided) {
+            ri_geom_add_texcoords(p, nverts, texcoords);
+        } else {
+            ri_geom_add_texcoords(p, nverts * 2, texcoords);
         }
     }
         
@@ -345,7 +450,7 @@ ri_pointspolygons_parse(RtInt npolys, RtInt nverts[], RtInt verts[],
     ri_attribute_t *attr;
     ri_geom_t      *p;
     RtFloat        *param;
-    RtFloat        *texcoords;
+    ri_float_t     *texcoords;
     ri_vector_t    *positions;
     ri_vector_t    *normals;
     ri_vector_t    *colors = NULL;
@@ -573,12 +678,12 @@ ri_pointspolygons_parse(RtInt npolys, RtInt nverts[], RtInt verts[],
         } else if (strcmp(tokens[i], RI_ST) == 0 ||
                strcmp(tokens[i], "st") == 0) { /* tex coords */
             if (attr->sides == 2) {
-                texcoords = (RtFloat *)ri_mem_alloc(
-                        sizeof(RtFloat) *
+                texcoords = (ri_float_t *)ri_mem_alloc(
+                        sizeof(ri_float_t) *
                         nvertices * 2 * 2);
             } else {
-                texcoords = (RtFloat *)ri_mem_alloc(
-                        sizeof(RtFloat) *
+                texcoords = (ri_float_t *)ri_mem_alloc(
+                        sizeof(ri_float_t) *
                         nvertices * 2);
             }
 
