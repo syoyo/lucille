@@ -21,23 +21,24 @@ ri_geom_new()
 
     p = ( ri_geom_t * )ri_mem_alloc( sizeof( ri_geom_t ) );
 
-    p->positions  = NULL;
-    p->normals    = NULL;
-    p->tangents   = NULL;
-    p->binormals  = NULL;
-    p->colors     = NULL;
-    p->opacities  = NULL;
-    p->texcoords  = NULL;
-    p->indices    = NULL;
+    p->positions            = NULL;
+    p->normals              = NULL;
+    p->tangents             = NULL;
+    p->binormals            = NULL;
+    p->colors               = NULL;
+    p->opacities            = NULL;
+    p->texcoords            = NULL;
+    p->texcoords_unshared   = NULL;
+    p->indices              = NULL;
 
-    p->nnormals   = 0;
-    p->ntangents  = 0;
-    p->nbinormals = 0;
-    p->npositions = 0;
-    p->nindices   = 0;
-    p->ntexcoords = 0;
-    p->ncolors    = 0;
-    p->nopacities = 0;
+    p->nnormals             = 0;
+    p->ntangents            = 0;
+    p->nbinormals           = 0;
+    p->npositions           = 0;
+    p->nindices             = 0;
+    p->ntexcoords           = 0;
+    p->ncolors              = 0;
+    p->nopacities           = 0;
 
     p->kd = 0.0;
     p->ks = 0.0;
@@ -243,6 +244,28 @@ ri_geom_add_texcoords(
 
     geom->texcoords  = p;
     geom->ntexcoords = ntexcoords;
+}
+
+void
+ri_geom_add_texcoords_unshared(
+    ri_geom_t          *geom,
+    unsigned int        ntexcoords,
+    const ri_float_t   *texcoords )
+{
+    ri_float_t      *p;
+    size_t           size;
+
+    ri_log_and_return_if( ntexcoords == 0 );
+    ri_log_and_return_if( texcoords  == NULL );
+
+    size = sizeof( ri_float_t ) * ntexcoords * 2; /* st */
+
+    p = ( ri_float_t * )ri_mem_alloc( ( long )size );
+
+    memcpy( p, texcoords, size );
+
+    geom->texcoords_unshared    = p;
+    geom->ntexcoords            = ntexcoords;
 }
 
 /*

@@ -208,14 +208,26 @@ ri_intersection_state_build(
 #endif
 
     if (geom->texcoords) {
+
         lerp_uv( &state_inout->stqr[0], &state_inout->stqr[1],
             (const ri_float_t *)&geom->texcoords[2 * i0],
             (const ri_float_t *)&geom->texcoords[2 * i1],
             (const ri_float_t *)&geom->texcoords[2 * i2],
             u, v );
+
+    } else if (geom->texcoords_unshared) {
+
+        lerp_uv( &state_inout->stqr[0], &state_inout->stqr[1],
+            (const ri_float_t *)&geom->texcoords_unshared[2 * (index + 0)],
+            (const ri_float_t *)&geom->texcoords_unshared[2 * (index + 1)],
+            (const ri_float_t *)&geom->texcoords_unshared[2 * (index + 2)],
+            u, v );
+
     } else {
+
         state_inout->stqr[0] = 0.0;
         state_inout->stqr[1] = 0.0;
+
     }
 
     if (geom->two_side) {

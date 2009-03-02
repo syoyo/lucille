@@ -441,21 +441,66 @@ ri_polygon_parse(RtInt nverts, RtInt n, RtToken tokens[], RtPointer params[])
     return p;
 }
 
+static void
+parse_facevarying_float_param_pointspolygons(
+    ri_float_t  *out,
+    int          offt,              /* s = 0, t = 1 */
+    RtInt        npolys,
+    RtInt        nverts[],
+    RtFloat     *param)
+{
+    int i, j, k;
+    int idx = 0;
+
+    int idx_table[6] = { 0, 1, 2, 0, 2, 3 };
+
+    j = 0;
+    for (i = 0; i < npolys; i++) {
+
+        if (nverts[i] == 3) {
+
+            for (k = 0; k < 3; k++) {
+                out[2 * (idx + k) + offt] = param[j + k];
+            }
+            idx += 3;
+            j   += 3;
+
+        } else {        /* nverts[i] = 4 */
+
+            for (k = 0; k < 6; k++) {
+                out[2 * (idx + k) + offt] = param[j + idx_table[k]];
+            }
+            idx += 6;
+            j   += 4;
+
+        }
+
+    }
+
+    // dbg
+    for (i = 0; i < idx * 2; i++) {
+        printf("v[%d(%d)] = %f\n", i, offt, out[i]);
+    }
+
+}
+
+
 ri_geom_t *
 ri_pointspolygons_parse(RtInt npolys, RtInt nverts[], RtInt verts[],
             RtInt n, RtToken tokens[], RtPointer params[])
 {
     unsigned int    i, j, k;
     int             rh;
-    ri_context_t   *ctx         = NULL;
-    ri_attribute_t *attr        = NULL;
-    ri_geom_t      *p           = NULL;
-    RtFloat        *param       = NULL;
-    ri_float_t     *texcoords   = NULL;
-    ri_vector_t    *positions   = NULL;
-    ri_vector_t    *normals     = NULL;
-    ri_vector_t    *colors      = NULL;
-    ri_vector_t    *opacities   = NULL;
+    ri_context_t   *ctx                 = NULL;
+    ri_attribute_t *attr                = NULL;
+    ri_geom_t      *p                   = NULL;
+    RtFloat        *param               = NULL;
+    ri_float_t     *texcoords           = NULL;
+    ri_float_t     *texcoords_unshared  = NULL;
+    ri_vector_t    *positions           = NULL;
+    ri_vector_t    *normals             = NULL;
+    ri_vector_t    *colors              = NULL;
+    ri_vector_t    *opacities           = NULL;
     ri_vector_t     refcol;
     ri_vector_t     v;
     ri_matrix_t    *m;
@@ -512,6 +557,7 @@ ri_pointspolygons_parse(RtInt npolys, RtInt nverts[], RtInt verts[],
             continue;
         }
 
+        /* maximum index = # of verts. */
         for (k = 0; k < (unsigned int)nverts[i]; k++) {
             if (nvertices < (unsigned int)verts[j + k]) {
                 nvertices = verts[j + k];
@@ -686,9 +732,7 @@ ri_pointspolygons_parse(RtInt npolys, RtInt nverts[], RtInt verts[],
          * Texcoord(S)?
          *
          * ---------------------------------------------------------------- */
-        } else if (strcmp(tokens[i], RI_S) == 0 ||
-                   strcmp(tokens[i], "s")  == 0 ||
-                   strcmp(tokens[i], "facevertex float s") == 0) {
+        } else if (strcmp(tokens[i], RI_S) == 0) {
 
             if (!texcoords) {
                 if (attr->sides == 2) {
@@ -716,12 +760,38 @@ ri_pointspolygons_parse(RtInt npolys, RtInt nverts[], RtInt verts[],
 
         /* -------------------------------------------------------------------
          *
+         * Unshared texcoord(S)?
+         *
+         * ---------------------------------------------------------------- */
+        } else if (strcmp(tokens[i], "facevarying float s") == 0 ||
+                   strcmp(tokens[i], "facevertex float s") == 0) {
+
+            if (!texcoords_unshared) {
+                if (attr->sides == 2) {
+                    texcoords_unshared = (ri_float_t *)ri_mem_alloc(
+                            sizeof(ri_float_t) * nindices * 2 * 2);
+                } else {
+                    texcoords_unshared = (ri_float_t *)ri_mem_alloc(
+                            sizeof(ri_float_t) * nindices * 2);
+                }
+            }
+
+            parse_facevarying_float_param_pointspolygons(
+                texcoords_unshared,
+                0, npolys, nverts, param); 
+
+            /*
+             * Adding texcoords to the geometry 'p' is delayed until
+             * all parameter was parsed.
+             *
+             */
+
+        /* -------------------------------------------------------------------
+         *
          * Texcoord(T)?
          *
          * ---------------------------------------------------------------- */
-        } else if (strcmp(tokens[i], RI_T) == 0 ||
-                   strcmp(tokens[i], "t")  == 0 ||
-                   strcmp(tokens[i], "facevertex float t") == 0) {
+        } else if (strcmp(tokens[i], RI_T) == 0) {
 
             if (!texcoords) {
                 if (attr->sides == 2) {
@@ -740,6 +810,34 @@ ri_pointspolygons_parse(RtInt npolys, RtInt nverts[], RtInt verts[],
                     texcoords[2 * (nvertices + j) + 1] = param[j];
                 }
             }
+
+            /*
+             * Adding texcoords to the geometry 'p' is delayed until
+             * all parameter was parsed.
+             *
+             */
+
+        /* -------------------------------------------------------------------
+         *
+         * Unshared texcoord(T)?
+         *
+         * ---------------------------------------------------------------- */
+        } else if (strcmp(tokens[i], "facevarying float t") == 0 ||
+                   strcmp(tokens[i], "facevertex float t") == 0) {
+
+            if (!texcoords_unshared) {
+                if (attr->sides == 2) {
+                    texcoords_unshared = (ri_float_t *)ri_mem_alloc(
+                            sizeof(ri_float_t) * nindices * 2 * 2);
+                } else {
+                    texcoords_unshared = (ri_float_t *)ri_mem_alloc(
+                            sizeof(ri_float_t) * nindices * 2);
+                }
+            }
+
+            parse_facevarying_float_param_pointspolygons(
+                texcoords_unshared,
+                1, npolys, nverts, param); 
 
             /*
              * Adding texcoords to the geometry 'p' is delayed until
@@ -819,6 +917,16 @@ ri_pointspolygons_parse(RtInt npolys, RtInt nverts[], RtInt verts[],
             ri_geom_add_texcoords(p, nvertices * 2, texcoords);
         } else {
             ri_geom_add_texcoords(p, nvertices, texcoords);
+        }
+
+    }
+
+    if (texcoords_unshared) {
+
+        if (attr->sides == 2) {
+            ri_geom_add_texcoords_unshared(p, nindices * 2, texcoords_unshared);
+        } else {
+            ri_geom_add_texcoords_unshared(p, nindices, texcoords_unshared);
         }
 
     }

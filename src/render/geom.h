@@ -16,6 +16,10 @@
 extern "C" {
 #endif
 
+/*
+ * TODO: Store all geometry data with unshared vertices?
+ */
+
 /* Forward decl. */
 struct _ri_light_t;
 
@@ -37,6 +41,10 @@ typedef struct _ri_geom_t {
     unsigned int        nopacities;
     ri_float_t         *texcoords;  /* texture coordinates
                                      * (st, 2 floats)                       */
+
+    /* Unshared tex coords(facevarying, facevertex) */
+    ri_float_t         *texcoords_unshared;
+
     unsigned int        ntexcoords;
     unsigned int       *indices;    /* vertex index                         */
     unsigned int        nindices;
@@ -108,6 +116,11 @@ extern void         ri_geom_add_opacities(
     const ri_vector_t   *opacities );
 
 extern void         ri_geom_add_texcoords(
+    ri_geom_t           *geom,
+    unsigned int         ntexcoords,
+    const ri_float_t    *texcoords );
+
+extern void         ri_geom_add_texcoords_unshared(
     ri_geom_t           *geom,
     unsigned int         ntexcoords,
     const ri_float_t    *texcoords );
