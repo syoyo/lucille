@@ -80,6 +80,18 @@ emitTy ty = case ty of
   TyMatrix  -> "<16 x float>"
   TyBool    -> "i1"
 
+getLLVMTySize ty = case ty of
+  TyVoid    -> 4        -- FIXME: Consider 64bit env
+  TyInt     -> 4
+  TyString  -> 4        -- FIXME: Consider 64bit env
+  TyFloat   -> 4
+  TyVector  -> 16
+  TyColor   -> 16 
+  TyPoint   -> 16
+  TyNormal  -> 16
+  TyMatrix  -> 64
+  TyBool    -> 4
+
 class AST a where
 
   gen :: Int -> a -> String
@@ -1620,8 +1632,82 @@ instance AST Func where
 
   genGlobal f = case f of
     ShaderFunc ty name decls stms -> concat 
-      [ genGlobal stms
+      [
+      -- emit shader param def
+        emitShaderParamStructDef decls
+      , "\n"
+      -- emit global values
+      , genGlobal stms
       , "\n"
       ]
   
 -- codeGenLLVM ast = gen ast
+
+--
+-- Emit definition for struct of shader parameters.
+--
+emitShaderParamStructDef :: [FormalDecl] -> String
+emitShaderParamStructDef decls = concat
+  [ "%struct._shader_param_t = type <{ "
+  , emitTys decls
+  , if (align16 - structSize) > 0 then ", " ++ emitPad (align16 - structSize)
+                                  else ""
+  , " }>; 16 byte align\n"
+  , "\n"
+  , emitShaderParamGetters 0 decls
+  , emitShaderParamSetters 0 decls
+  , "\n"
+  ]
+
+  where
+
+    emitTys []                          = ""
+    emitTys [(FormalDecl ty _ _ )]     = emitTy ty
+    emitTys ((FormalDecl ty _ _ ):xs)  = emitTy ty ++ ", " ++ emitTys xs
+
+    structSize = sum $ map (getLLVMTySize . getTyField) decls
+
+    align16 = ((structSize `div` 16) + 1) * 16
+
+    getTyField :: FormalDecl -> Type
+    getTyField (FormalDecl ty _ _) = ty
+
+    emitPad :: Int -> String
+    emitPad 0 = ""
+    emitPad 1 = "i8"
+    emitPad n = "i8, " ++ emitPad (n-1)
+
+    emitShaderParamGetters :: Int -> [FormalDecl] -> String
+    emitShaderParamGetters n []        = ""
+    emitShaderParamGetters n [decl]    = emitShaderParamGetter n decl
+    emitShaderParamGetters n (decl:ds) = emitShaderParamGetter n decl ++ "\n" ++
+                                         emitShaderParamGetters (n+1) ds
+
+    emitShaderParamSetters :: Int -> [FormalDecl] -> String
+    emitShaderParamSetters n []        = ""
+    emitShaderParamSetters n [decl]    = emitShaderParamSetter n decl
+    emitShaderParamSetters n (decl:ds) = emitShaderParamSetter n decl ++ "\n" ++
+                                         emitShaderParamSetters (n+1) ds
+--
+-- Emit function which set/get shader variable.
+--
+emitShaderParamGetter :: Int -> FormalDecl -> String
+emitShaderParamGetter offset (FormalDecl ty name _) = concat
+  [ "define void @set_shader_param_" ++ name ++ "(%struct._shader_param_t* %param, " ++ emitTy ty ++" %x) {\n"
+  , "entry:\n"
+  , indent 1 ++ "%tmp = getelementptr %struct._shader_param_t* %param, i32 0, i32 " ++ show offset ++ "\n"
+  , indent 1 ++ "store " ++ emitTy ty ++ " %x, " ++ emitTy ty ++ " *%tmp\n"
+  , indent 1 ++ "ret void\n"
+  , "}\n"
+  ]
+
+
+emitShaderParamSetter :: Int -> FormalDecl -> String
+emitShaderParamSetter offset (FormalDecl ty name _) = concat
+  [ "define " ++ emitTy ty ++ " @get_shader_param_" ++ name ++ "(%struct._shader_param_t *%param) {\n"
+  , "entry:\n"
+  , indent 1 ++ "%tmp = getelementptr %struct._shader_param_t* %param, i32 0, i32 " ++ show offset ++ "\n"
+  , indent 1 ++ "%val = load " ++ emitTy ty ++ "* %tmp\n"
+  , indent 1 ++ "ret " ++ emitTy ty ++ " %val\n"
+  , "}\n"
+  ]
