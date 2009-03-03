@@ -1654,7 +1654,10 @@ emitShaderParamStructDef decls = concat
                                   else ""
   , " }>; 16 byte align\n"
   , "\n"
+  , emitShaderParamStructSizeGetter align16
+  , "\n"
   , emitShaderParamGetters 0 decls
+  , "\n"
   , emitShaderParamSetters 0 decls
   , "\n"
   ]
@@ -1688,6 +1691,15 @@ emitShaderParamStructDef decls = concat
     emitShaderParamSetters n [decl]    = emitShaderParamSetter n decl
     emitShaderParamSetters n (decl:ds) = emitShaderParamSetter n decl ++ "\n" ++
                                          emitShaderParamSetters (n+1) ds
+
+emitShaderParamStructSizeGetter :: Int -> String
+emitShaderParamStructSizeGetter sz = concat
+  [ "define i32 @get_shader_param_struct_size() {\n"
+  , "entry:\n"
+  , indent 1 ++ "ret i32 " ++ show sz ++ "\n"
+  , "}\n"
+  ]
+
 --
 -- Emit function which set/get shader variable.
 --
