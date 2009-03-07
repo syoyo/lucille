@@ -204,8 +204,11 @@ ri_polygon_parse(RtInt nverts, RtInt n, RtToken tokens[], RtPointer params[])
          * Texture coordinate(S only)?
          *
          * ---------------------------------------------------------------- */
-        } else if (strcmp(tokens[i], RI_S) == 0 ||
-                   strcmp(tokens[i], "facevertex float s")  == 0)  {
+        } else if (strcmp(tokens[i], RI_S                 )  == 0 ||
+                   strcmp(tokens[i], "facevertex float s" )  == 0 ||
+                   strcmp(tokens[i], "facevertex s"       )  == 0 ||
+                   strcmp(tokens[i], "facevarying float s")  == 0 ||
+                   strcmp(tokens[i], "facevarying s"      )  == 0)  {
 
             if (!texcoords) {
 
@@ -240,7 +243,10 @@ ri_polygon_parse(RtInt nverts, RtInt n, RtToken tokens[], RtPointer params[])
          *
          * ---------------------------------------------------------------- */
         } else if (strcmp(tokens[i], RI_T) == 0 ||
-                   strcmp(tokens[i], "facevertex float t")  == 0)  {
+                   strcmp(tokens[i], "facevertex float t" )  == 0 ||
+                   strcmp(tokens[i], "facevertex t"       )  == 0 ||
+                   strcmp(tokens[i], "facevarying float t")  == 0 ||
+                   strcmp(tokens[i], "facevarying t"      )  == 0)  {
 
             if (!texcoords) {
 
@@ -478,9 +484,9 @@ parse_facevarying_float_param_pointspolygons(
     }
 
     // dbg
-    for (i = 0; i < idx * 2; i++) {
-        printf("v[%d(%d)] = %f\n", i, offt, out[i]);
-    }
+    // for (i = 0; i < idx * 2; i++) {
+    //     printf("v[%d(%d)] = %f\n", i, offt, out[i]);
+    // }
 
 }
 
@@ -763,8 +769,10 @@ ri_pointspolygons_parse(RtInt npolys, RtInt nverts[], RtInt verts[],
          * Unshared texcoord(S)?
          *
          * ---------------------------------------------------------------- */
-        } else if (strcmp(tokens[i], "facevarying float s") == 0 ||
-                   strcmp(tokens[i], "facevertex float s") == 0) {
+        } else if (strcmp(tokens[i], "facevertex float s" )  == 0 ||
+                   strcmp(tokens[i], "facevertex s"       )  == 0 ||
+                   strcmp(tokens[i], "facevarying float s")  == 0 ||
+                   strcmp(tokens[i], "facevarying s"      )  == 0)  {
 
             if (!texcoords_unshared) {
                 if (attr->sides == 2) {
@@ -822,8 +830,10 @@ ri_pointspolygons_parse(RtInt npolys, RtInt nverts[], RtInt verts[],
          * Unshared texcoord(T)?
          *
          * ---------------------------------------------------------------- */
-        } else if (strcmp(tokens[i], "facevarying float t") == 0 ||
-                   strcmp(tokens[i], "facevertex float t") == 0) {
+        } else if (strcmp(tokens[i], "facevertex float t" ) == 0 ||
+                   strcmp(tokens[i], "facevertex t"       ) == 0 ||
+                   strcmp(tokens[i], "facevarying float t") == 0 ||
+                   strcmp(tokens[i], "facevarying t"      ) == 0)  {
 
             if (!texcoords_unshared) {
                 if (attr->sides == 2) {
