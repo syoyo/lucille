@@ -31,6 +31,7 @@
 #include "reflection.h"
 #include "random.h"
 #include "sunsky.h"
+#include "texture.h"
 
 /* ---------------------------------------------------------------------------
  *
@@ -337,6 +338,7 @@ ri_transport_ambientocclusion(
 
     ri_ray_t                eyeray;
     ri_intersection_state_t state;
+    ri_vector_t             texcol;
 
     /*
      * Initialize
@@ -374,6 +376,22 @@ ri_transport_ambientocclusion(
                                       &eyeray,
                                       &state,
                                       8, 8);
+
+            // result->radiance[0] = state.stqr[0];
+            // result->radiance[1] = state.stqr[1];
+            // result->radiance[2] = 0.0;
+
+            if (state.geom->material && state.geom->material->texture) {
+
+                ri_texture_fetch(texcol, state.geom->material->texture,
+                                 state.stqr[0], state.stqr[1]);
+
+                result->radiance[0] *= texcol[0];
+                result->radiance[1] *= texcol[1];
+                result->radiance[2] *= texcol[2];
+            }
+
+            //result->radiance[2] = 0.0;
 
         }
 
