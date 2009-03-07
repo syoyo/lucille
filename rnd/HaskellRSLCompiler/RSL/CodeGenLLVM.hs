@@ -1602,6 +1602,8 @@ instance AST Func where
       , "\n}\n"
       ]
 
+    Preprocessor s -> ""
+
   genStatic n f = case f of
 
     ShaderFunc ty name decls stms -> concat 
@@ -1615,6 +1617,8 @@ instance AST Func where
       , "\n" ++ indent (n+1) ++ "ret void;\n"
       , "\n}\n"
       ]
+
+    Preprocessor s -> ""
 
   genDynamic n f = case f of
 
@@ -1630,6 +1634,8 @@ instance AST Func where
       , "\n}\n"
       ]
 
+    Preprocessor s -> ""
+
   genGlobal f = case f of
     ShaderFunc ty name decls stms -> concat 
       [
@@ -1640,6 +1646,8 @@ instance AST Func where
       , genGlobal stms
       , "\n"
       ]
+
+    Preprocessor s -> ""
   
 -- codeGenLLVM ast = gen ast
 

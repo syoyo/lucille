@@ -262,4 +262,5 @@ instance AST Func where
       , "\n}\n"
       ]
 
+    Preprocessor s -> ""
 

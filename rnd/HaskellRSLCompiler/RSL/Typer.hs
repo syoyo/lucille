@@ -260,6 +260,9 @@ instance Typer Func where
     ShaderFunc ty name decls stmt ->
       do { stmt' <- mapM typing stmt
          ; return (ShaderFunc ty name decls stmt') }
+    Preprocessor s ->
+      do { return (Preprocessor s) }
+    
 
 typingAST :: [Func] -> [Func]
 typingAST []     = []

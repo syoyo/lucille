@@ -1,6 +1,8 @@
 module Main where
 
+import Directory
 import System
+import System.Cmd
 import System.FilePath
 import System.Console.GetOpt
 
@@ -15,8 +17,8 @@ import RSL.CodeGenLLVM
 --
 -- Configurations
 --
-preprocessor = "mcpp" -- A portable C preprocessor by Kiyoshi Matsui
-version      = "0.1"
+preprocessorCmd = "mcpp" -- A portable C preprocessor by Kiyoshi Matsui
+version         = "0.1"
 
 --
 -- Compile flags
@@ -69,9 +71,34 @@ debugPrinter ast = do putStrLn $ "// [AST] = " ++ show ast ++ "\n"
                       writeFile "output.ll" (headerString ++ "\n" ++ globalVariablesString ++ codeString ++ "\n" ++ staticCodeString ++ "\n" ++ dynamicCodeString)
 
 
+--
+-- Execute C preprocessor as an external command.
+--
+runPreprocessor :: FilePath -> IO FilePath
+runPreprocessor filename =
+  do  let preprocessedFilename = replaceExtension filename ".i"
+
+      exitCode <- rawSystem preprocessorCmd [filename, "-o", preprocessedFilename]
+
+      case exitCode of 
+      
+        ExitSuccess   -> return preprocessedFilename
+        ExitFailure _ -> error "Failed to execute preprocessor."
+
+        
+
 main = do (flags, args) <- getArgs >>= parseOption
-          if length args > 0 then runLex program (args !! 0) debugPrinter
-                             else error (usageInfo usage options)
+          if length args > 0
+
+            then
+
+              do { preprocessedFilename <- runPreprocessor (args !! 0)
+                 ; runLex program preprocessedFilename (args !! 0) debugPrinter
+                   -- clean up
+                 ; removeFile preprocessedFilename
+                 }
+
+            else error (usageInfo usage options)
 
           --putStrLn $ show s
 

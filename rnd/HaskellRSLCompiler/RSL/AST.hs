@@ -216,6 +216,7 @@ data Expr
 data Func 
   = ShaderFunc ShaderType String [FormalDecl] [Expr]
   | UserFunc   Type       String
+  | Preprocessor String
     deriving (Show, Eq, Typeable, Data)
 
 

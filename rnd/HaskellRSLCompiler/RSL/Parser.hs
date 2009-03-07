@@ -19,6 +19,7 @@ import Text.ParserCombinators.Parsec
 import qualified Text.ParserCombinators.Parsec.Token as P
 import Text.ParserCombinators.Parsec.Expr
 import Text.ParserCombinators.Parsec.Language
+import Text.ParserCombinators.Parsec.Error
 
 import Control.Monad.State
 import Debug.Trace
@@ -77,15 +78,16 @@ addSymbol sym st = trace ("// Add " ++ (show sym)) $
 --
 -- Topmost parsing rule
 --
-program               = do  { ast <- many1 definition
+program               = do  { ast <- many (spaces >> global)
                             ; return ast
                             }
                        <?>   "program"
 
 
-definition            =   shaderDefinition
+global                =   shaderDefinition
                       <|> functionDefinition
-                      <?>   "definition"
+                      <|> preprocessor
+                      <?>   "top level definition"
 
 shaderDefinition      = do  { ty    <- shaderType
                             ; name  <- identifier
@@ -157,6 +159,7 @@ statement             =   varDefsStmt
                       <|> do { stm <- forStmt         ; return [stm] }
                       <|> do { stm <- illuminanceStmt ; return [stm] }
                       <|> do { stm <- ifStmt          ; return [stm] }
+                      <|> do { p <- preprocessor      ; return []    }
                       <?> "statement"
 
 
@@ -331,6 +334,34 @@ triple        = do  { try (symbol "(")        -- try is added to remove
                     }
                     
 
+--
+-- #line N ...
+--
+preprocessorLine = do { pos <- getPosition
+                      ; string "#line"
+                      ; whiteSpace
+                      ; n <- natural
+                      ; whiteSpace
+                      ; s <- manyTill anyChar newline
+                      ; -- adjust source pos
+                      ; setPosition (setSourceLine pos (fromIntegral n))
+                      ; return (Preprocessor s)
+                      }
+
+--
+-- #pragma ...
+--
+preprocessorPragma = do { pos <- getPosition
+                        ; string "#pragma"
+                        ; whiteSpace
+                        ; s <- manyTill anyChar newline
+                        ; return (Preprocessor s)
+                        }
+
+
+preprocessor      =   try preprocessorLine
+                  <|> preprocessorPragma
+                  <?> "preprocessor line"
 
 maybeDefinedInScope :: (String, [Symbol]) -> String -> (Maybe Symbol)
 maybeDefinedInScope (scope, syms) name = scan syms
@@ -553,27 +584,44 @@ parseRSLFromFile p fname =
      }
 
 
-run :: RSLParser [Func] -> FilePath -> ([Func] -> IO ()) -> IO ()
-run p name proc =
-  do  { result <- parseRSLFromFile p name
+--
+-- Same as done in Error.hs of Parsec, just replace filename to show.
+--
+showErrorMsg :: ParseError -> FilePath -> String
+showErrorMsg err fname =
+  show (setSourceName (errorPos err) fname) ++ ":" ++
+  showErrorMessages "or" "unknown parse error"
+                    "expecting" "unexpected" "end of input"
+                   (errorMessages err)
+
+mkMyError :: ParseError -> FilePath -> ParseError
+mkMyError err fname = setErrorPos (setSourceName (errorPos err) fname) err
+
+
+run :: RSLParser [Func] -> FilePath -> FilePath -> ([Func] -> IO ()) -> IO ()
+run p prepname name proc =
+  do  { result <- parseRSLFromFile p prepname
       ; case (result) of
-          Left err -> do  { putStrLn "Parse err:"
+          Left err -> do  { -- Parse preprocessed file, but print original file
+                            -- when reporting error.
+                            putStrLn "Parse err:"
                           ; showLine name (sourceLine (errorPos err)) (sourceColumn (errorPos err))
-                          ; print err
+                          --; print (showErrorMsg err name)
+                          ; print (mkMyError err name)
                           }
           Right x  -> do  { proc $ typingAST x
                           }
       }
 
 
-runLex :: RSLParser [Func] -> FilePath -> ([Func] -> IO ()) -> IO ()
-runLex p name proc =
+runLex :: RSLParser [Func] -> FilePath -> FilePath -> ([Func] -> IO ()) -> IO ()
+runLex p prepname name proc =
   run (do { whiteSpace
           ; x <- p
           ; eof
           ; return x
           }
-      ) name proc
+      ) prepname name proc
 
 --
 -- Useful parsing tools
