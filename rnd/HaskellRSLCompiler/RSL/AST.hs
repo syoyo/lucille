@@ -95,6 +95,7 @@ data Const
 
 data Kind
   = KindVariable
+  | KindExternalVariable      -- used in nested function.
   | KindFormalVariable
   | KindBuiltinVariable
     deriving (Show, Eq, Typeable, Data)
@@ -164,7 +165,7 @@ data Expr
                 Op                          -- operator
                 Expr                        -- lhs
                 Expr                        -- rhs
-  | Def         Type String (Maybe Expr)
+  | Def         Type String (Maybe Expr)    -- variable definition
   | UnaryOp    (Maybe Symbol)
                 Op                          -- Operator
                 Expr                        

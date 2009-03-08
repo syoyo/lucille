@@ -152,9 +152,9 @@ statements            =  do { stms <- many statement    -- [[]]
                             }
 
 statement :: RSLParser [Expr]
-statement             =   try ( do { stm <- nestedFunction  ; return [stm] } )
-                      <|> try varDefsStmt
+statement             =   try varDefsStmt
                       -- <|> do { stm <- assignStmt      ; return [stm] }
+                      <|> do { stm <- nestedFunction  ; return [stm] }
                       <|> do { stm <- exprStmt        ; return [stm] }
                       <|> do { stm <- whileStmt       ; return [stm] }
                       <|> do { stm <- forStmt         ; return [stm] }
@@ -198,32 +198,53 @@ varDef                = do  { name  <- identifier
                             ; return (name, expr)
                             }
 
-{-
-varDefStmt            = do  { ty    <- rslType
-                            ; name  <- identifier
-                            ; initE <- try maybeInitExpr
-                            ; symbol ";"
-                            ; updateState (addSymbol (SymVar name ty Uniform KindVariable))
-                            ; return (Def ty name initE)
+--
+-- | External variable definition
+--
+externVarDef          = do  { sym  <- definedSym  <?> "extern variable"
+                            ; return (getNameOfSym sym, Nothing)
                             }
-                      <?> "variable definition"
--}
+                      <?> "extern variable"
 
-varDefsStmt           = do  { sc    <- option Nothing maybeRSLStorageClass
+
+-- definedInOuterScope :: Symbol -> RSLState Symbol
+-- definedInOuterScope sym
+--   = trace (show sym) $
+--     do  { state <- getState
+--         ; case (maybeDefined (symbolTable state) (getNameOfSym sym)) of
+--             -- (Just (SymVar _ _ _ _ )) -> return sym -- OK
+--             (Just _)                 -> return sym
+--             _                        -> error $ "No matching variable " ++ show (getNameOfSym sym) ++ " defined in outer scope."
+--         } 
+-- 
+--
+-- If variable was defined with 'extern', it should be already defined 
+-- elsewhere.
+--
+varDefsStmt           = do  { es    <- option Nothing maybeExternSpec
+                            ; sc    <- option Nothing maybeRSLStorageClass
                             ; ty    <- rslType
-                            ; defs  <- sepBy1 varDef (symbol ",")
+                            ; defs  <- sepBy1 (def es) (symbol ",")
                             ; symbol ";"
-                            ; mapM (updateState . addSymbol) (genSyms ty defs)
+                            ; mapM (updateState . addSymbol) (genSyms es ty defs)
                             ; return (genDefs ty defs)
                             }
 
                             where
 
                               -- float a, b, c -> [float a, float b, float c]
-                              genSyms ty [(name, expr)]   = [(SymVar name ty Uniform KindVariable)]
-                              genSyms ty ((name, expr):x) = [(SymVar name ty Uniform KindVariable)] ++ genSyms ty x
+                              genSyms es ty [(name, expr)]   = [(SymVar name ty Uniform (kind es))]
+                              genSyms es ty ((name, expr):x) = [(SymVar name ty Uniform (kind es))] ++ genSyms es ty x
                               genDefs ty [(name, expr)]   = [(Def ty name expr)]
                               genDefs ty ((name, expr):x) = [(Def ty name expr)] ++ genDefs ty x
+
+                              kind s = case s of
+                                (Just KindExternalVariable) -> KindExternalVariable
+                                Nothing                     -> KindVariable
+
+                              def es = case es of
+                                Nothing -> varDef
+                                _       -> externVarDef
 
 
 {-
@@ -552,8 +573,15 @@ rslStorageClass         =   (reserved "uniform"       >> return Uniform     )
                         <|> (reserved "varying"       >> return Varying     )
                         <?> "RenderMan storage class"
 
+externSpec              =   (reserved "extern"        >> return KindExternalVariable)
+                        <?> "external spec"
+
 maybeRSLStorageClass    = do  { sc <- rslStorageClass
                               ; return (Just sc)
+                              }
+
+maybeExternSpec         = do  { es <- externSpec
+                              ; return (Just es)
                               }
 
 -- typeCastExpr            =   do  { ty  <- rslType
