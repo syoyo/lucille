@@ -532,28 +532,28 @@ instance AST Expr where
       ]
 
 
-    Def    ty name Nothing -> concat 
+    Def    sym Nothing -> concat 
       [ indent n
-      , "%" ++ name ++ " "
+      , "%" ++ (getNameOfSym sym) ++ " "
       , "= "
       , "alloca "
-      , emitTy ty
+      , emitTy (getTyOfSym sym)
       , ";\n"
       ]
 
 
-    Def    ty name (Just initExpr)  -> concat 
+    Def    sym (Just initExpr)  -> concat 
       [ indent n
-      , "%" ++ name ++ " "
+      , "%" ++ (getNameOfSym sym) ++ " "
       , "= "
       , "alloca "
-      , emitTy ty
+      , emitTy (getTyOfSym sym)
       , ";\n"
       , gen n initExpr
       --
       , indent n ++ "store "
       , emitTy (getTyOfExpr initExpr) ++ " " ++ (getReg initExpr) ++ " , "
-      , emitTy (getTyOfExpr initExpr) ++ "* " ++ "%" ++ name
+      , emitTy (getTyOfExpr initExpr) ++ "* " ++ "%" ++ (getNameOfSym sym)
       , ";\n"
       ]
 
@@ -886,28 +886,28 @@ instance AST Expr where
       ]
 
 
-    Def    ty name Nothing -> concat 
+    Def    sym Nothing -> concat 
       [ indent n
-      , "%" ++ name ++ " "
+      , "%" ++ (getNameOfSym sym) ++ " "
       , "= "
       , "alloca "
-      , emitTy ty
+      , emitTy (getTyOfSym sym)
       , ";\n"
       ]
 
 
-    Def    ty name (Just initExpr)  -> concat 
+    Def    sym (Just initExpr)  -> concat 
       [ indent n
-      , "%" ++ name ++ " "
+      , "%" ++ (getNameOfSym sym) ++ " "
       , "= "
       , "alloca "
-      , emitTy ty
+      , emitTy (getTyOfSym sym)
       , ";\n"
       , genStatic n initExpr
       --
       , indent n ++ "store "
       , emitTy (getTyOfExpr initExpr) ++ " " ++ (getReg initExpr) ++ " , "
-      , emitTy (getTyOfExpr initExpr) ++ "* " ++ "%" ++ name
+      , emitTy (getTyOfExpr initExpr) ++ "* " ++ "%" ++ (getNameOfSym sym)
       , ";\n"
       ]
 
@@ -1211,28 +1211,28 @@ instance AST Expr where
       ]
 
 
-    Def    ty name Nothing -> concat 
+    Def    sym Nothing -> concat 
       [ indent n
-      , "%" ++ name ++ " "
+      , "%" ++ (getNameOfSym sym) ++ " "
       , "= "
       , "alloca "
-      , emitTy ty
+      , emitTy (getTyOfSym sym)
       , ";\n"
       ]
 
 
-    Def    ty name (Just initExpr)  -> concat 
+    Def    sym (Just initExpr)  -> concat 
       [ indent n
-      , "%" ++ name ++ " "
+      , "%" ++ (getNameOfSym sym) ++ " "
       , "= "
       , "alloca "
-      , emitTy ty
+      , emitTy (getTyOfSym sym)
       , ";\n"
       , genDynamic n initExpr
       --
       , indent n ++ "store "
       , emitTy (getTyOfExpr initExpr) ++ " " ++ (getReg initExpr) ++ " , "
-      , emitTy (getTyOfExpr initExpr) ++ "* " ++ "%" ++ name
+      , emitTy (getTyOfExpr initExpr) ++ "* " ++ "%" ++ (getNameOfSym sym)
       , ";\n"
       ]
 
@@ -1565,8 +1565,8 @@ emitGlobal e = case e of
   TypeCast _ _ _ expr       -> emitGlobal expr
   Var _ sym                 -> ""
   Assign _ _ lexpr rexpr    -> emitGlobal lexpr ++ emitGlobal rexpr
-  Def _ _ Nothing           -> ""
-  Def _ _ (Just expr)       -> emitGlobal expr
+  Def _ Nothing             -> ""
+  Def _ (Just expr)         -> emitGlobal expr
   UnaryOp _ _ expr          -> emitGlobal expr
   BinOp _ _ expr0 expr1     -> emitGlobal expr0 ++ emitGlobal expr1
   Call _ _ exprs            -> concatMap emitGlobal exprs
@@ -1740,3 +1740,37 @@ emitShaderParamSetter offset (FormalDecl ty name _) = concat
   , indent 1 ++ "ret " ++ emitTy ty ++ " %val\n"
   , "}\n"
   ]
+
+
+--
+-- Functions for handling nested function
+--
+
+extractExternVariables :: [Expr] -> [Expr]
+extractExternVariables exprs = filter isExternVariableDef exprs
+
+  where
+
+    isExternVariableDef e = case e of
+      (Def (SymVar name _ _ kind) initExpr) -> if kind == KindExternalVariable then True else False
+      _                                     -> False
+
+
+mkFrameStruct :: [Expr] -> String
+mkFrameStruct stms = show $ extractExternVariables stms
+
+emitFrameStructDef :: [Symbol] -> String
+emitFrameStructDef syms = concat
+
+  [ "%struct.frame = type <{ "
+  , emitTys syms
+  , "}\n"
+  ]
+
+  where
+
+    emitTys :: [Symbol] -> String
+    emitTys []                      = ""
+    emitTys [(SymVar _ ty _ _)]     = emitTy ty
+    emitTys ((SymVar _ ty _ _):xs)  = emitTy ty ++ ", " ++ emitTys xs
+

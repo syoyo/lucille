@@ -190,12 +190,12 @@ instance Typer Expr where
                                return (Call (Just sym') funSym exprs')  -- rewrite sym with funSym
           }
 
-    Def ty name Nothing -> 
-      do  { return (Def ty name Nothing) }
+    Def sym Nothing -> 
+      do  { return (Def sym Nothing) }
 
-    Def ty name (Just initExpr) -> 
+    Def sym (Just initExpr) -> 
       do  { initExpr' <- typing initExpr
-          ; return (Def ty name (Just initExpr'))
+          ; return (Def sym (Just initExpr'))
           }
 
     Triple _ stmt ->

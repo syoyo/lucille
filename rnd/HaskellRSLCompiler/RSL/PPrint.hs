@@ -111,15 +111,15 @@ instance AST Expr where
       ]
 
 
-    Def    ty val Nothing -> concat 
+    Def   sym Nothing -> concat 
       [ indent n
-      , pprint 0 ty ++ " " ++ val ++ ";\n"
+      , pprint 0 (getTyOfSym sym) ++ " " ++ (getNameOfSym sym) ++ ";\n"
       ]
 
 
-    Def    ty val (Just initExpr)  -> concat 
+    Def   sym (Just initExpr)  -> concat 
       [ indent n
-      , pprint 0 ty ++ " " ++ val
+      , pprint 0 (getTyOfSym sym) ++ " " ++ (getNameOfSym sym)
       , " = "
       , pprint 0 initExpr
       , ";\n"

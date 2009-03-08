@@ -136,6 +136,8 @@ builtinShaderFunctions =
   -- , (SymFunc "setycomp"       f [n]    [])
   -- , (SymFunc "setzcomp"       f [n]    [])
   , (SymBuiltinFunc "length"         f [v]       [])
+  , (SymBuiltinFunc "length"         f [p]       [])
+  , (SymBuiltinFunc "length"         f [n]       [])
   , (SymBuiltinFunc "normalize"      v [v]       [])
   , (SymBuiltinFunc "normalize"      v [n]       [])
   , (SymBuiltinFunc "distance"       f [p, p]    [])

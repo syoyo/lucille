@@ -123,6 +123,7 @@ data Symbol
 getNameOfSym (SymVar  name _ _ _) = name
 getNameOfSym (SymFunc name _ _ _) = name
 getNameOfSym (SymBuiltinFunc name _ _ _) = name
+
 getTyOfSym   (SymVar  _ ty _ _)   = ty
 getTyOfSym   (SymFunc _ ty _ _)   = ty
 getTyOfSym   (SymBuiltinFunc _ ty _ _)   = ty
@@ -165,7 +166,7 @@ data Expr
                 Op                          -- operator
                 Expr                        -- lhs
                 Expr                        -- rhs
-  | Def         Type String (Maybe Expr)    -- variable definition
+  | Def         Symbol (Maybe Expr)         -- variable definition
   | UnaryOp    (Maybe Symbol)
                 Op                          -- Operator
                 Expr                        

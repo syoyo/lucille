@@ -73,11 +73,11 @@ numberExpr e = case e of
                                 ; return (e0' ++ e1' ++ [(e', id, getIDMap e0' ++ getIDMap e1')]) 
                                 }
 
-  Def _ _ Nothing         -> do { id <- getUniqueID
+  Def _ Nothing           -> do { id <- getUniqueID
                                 ; return [(e, id, [])]
                                 }
 
-  Def _ _ (Just initExpr) -> do { initExpr' <- numberExpr initExpr
+  Def _ (Just initExpr)   -> do { initExpr' <- numberExpr initExpr
                                 ; id        <- getUniqueID
                                 ; return (initExpr' ++ [(e, id, getIDMap initExpr')])
                                 }

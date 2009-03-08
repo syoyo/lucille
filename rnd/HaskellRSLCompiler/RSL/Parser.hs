@@ -113,9 +113,18 @@ shaderDefinition      = do  { ty    <- shaderType
 functionDefinition    = do  { ty    <- option (TyVoid) rslType
                             ; name  <- identifier
                             ; symbol "("
+                            ; formals <- formalDecls
                             ; symbol ")"
                             ; symbol "{"
+                            -- push scope
+                            ; updateState (pushScope name [])
+
+                            ; stms <- statements
                             ; symbol "}"
+
+                            -- pop scope
+                            ; updateState (popScope)
+
                             ; return (UserFunc ty name)
                             }
 
@@ -227,16 +236,16 @@ varDefsStmt           = do  { es    <- option Nothing maybeExternSpec
                             ; defs  <- sepBy1 (def es) (symbol ",")
                             ; symbol ";"
                             ; mapM (updateState . addSymbol) (genSyms es ty defs)
-                            ; return (genDefs ty defs)
+                            ; return (genDefs es ty defs)
                             }
 
                             where
 
                               -- float a, b, c -> [float a, float b, float c]
-                              genSyms es ty [(name, expr)]   = [(SymVar name ty Uniform (kind es))]
-                              genSyms es ty ((name, expr):x) = [(SymVar name ty Uniform (kind es))] ++ genSyms es ty x
-                              genDefs ty [(name, expr)]   = [(Def ty name expr)]
-                              genDefs ty ((name, expr):x) = [(Def ty name expr)] ++ genDefs ty x
+                              genSyms es ty [(name, expr)]   = [(SymVar name ty Varying (kind es))]
+                              genSyms es ty ((name, expr):x) = [(SymVar name ty Varying (kind es))] ++ genSyms es ty x
+                              genDefs es ty [(name, expr)]   = [(Def (SymVar name ty Varying (kind es)) expr)]
+                              genDefs es ty ((name, expr):x) = [(Def (SymVar name ty Varying (kind es)) expr)] ++ genDefs es ty x
 
                               kind s = case s of
                                 (Just KindExternalVariable) -> KindExternalVariable
@@ -357,7 +366,7 @@ illuminanceStmt       = do  { reserved "illuminance"
 -- Expression
 --
 
-procedureCall = do  { var <- try definedFunc    -- try is inserted to remove
+procedureCall = do  { var <- definedFunc    -- try is inserted to remove
                                                 -- ambiciousness with 'varRef'
                     ; symbol "("
                     ; args <- procArguments
@@ -473,7 +482,7 @@ definedFunc         = do  { state <- getState
 --
 -- | Expecting identifier and its defined previously.
 --
-varRef      =   do  { var <- try definedSym
+varRef      =   do  { var <- definedSym
                     ; return (Var Nothing var)
                     }
             <?> "defined symbol"
@@ -707,8 +716,8 @@ expr        =   buildExpressionParser table primary
 
 primary     =   try (parens expr)
             <|> triple
+            <|> try varRef
             <|> procedureCall   -- Do I really need "try"?
-            <|> varRef
             -- <|> procedureCall   -- Do I really need "try"?
             <|> number
             <|> constString
