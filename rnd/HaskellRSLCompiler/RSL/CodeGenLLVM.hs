@@ -797,6 +797,8 @@ instance AST Expr where
         genArgs [x]    = emitTy (getTyOfExpr x) ++ " " ++ getReg x
         genArgs (x:xs) = emitTy (getTyOfExpr x) ++ " " ++ getReg x ++ ", " ++ genArgs xs
 
+    NestedFunc resTy name decls stms  -> "; TODO: nested func\n"
+
     Nil                               -> "null"
 
     _                                 -> error $ "[CodeGen] TODO: " ++ show expr
@@ -1121,6 +1123,8 @@ instance AST Expr where
         genArgs [x]    = emitTy (getTyOfExpr x) ++ " " ++ getReg x
         genArgs (x:xs) = emitTy (getTyOfExpr x) ++ " " ++ getReg x ++ ", " ++ genArgs xs
 
+    NestedFunc resTy name decls stms  -> "; TODO: nested func\n"
+
     Nil                               -> "null"
 
     _                                 -> error $ "[CodeGen] TODO: " ++ show expr
@@ -1444,6 +1448,8 @@ instance AST Expr where
         genArgs [x]    = emitTy (getTyOfExpr x) ++ " " ++ getReg x
         genArgs (x:xs) = emitTy (getTyOfExpr x) ++ " " ++ getReg x ++ ", " ++ genArgs xs
 
+    NestedFunc resTy name decls stms  -> "; TODO: nested func\n"
+
     Nil                               -> "null"
 
   genGlobal e = emitGlobal e
@@ -1571,6 +1577,7 @@ emitGlobal e = case e of
   If  cond thenStmt Nothing -> emitGlobal cond ++ (concatMap emitGlobal thenStmt)
   If  cond thenStmt (Just elseStmt) -> emitGlobal cond ++ (concatMap emitGlobal thenStmt) ++ (concatMap emitGlobal elseStmt)
   Illuminance _ _ _ _ stmt  -> concatMap emitGlobal stmt
+  NestedFunc _ _ _ _        -> "" -- TODO
   {- TODO
   | If        Expr                        -- condition
               [Expr]                      -- statement
@@ -1658,7 +1665,7 @@ emitShaderParamStructDef :: [FormalDecl] -> String
 emitShaderParamStructDef decls = concat
   [ "%struct._shader_param_t = type <{ "
   , emitTys decls
-  , if (align16 - structSize) > 0 then ", " ++ emitPad (align16 - structSize)
+  , if (align16 - structSize) > 0 then delim ++ emitPad (align16 - structSize)
                                   else ""
   , " }>; 16 byte align\n"
   , "\n"
@@ -1671,6 +1678,8 @@ emitShaderParamStructDef decls = concat
   ]
 
   where
+
+    delim = if length decls == 0 then "" else ", "
 
     emitTys []                          = ""
     emitTys [(FormalDecl ty _ _ )]     = emitTy ty

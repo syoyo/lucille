@@ -152,16 +152,38 @@ statements            =  do { stms <- many statement    -- [[]]
                             }
 
 statement :: RSLParser [Expr]
-statement             =   varDefsStmt
+statement             =   try ( do { stm <- nestedFunction  ; return [stm] } )
+                      <|> try varDefsStmt
                       -- <|> do { stm <- assignStmt      ; return [stm] }
                       <|> do { stm <- exprStmt        ; return [stm] }
                       <|> do { stm <- whileStmt       ; return [stm] }
                       <|> do { stm <- forStmt         ; return [stm] }
                       <|> do { stm <- illuminanceStmt ; return [stm] }
                       <|> do { stm <- ifStmt          ; return [stm] }
+                      <|> do { stm <- returnStmt      ; return [stm] }
                       <|> do { p <- preprocessor      ; return []    }
                       <?> "statement"
 
+
+nestedFunction :: RSLParser Expr
+nestedFunction  = do  { resTy   <- rslType 
+                      ; name    <- identifier
+                      ; symbol "("
+                      ; decls   <- formalDecls
+                      ; symbol ")"
+                      ; symbol "{"
+
+                      ; updateState (pushScope name []) -- push scope
+
+                      ; stms <- statements
+
+                      ; symbol "}"
+
+                      ; updateState (popScope)          -- pop scope
+
+                      ; return (NestedFunc resTy name decls stms)
+                      }
+                      <?> "nested function definition"
 
 exprStmt = do { e <- expr
               ; symbol ";"
@@ -277,6 +299,12 @@ statementBlock        = try ( do { s <- statement; return s } )
                       <|>     do { s <- braces (many statement); return $ concat s }
                       <?> "statement"
 
+returnStmt            = do  { reserved "return"
+                            ; e <- expr
+                            ; symbol ";"
+                            ; return (Return e)
+                            }
+                      <?> "return statement"
 --
 -- Illuminate statement
 -- TODO: Parse optional "category" field.
@@ -457,6 +485,7 @@ floatValue              =   do  { num  <- naturalOrFloat
                                          )
                                 }
                         <|> fractValue
+                        <?> "floating point literal"
 
 --
 -- TODO: Parse more fp value string(e.g. 1.0e+5f)
@@ -485,6 +514,7 @@ constString             = do  { s   <- stringLiteral
 
 -- Number are float value in RSL.
 number                  = do  { val <- parseFloat
+                              ; whiteSpace
                               ; return (Const Nothing (F val))
                               }
 
@@ -736,6 +766,7 @@ rslStyle = javaStyle
                     , "varying", "uniform", "facevarygin", "facevertex"
                     , "output"
                     , "extern"
+                    , "return"
                     , "color", "vector", "normal", "matrix", "point", "void"
                     -- More is TODO
                     ]

@@ -234,6 +234,19 @@ instance AST Expr where
       , indent n ++ "}"
       ]
 
+    Return expr                       -> concat
+      [ indent n ++ "return "
+      , pprint 0 expr ++ ";\n"
+      ]
+
+    NestedFunc resTy name decls stms  -> concat
+      [ indent n
+      , pprint 0 resTy ++ " " ++ name
+      , " (" ++ pprint 0 decls ++ ") {\n"
+      , pprint (n+1) stms
+      , indent n ++ "}"
+      ]
+
     Nil                               -> "null"
 
 instance AST FormalDecl where

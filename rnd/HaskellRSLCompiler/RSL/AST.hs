@@ -209,6 +209,12 @@ data Expr
                (Maybe String)             -- category
                [Expr]                     -- statement
 
+  | Return      Expr                      -- expr
+  | NestedFunc  Type                      -- return type
+                String                    -- func name
+                [FormalDecl]              -- args
+                [Expr]                    -- statement
+
   | Nil                                   -- null expr
     deriving (Show, Eq, Typeable, Data)
   

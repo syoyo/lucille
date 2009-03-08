@@ -252,14 +252,24 @@ instance Typer Expr where
           ; return (If cond' thenStmt' Nothing)
           }
 
+    Return expr ->
+      -- TODO: Check with the return type of the function.
+      do  { expr' <- typing expr
+          ; return (Return expr')
+          }
+
+    NestedFunc resTy name decls stms ->
+      do  { stms' <- mapM typing stms
+          ; return (NestedFunc resTy name decls stms')
+          }
 
     _ -> error $ "Typing: TODO: " ++ (show e)
   
 instance Typer Func where
   typing f = case f of
-    ShaderFunc ty name decls stmt ->
-      do { stmt' <- mapM typing stmt
-         ; return (ShaderFunc ty name decls stmt') }
+    ShaderFunc ty name decls stms ->
+      do { stms' <- mapM typing stms
+         ; return (ShaderFunc ty name decls stms') }
     Preprocessor s ->
       do { return (Preprocessor s) }
     
@@ -267,4 +277,4 @@ instance Typer Func where
 typingAST :: [Func] -> [Func]
 typingAST []     = []
 typingAST [x]    = [evalState (typing x) 0]
-typingAST (x:xs) = [evalState (typing x) 0]
+typingAST (x:xs) = [evalState (typing x) 0] ++ typingAST xs
