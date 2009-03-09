@@ -53,6 +53,8 @@ getCounter = do
 genUniqueReg :: String
 genUniqueReg = "%reg" ++ (show $ unsafePerformIO getCounter)
 
+genUniqueID  :: Int
+genUniqueID  = unsafePerformIO getCounter
 
 indent :: Int -> String
 indent n = concat $ replicate (4 * n) " "
@@ -584,7 +586,7 @@ instance AST Expr where
         ]
 
 
-      _ -> concat
+      (SymVar _ _ _ kind) -> concat
 
         [ gen n rexpr
         , indent n
@@ -592,9 +594,16 @@ instance AST Expr where
         , emitTy (getTyOfExpr rexpr) ++ " "
         , getReg rexpr ++ ", "
         , emitTy (getTyOfExpr rexpr) ++ "* "
-        , getLLNameOfSym sym
+        , dstName
         , ";\n"
         ]
+
+        where
+
+          dstName = case kind of
+            KindFormalVariable -> getLLNameOfSym sym ++ ".addr"
+            _                  -> getLLNameOfSym sym
+
 
 
     -- Call builtin function requires special treatment.
@@ -645,6 +654,12 @@ instance AST Expr where
     Triple (Just sym) exprs            -> concat
       [ gen n exprs
       , emitTriple n (getLLNameOfSym sym) (getReg (exprs !! 0)) (getReg (exprs !! 1)) (getReg (exprs !! 2))
+      ]
+
+    Return (Just sym) expr                        -> concat
+      [ gen n expr
+      , indent n ++ "ret " ++ emitTy (getTyOfSym sym) ++ " " ++ (getReg expr)
+      , "\n"
       ]
 
     -- FIXME
@@ -797,7 +812,7 @@ instance AST Expr where
         genArgs [x]    = emitTy (getTyOfExpr x) ++ " " ++ getReg x
         genArgs (x:xs) = emitTy (getTyOfExpr x) ++ " " ++ getReg x ++ ", " ++ genArgs xs
 
-    NestedFunc resTy name decls stms  -> "; TODO: nested func\n"
+    NestedFunc n resTy name decls stms  -> "; TODO: nested func\n"
 
     Nil                               -> "null"
 
@@ -932,7 +947,7 @@ instance AST Expr where
         ]
 
 
-      _ -> concat
+      (SymVar _ _ _ kind) -> concat
 
         [ genStatic n rexpr
         , indent n
@@ -940,9 +955,15 @@ instance AST Expr where
         , emitTy (getTyOfExpr rexpr) ++ " "
         , getReg rexpr ++ ", "
         , emitTy (getTyOfExpr rexpr) ++ "* "
-        , getLLNameOfSym sym
+        , dstName
         , ";\n"
         ]
+
+        where
+
+          dstName = case kind of
+            KindFormalVariable -> getLLNameOfSym sym ++ ".addr"
+            _                  -> getLLNameOfSym sym
 
 
     --
@@ -991,6 +1012,12 @@ instance AST Expr where
     Triple (Just sym) exprs            -> concat
       [ genStatic n exprs
       , emitTriple n (getLLNameOfSym sym) (getReg (exprs !! 0)) (getReg (exprs !! 1)) (getReg (exprs !! 2))
+      ]
+
+    Return (Just sym) expr                        -> concat
+      [ genStatic n expr
+      , indent n ++ "ret " ++ emitTy (getTyOfSym sym) ++ " " ++ (getReg expr)
+      , "\n"
       ]
 
     -- FIXME
@@ -1123,7 +1150,7 @@ instance AST Expr where
         genArgs [x]    = emitTy (getTyOfExpr x) ++ " " ++ getReg x
         genArgs (x:xs) = emitTy (getTyOfExpr x) ++ " " ++ getReg x ++ ", " ++ genArgs xs
 
-    NestedFunc resTy name decls stms  -> "; TODO: nested func\n"
+    NestedFunc n resTy name decls stms  -> "; TODO: nested func\n"
 
     Nil                               -> "null"
 
@@ -1257,7 +1284,7 @@ instance AST Expr where
         ]
 
 
-      _ -> concat
+      (SymVar _ _ _ kind) -> concat
 
         [ genDynamic n rexpr
         , indent n
@@ -1265,9 +1292,15 @@ instance AST Expr where
         , emitTy (getTyOfExpr rexpr) ++ " "
         , getReg rexpr ++ ", "
         , emitTy (getTyOfExpr rexpr) ++ "* "
-        , getLLNameOfSym sym
+        , dstName
         , ";\n"
         ]
+
+        where
+
+          dstName = case kind of
+            KindFormalVariable -> getLLNameOfSym sym ++ ".addr"
+            _                  -> getLLNameOfSym sym
 
 
     --
@@ -1316,6 +1349,12 @@ instance AST Expr where
     Triple (Just sym) exprs            -> concat
       [ genDynamic n exprs
       , emitTriple n (getLLNameOfSym sym) (getReg (exprs !! 0)) (getReg (exprs !! 1)) (getReg (exprs !! 2))
+      ]
+
+    Return (Just sym) expr                        -> concat
+      [ genDynamic n expr
+      , indent n ++ "ret " ++ emitTy (getTyOfSym sym) ++ " " ++ (getReg expr)
+      , "\n"
       ]
 
     Conditional (Just sym) cond thenExpr elseExpr -> concat
@@ -1448,7 +1487,7 @@ instance AST Expr where
         genArgs [x]    = emitTy (getTyOfExpr x) ++ " " ++ getReg x
         genArgs (x:xs) = emitTy (getTyOfExpr x) ++ " " ++ getReg x ++ ", " ++ genArgs xs
 
-    NestedFunc resTy name decls stms  -> "; TODO: nested func\n"
+    NestedFunc n resTy name decls stms  -> "; TODO: nested func\n"
 
     Nil                               -> "null"
 
@@ -1577,7 +1616,7 @@ emitGlobal e = case e of
   If  cond thenStmt Nothing -> emitGlobal cond ++ (concatMap emitGlobal thenStmt)
   If  cond thenStmt (Just elseStmt) -> emitGlobal cond ++ (concatMap emitGlobal thenStmt) ++ (concatMap emitGlobal elseStmt)
   Illuminance _ _ _ _ stmt  -> concatMap emitGlobal stmt
-  NestedFunc _ _ _ _        -> "" -- TODO
+  NestedFunc _ _ _ _ _      -> "" -- TODO
   {- TODO
   | If        Expr                        -- condition
               [Expr]                      -- statement
@@ -1649,6 +1688,15 @@ instance AST Func where
       -- emit shader param def
         emitShaderParamStructDef decls
       , "\n"
+
+      -- emit frame struct for nested function if exist.
+      , emitFrameStructDefs stms
+      , "\n"
+
+      -- emit definition of nested function.
+      , emitNestedFunctionDefs stms
+      , "\n"
+      
       -- emit global values
       , genGlobal stms
       , "\n"
@@ -1746,8 +1794,31 @@ emitShaderParamSetter offset (FormalDecl ty name _) = concat
 -- Functions for handling nested function
 --
 
-extractExternVariables :: [Expr] -> [Expr]
-extractExternVariables exprs = filter isExternVariableDef exprs
+{-
+emitStoreExternVariableToBuffer :: [Symbols] -> (String, Int) -> String
+emitStoreExternVariableToBuffer syms (fname, n) = concat
+  -- %var.addr = alloca ty
+  -- store %var, %var.addr
+  [ indent n ++ buf ++ " = " ++ "alloca " ++ tyStr ++ ";\n"
+  , indent n ++ "store " ++ tyStr ++ " " ++ src ++ " , " ++ tyStr ++ "* " ++ buf
+  , ";\n"
+  ]
+
+  where
+
+    frameName     = "%struct.frame." ++ fname ++ show n
+    chainName     = "%chain." ++ fname ++ show n
+    chainAddrName = chainName ++ ".addr"
+
+    nsyms = zip syms [1..length (syms)] -- [a, b, c] -> [(1, a),(2, b),(3, c)]
+
+    tyStr  = emitTy ty
+    buf = "%" ++ name ++ ".addr"
+    src = "%" ++ name
+-}
+
+extractExternVariables :: [Expr] -> [Symbol]
+extractExternVariables exprs = map getSym (filter isExternVariableDef exprs)
 
   where
 
@@ -1755,22 +1826,74 @@ extractExternVariables exprs = filter isExternVariableDef exprs
       (Def (SymVar name _ _ kind) initExpr) -> if kind == KindExternalVariable then True else False
       _                                     -> False
 
+    getSym e = case e of
+      (Def sym _) -> sym
+    
+
 
 mkFrameStruct :: [Expr] -> String
 mkFrameStruct stms = show $ extractExternVariables stms
 
-emitFrameStructDef :: [Symbol] -> String
-emitFrameStructDef syms = concat
+emitFrameStructDef :: Expr -> String
+emitFrameStructDef (NestedFunc n ty fname decls stms) = 
 
-  [ "%struct.frame = type <{ "
-  , emitTys syms
-  , "}\n"
-  ]
+  if length syms > 0
 
+    then
+
+      concat
+
+      [ "%struct.frame." ++ fname ++ (show n) ++ " = type <{ "
+      , emitTys syms
+      , "}>\n"
+      ]
+
+    else
+
+      concat
+
+      [ "%struct.frame." ++ fname ++ (show n) ++ " = type <{ "
+      , "i8" ++ (concat $ replicate 15 ", i8")
+      , "}>\n"
+      ]
+      
   where
+
+    syms = extractExternVariables stms
 
     emitTys :: [Symbol] -> String
     emitTys []                      = ""
     emitTys [(SymVar _ ty _ _)]     = emitTy ty
     emitTys ((SymVar _ ty _ _):xs)  = emitTy ty ++ ", " ++ emitTys xs
 
+emitFrameStructDef _ = ""
+
+emitFrameStructDefs :: [Expr] -> String
+emitFrameStructDefs []      = ""
+emitFrameStructDefs [e]     = emitFrameStructDef e
+emitFrameStructDefs (e:es)  = emitFrameStructDef e ++ emitFrameStructDefs es
+
+
+emitNestedFunctionDef :: Expr -> String
+emitNestedFunctionDef (NestedFunc n ty fname decls stms) = concat
+  [ "define " ++ emitTy ty ++ " @" ++ fname ++ "." ++ show n ++ "(" ++ frameName ++ "* nest " ++ chainName ++ ", " ++ gen 0 decls ++ ")"
+  , "{\n"
+  , indent 1 ++ chainAddrName ++" = alloca " ++ frameName ++ "*\n"
+  , indent 1 ++ "store " ++ frameName ++ "* " ++ chainName ++ ", " ++ frameName ++ "** " ++ chainAddrName ++ "\n"
+  , concatMap (emitStoreFormalVariableToBuffer 1) decls
+  , gen 1 stms
+  , "}\n"
+  ]
+
+  where
+
+    frameName     = "%struct.frame." ++ fname ++ show n
+    chainName     = "%chain." ++ fname ++ show n
+    chainAddrName = chainName ++ ".addr"
+
+emitNestedFunctionDef _ = ""
+
+emitNestedFunctionDefs :: [Expr] -> String
+emitNestedFunctionDefs []      = ""
+emitNestedFunctionDefs [e]     = emitNestedFunctionDef e
+emitNestedFunctionDefs (e:es)  = emitNestedFunctionDef e ++ emitNestedFunctionDefs es

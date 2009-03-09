@@ -30,6 +30,13 @@ getUniqueName = do  { n <- get
                     ; return $ "tmp" ++ (show n')
                     } 
 
+getUniqueID :: TyperState Int
+getUniqueID = do    { n <- get
+                    ; let n' = n + 1
+                    ; put n'
+                    ; return n'
+                    } 
+
 class Typer a where
   typing :: a -> TyperState a
 
@@ -252,15 +259,19 @@ instance Typer Expr where
           ; return (If cond' thenStmt' Nothing)
           }
 
-    Return expr ->
+    Return _ expr ->
       -- TODO: Check with the return type of the function.
-      do  { expr' <- typing expr
-          ; return (Return expr')
+      do  { expr'   <- typing expr
+          ; tmpName <- getUniqueName
+          ; let ty  = getTyOfExpr expr'
+          ; let sym = (SymVar tmpName ty Uniform KindVariable)
+          ; return (Return (Just sym) expr')
           }
 
-    NestedFunc resTy name decls stms ->
-      do  { stms' <- mapM typing stms
-          ; return (NestedFunc resTy name decls stms')
+    NestedFunc _ resTy name decls stms ->
+      do  { stms'   <- mapM typing stms
+          ; uniqID  <- getUniqueID
+          ; return (NestedFunc uniqID resTy name decls stms')
           }
 
     _ -> error $ "Typing: TODO: " ++ (show e)
