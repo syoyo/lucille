@@ -1,7 +1,7 @@
 /*
  * RenderMan option
  *
- * $Id: option.c,v 1.7 2004/06/13 06:44:51 syoyo Exp $
+ * $Id$
  */
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -396,7 +396,39 @@ ri_api_option(RtToken token, RtInt n, RtToken tokens[], RtPointer params[])
 
                 parse_and_add_searchpath( ctxopt, (*tokp) );
                
-            } 
+            } else if (
+                strcmp(tokens[i], "shader")        == 0 ||
+                strcmp(tokens[i], "string shader") == 0 ) {
+
+                tokp = (RtToken *)params[i];
+
+                /*
+                 * Put paths into one search path list.
+                 * Do not distinguish search paths for archive, shader,
+                 * texture, etc.
+                 */
+                parse_and_add_searchpath( ctxopt, (*tokp) );
+
+            } else if (
+                strcmp(tokens[i], "texture")        == 0 ||
+                strcmp(tokens[i], "string texture") == 0 ) {
+
+                tokp = (RtToken *)params[i];
+
+                /*
+                 * Put paths into one search path list.
+                 * Do not distinguish search paths for archive, shader,
+                 * texture, etc.
+                 */
+                parse_and_add_searchpath( ctxopt, (*tokp) );
+
+            } else {
+
+                ri_log(LOG_WARN,
+                       "(Option) Unknown option \"%s\", ignored.", tokens[i]);
+
+            }
+
        } 
 
 	} else if (strcmp(token, "raytrace") == 0) {
