@@ -234,12 +234,12 @@ instance AST Expr where
       , indent n ++ "}"
       ]
 
-    Return expr                       -> concat
+    Return sym expr                   -> concat
       [ indent n ++ "return "
       , pprint 0 expr ++ ";\n"
       ]
 
-    NestedFunc resTy name decls stms  -> concat
+    NestedFunc id resTy name decls stms  -> concat
       [ indent n
       , pprint 0 resTy ++ " " ++ name
       , " (" ++ pprint 0 decls ++ ") {\n"

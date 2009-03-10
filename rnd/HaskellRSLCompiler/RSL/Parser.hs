@@ -190,7 +190,7 @@ nestedFunction  = do  { resTy   <- rslType
 
                       ; updateState (popScope)          -- pop scope
 
-                      ; return (NestedFunc resTy name decls stms)
+                      ; return (NestedFunc 0 resTy name decls stms)
                       }
                       <?> "nested function definition"
 
@@ -332,7 +332,7 @@ statementBlock        = try ( do { s <- statement; return s } )
 returnStmt            = do  { reserved "return"
                             ; e <- expr
                             ; symbol ";"
-                            ; return (Return e)
+                            ; return (Return Nothing e)
                             }
                       <?> "return statement"
 --
