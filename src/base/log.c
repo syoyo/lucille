@@ -55,7 +55,8 @@
 #include "log.h"
 #include "parallel.h"
 
-static int gdebug = 0;
+static int gdebug    = 0;
+static int gloglevel = RI_LOG_LEVEL_INFO;
 
 static char *level_msg[] = {
     "debug",
@@ -79,6 +80,12 @@ ri_log_get_debug()
 }
 
 void
+ri_log_set_level(int level)
+{
+    return gloglevel = level;
+}
+
+void
 ri_log(int level, const char *filename, int linenum, const char *message, ...)
 {
     va_list list;
@@ -94,12 +101,17 @@ ri_log(int level, const char *filename, int linenum, const char *message, ...)
     if (gdebug) {
         fprintf(stdout, "[lucille] %s:%d %s : ",
             filename, linenum, level_msg[level]);
+        vfprintf(stdout, message, list);
+        fprintf(stdout, "\n");
+        fflush(stdout);
     } else {
-        fprintf(stdout, "[lucille] %s : ", level_msg[level]);
+        if (level >= gloglevel) {
+            fprintf(stdout, "[lucille] %s : ", level_msg[level]);
+            vfprintf(stdout, message, list);
+            fprintf(stdout, "\n");
+            fflush(stdout);
+        }
     }
-    vfprintf(stdout, message, list);
-    fprintf(stdout, "\n");
-    fflush(stdout);
 #if 0
         /* print only if master node */
         if (ri_parallel_taskid() == 0) {
