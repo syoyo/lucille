@@ -21,10 +21,10 @@ Features
 ========
 
 - Efficient ray tracing and global illumination computation.
-- Fully analytic rendering(no noise, experimental feature).
+- Fully analytic rendering(no noise rendering, R&D phase).
 - Support for RIB( The RenderMan(R) Interface Bytestream ) file format.
-- Support for RenderMan Shading Language with JIT execution.
-- Multicore ready, SIMD optimized. Designed for fully unleash the processor power.
+- Support for RenderMan Shading Language with JIT execution(R&D phase).
+- Multicore ready, SIMD optimized. Designed for fully unleashing the processor power.
 - Highly portable architecture.
 
 
