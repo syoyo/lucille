@@ -77,6 +77,21 @@ extern void ri_log          (      int   level,
                              const char *message,
                              ...);
 
+/*
+ * Emit log message just once(log message wit same text in the successor is
+ * discarded)
+ *
+ * ri_log_once(LOG_INFO, "Info");
+ *   -> print "Info"
+ * ri_log_once(LOG_INFO, "Info");
+ *   -> discarded
+ */
+extern void ri_log_once     (      int   level,
+                             const char *filename,
+                                   int   linenum,
+                             const char *message,
+                             ...);
+
 
 #define ri_log_and_return_if(eval) {                        \
         if ((eval)) {                                       \
