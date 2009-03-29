@@ -145,6 +145,8 @@ ri_option_new()
 	p->bsp_tree_depth = 6;
 	p->kd_tree_depth = 16;
 
+	p->gather_nsamples = 64;
+
 	//p->pixel_filter = RiBoxFilter;
 	p->pixel_filter_widthx = 1.0;
 	p->pixel_filter_widthy = 1.0;
@@ -537,6 +539,13 @@ ri_api_option(RtToken token, RtInt n, RtToken tokens[], RtPointer params[])
 			if (strcmp(tokens[i], "nsamples") == 0) {
 				valp = (RtFloat *)params[i];
 				ctxopt->mlt_nsamples = (int)(*valp);
+			}
+		}
+	} else if (strcmp(token, "gather") == 0) {
+		for (i = 0; i < n; i++) {
+			if (strcmp(tokens[i], "nsamples") == 0) {
+				valp = (RtFloat *)params[i];
+				ctxopt->gather_nsamples = (int)(*valp);
 			}
 		}
 	} else if (strcmp(token, "pathtrace") == 0) {
