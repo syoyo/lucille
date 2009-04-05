@@ -43,6 +43,7 @@ data Op
 -- | Type qualifier
 data Qual
   = Output
+  | NoQual
     deriving (Show, Eq, Typeable, Data) 
   
 data Type

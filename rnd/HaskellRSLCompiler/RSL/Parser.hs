@@ -110,7 +110,7 @@ shaderDefinition      = do  { ty    <- shaderType
                       <?> "shader definition"
   
 
-functionDefinition    = do  { ty    <- option (TyVoid) rslType
+functionDefinition    = do  { ty    <- option (TyVoid) funType
                             ; name  <- identifier
                             ; symbol "("
                             ; formals <- formalDecls
@@ -141,7 +141,8 @@ formalDef             = do  { name  <- identifier
                             ; return (name, expr)
                             }
 
-formalDecl            = do  { sc    <- option Nothing maybeRSLStorageClass
+formalDecl            = do  { q     <- option NoQual qual
+                            ; sc    <- option Nothing maybeRSLStorageClass
                             ; ty    <- rslType
                             ; defs  <- sepBy1 formalDef (symbol ",")
                             ; mapM (updateState . addSymbol) (genSyms ty defs)
@@ -562,6 +563,8 @@ maybeInitFormalDeclExpr = do  { symbol "="
                         <|>   return Nothing
                                
 
+qual                    =   (reserved "output"        >> return Output      )
+                       
 shaderType              =   (reserved "light"         >> return Light       )
                         <|> (reserved "surface"       >> return Surface     )
                         <|> (reserved "volume"        >> return Volume      )
@@ -576,6 +579,10 @@ rslType                 =   (reserved "float"         >> return TyFloat     )
                         <|> (reserved "vector"        >> return TyVector    )
                         <|> (reserved "normal"        >> return TyNormal    )
                         <|> (reserved "matrix"        >> return TyMatrix    )
+                        <?> "RenderMan type"
+
+funType                 =   rslType
+                        <|> (reserved "void"          >> return TyVoid      )
                         <?> "RenderMan type"
                       
 rslStorageClass         =   (reserved "uniform"       >> return Uniform     )
