@@ -117,7 +117,7 @@ data Symbol
             String            -- name of the function
             Type              -- return type of the function
             [Type]            -- arguments of the function         
-            [Type]            -- optional arguments
+            (Maybe Type)      -- vaarg
 
     deriving (Show, Eq, Typeable, Data)
 
