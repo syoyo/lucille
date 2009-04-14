@@ -1,5 +1,5 @@
 /*
- * $Id: attribute.c,v 1.8 2004/06/13 06:44:51 syoyo Exp $
+ * $Id$
  */
 
 #ifdef HAVE_CONFIG_H
@@ -373,7 +373,7 @@ load_shader(const char *name)
 {
     ri_parameter_t           *param     = NULL;    /* shader parameter */
     dl_module_t              *module    = NULL;
-    ri_shader_t         *s         = NULL;
+    ri_shader_t              *s         = NULL;
     char                     *buf       = NULL;
     char                      fullpath[1024];
 
@@ -390,14 +390,14 @@ load_shader(const char *name)
     if (!ri_option_find_file(fullpath,    /* output */
                  ri_render_get()->context->option,
                  buf)) {
-        ri_log(LOG_WARN, "(API   ) Can't find shader \"%s\". Use default shader.", buf);
+        ri_log_once(LOG_WARN, "(API   ) Can't find shader \"%s\". Use default shader.", buf);
         ri_mem_free(buf);
         return NULL;
     }
 
     module = dlload(fullpath);
     if (module == NULL) {
-        ri_log(LOG_WARN, "(API   ) Can't load shader \"%s\". Use default shader.", buf);
+        ri_log_once(LOG_WARN, "(API   ) Can't load shader \"%s\". Use default shader.", buf);
         ri_mem_free(buf);
         return NULL;
     }

@@ -53,7 +53,7 @@ calculate_occlusion(
 
     double                  z0, z1;
     double                  cos_theta, phi;
-    double                  eps = 1.0e-5;
+    double                  eps = 1.0e-6;
     double                  occlusion = 0.0;
 
     vec                     dir;
@@ -340,6 +340,9 @@ ri_transport_ambientocclusion(
     ri_intersection_state_t state;
     ri_vector_t             texcol;
 
+    int                     nsamples;
+    int                     nphi, ntheta;
+
     /*
      * Initialize
      */
@@ -372,10 +375,16 @@ ri_transport_ambientocclusion(
 
         } else {
 
+            nsamples = ri_render_get()->context->option->gather_nsamples;
+
+            /* Evenly distribute samples to phi and theta direction.    */ 
+            nphi     = sqrt((double)nsamples);
+            ntheta   = nphi;
+
             ret = calculate_occlusion(result->radiance,
                                       &eyeray,
                                       &state,
-                                      8, 8);
+                                      ntheta, nphi);
 
             // result->radiance[0] = state.stqr[0];
             // result->radiance[1] = state.stqr[1];

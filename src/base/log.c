@@ -54,6 +54,7 @@
 
 #include "log.h"
 #include "parallel.h"
+#include "hash.h"
 
 static int gdebug    = 0;
 static int gloglevel = RI_LOG_LEVEL_INFO;
@@ -66,6 +67,10 @@ static char *level_msg[] = {
     "FATAL"
 };
 
+/*
+ * Message hash to prevent duplicated log message(used in ri_log_once).
+ */
+static ri_hash_t *g_msg_hash = NULL;
 
 void
 ri_log_set_debug(int onoff)
@@ -82,7 +87,7 @@ ri_log_get_debug()
 void
 ri_log_set_level(int level)
 {
-    return gloglevel = level;
+    gloglevel = level;
 }
 
 void
@@ -119,4 +124,45 @@ ri_log(int level, const char *filename, int linenum, const char *message, ...)
                     level, message, file, line, ctime(&tm));
         }
 #endif
+}
+
+void
+ri_log_once(
+    int         level,
+    const char *filename,
+    int         linenum,
+    const char *message,
+    ...) 
+{
+    va_list ap;
+    
+    /* TODO: Make this MT-safe. */
+    if (g_msg_hash == NULL) {
+        g_msg_hash = ri_hash_new();
+    }
+
+    char msg[2048];
+    char *msg_buf;
+
+    va_start(ap, message);
+
+    vsnprintf(msg, 2047, message, ap);
+
+    if (ri_hash_lookup(g_msg_hash, msg) != NULL) {
+
+        /* Same log message was already printed.
+         * Discard this message.
+         */
+        return;
+
+    } else {
+
+        ri_log(level, filename, linenum, msg);
+
+        /* Cache log message string. */
+        msg_buf = strdup(msg);
+        ri_hash_insert(g_msg_hash, msg, msg_buf);
+
+    }
+
 }

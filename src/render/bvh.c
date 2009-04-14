@@ -78,7 +78,7 @@
  * BVH settings
  */
 #define BVH_MAXDEPTH          100
-#define BVH_NTRIS_LEAF          2        /* TODO: parameterize.  */
+#define BVH_NTRIS_LEAF         16        /* TODO: parameterize.  */
 #define BVH_BIN_SIZE           64
 #define BVH_MAXMISSBEAMS     1024
 

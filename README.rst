@@ -103,6 +103,6 @@ lucille is distributed under BSD3 license. See ''LICENSE'' for more information 
 Copyright
 =========
 
-2003-2203 Syoyo FUJITA( syoyo@lucillerender.org )
+2003-2203 Syoyo FUJITA( syoyofujita@gmail.com )
 
 The RenderMan(R) Interface Procedures and Protocol are: Copyright 1988, 1989, 2000 Pixar All Rights Reserved

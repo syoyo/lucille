@@ -2,7 +2,7 @@
  * The graphics state has various options that must be set bet before rendering
  * a frame. 
  *
- * $Id: option.h,v 1.6 2004/05/04 02:29:00 syoyo Exp $
+ * $Id$
  */
 
 #ifndef OPTION_H
@@ -47,9 +47,9 @@ typedef struct _ri_option_t
 	/* for ray-tracing */
 	unsigned int nfinalgather_rays;	/* number of final gather rays */
 	unsigned int narealight_rays;	/* number of sampling rays for
-					 * arealight(direct lighting)
-					 */
-	unsigned int max_ray_depth;	/* maximun nuber of tracing depth */
+					                 * arealight(direct lighting)
+					                 */
+	unsigned int max_ray_depth;	    /* maximun nuber of tracing depth */
 	int          enable_photonmapping;
 	int          enable_irradcache; /* do irradiance caching ? 	*/
 	double       irradcache_find_tolerance;
@@ -78,26 +78,29 @@ typedef struct _ri_option_t
 	int          prt_no_shadow;
 	float        prt_scale;
 
-	ri_vector_t  bgcolor;			/* background color */
-	ri_vector_t  ambcolor;			/* ambient color */
+	ri_vector_t  bgcolor;			   /* background color */
+	ri_vector_t  ambcolor;			   /* ambient color */
 
-	int          nthreads;			/* for multi-threading */
+	int          nthreads;			   /* for multi-threading */
 
-	int          use_qmc;			/* Switch to QMC sampling */
+	int          use_qmc;			   /* Switch to QMC sampling */
 
 	/* rendering algorithm used for the renderer */
 	int          render_method;
-	//int          use_mlt;			/* Metropolis Light Transport */
+	//int          use_mlt;			   /* Metropolis Light Transport */
 
-	int          pt_nsamples;		/* samples per pixel
-						 * (for Path Tracing)       */
+	int          pt_nsamples;		   /* samples per pixel
+						                * (for Path Tracing)       */
 
 	int          mlt_nsamples;
+
+    /* Used for ambient occlusion, IBL, etc */
+	int          gather_nsamples;
 
 	int          bsp_tree_depth;
 	int          kd_tree_depth;
 
-	RtFilterFunc pixel_filter;		/* pixel filter		    */
+	RtFilterFunc pixel_filter;		    /* pixel filter		        */
 	float        pixel_filter_widthx;	/* width of filter in x dir */
 	float        pixel_filter_widthy; 	/* width of filter in y dir */
 
