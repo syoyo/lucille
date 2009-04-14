@@ -55,6 +55,7 @@ instance AST Type where
     TyNormal      -> "normal"
     TyMatrix      -> "matrix"
     TyString      -> "string"
+    TyArray n aty -> pprint n aty
 
 emitOp op = case op of
   OpAdd       -> "+"
@@ -91,7 +92,7 @@ instance AST Expr where
 
     Const _ (F val)             -> show val
 
-    Const _ (S val)             -> val
+    Const _ (S val)             -> "\"" ++ val ++ "\""
 
     Var _  (SymVar name _ _ _)  -> name
 
@@ -112,18 +113,34 @@ instance AST Expr where
 
 
     Def   sym Nothing -> concat 
+
       [ indent n
-      , pprint 0 (getTyOfSym sym) ++ " " ++ (getNameOfSym sym) ++ ";\n"
+      , pprint 0 (getTyOfSym sym) ++ " " ++ (getNameOfSym sym)
+      , arrSuffix ++ ";\n"
       ]
+
+      where
+
+        arrSuffix = case getTyOfSym sym of
+          (TyArray m ty) -> "[" ++ show m ++ "]"
+          _              -> ""
 
 
     Def   sym (Just initExpr)  -> concat 
+
       [ indent n
       , pprint 0 (getTyOfSym sym) ++ " " ++ (getNameOfSym sym)
+      , arrSuffix
       , " = "
       , pprint 0 initExpr
       , ";\n"
       ]
+
+      where
+
+        arrSuffix = case getTyOfSym sym of
+          (TyArray m ty) -> "[" ++ show m ++ "]"
+          _              -> ""
 
 
     Assign _ op lexpr rexpr -> concat 
@@ -135,7 +152,7 @@ instance AST Expr where
       ]
 
 
-    Call _ (SymFunc name ty _ _) args  -> concat 
+    Call _ (SymFunc name ty _ _ _) args  -> concat 
       [ name
       , "("
       , pprintArgs args
@@ -170,6 +187,25 @@ instance AST Expr where
       , pprint 0 (exprs !! 2)
       , " )"
       ]
+
+    Array _ idxExpr expr              -> concat
+      [ pprint 0 expr
+      , "["
+      , pprint 0 idxExpr
+      , "]"
+      ]
+
+    EList exprs                           -> concat
+      [ "{"
+      , pprintEList exprs
+      , "}"
+      ]
+
+      where
+
+        pprintEList []     = ""
+        pprintEList [x]    = pprint 0 x
+        pprintEList (x:xs) = pprint 0 x ++ ", " ++ pprintEList xs
 
     Conditional _ cond thenExpr elseExpr  -> concat
       [ "( " ++ pprint 0 cond ++ " )"
@@ -253,8 +289,8 @@ instance AST FormalDecl where
 
   pprint n decl = case decl of
 
-    FormalDecl ty name Nothing    -> pprint n ty ++ " " ++ name
-    FormalDecl ty name (Just val) -> pprint n ty ++ " " ++ name
+    FormalDecl (TyArray n ty) name _    -> pprint n ty ++ " " ++ name ++ "[" ++ show n ++ "]"
+    FormalDecl ty name _    -> pprint n ty ++ " " ++ name
 
 
   pprintList n []     = ""

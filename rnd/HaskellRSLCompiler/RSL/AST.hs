@@ -56,8 +56,9 @@ data Type
   | TyPoint
   | TyNormal
   | TyMatrix
-  | TyBool            -- Internal
+  | TyBool                  -- Used internally
   | TyQualified Qual Type
+  | TyArray Int Type        -- Array type
     deriving (Show, Eq, Typeable, Data)
 
 isVectorTy :: Type -> Bool
@@ -68,6 +69,9 @@ isVectorTy ty = case ty of
   TyNormal -> True
   _        -> False
 
+data VaArgs
+  = VaArgs Int [Type]
+    deriving (Show, Eq, Typeable, Data)
 
 data StorageClass
   = Uniform
@@ -111,6 +115,7 @@ data Symbol
             Type              -- return type of the function
             [Type]            -- arguments of the function         
             [Type]            -- optional arguments
+            (Maybe String)    -- nested function has uniqe name
 
   | SymBuiltinFunc 
             String            -- name of the function
@@ -120,13 +125,13 @@ data Symbol
 
     deriving (Show, Eq, Typeable, Data)
 
-getNameOfSym (SymVar  name _ _ _) = name
-getNameOfSym (SymFunc name _ _ _) = name
-getNameOfSym (SymBuiltinFunc name _ _ _) = name
+getNameOfSym (SymVar  name _ _ _)         = name
+getNameOfSym (SymFunc name _ _ _ _)       = name
+getNameOfSym (SymBuiltinFunc name _ _ _)  = name
 
-getTyOfSym   (SymVar  _ ty _ _)   = ty
-getTyOfSym   (SymFunc _ ty _ _)   = ty
-getTyOfSym   (SymBuiltinFunc _ ty _ _)   = ty
+getTyOfSym   (SymVar  _ ty _ _)           = ty
+getTyOfSym   (SymFunc _ ty _ _ _)         = ty
+getTyOfSym   (SymBuiltinFunc _ ty _ _)    = ty
 
 getTyOfExpr :: Expr -> Type
 getTyOfExpr expr = case expr of
@@ -210,6 +215,10 @@ data Expr
                 Expr                      -- angle
                (Maybe String)             -- category
                [Expr]                     -- statement
+  | Illuminate  Expr                      -- position
+                Expr                      -- FIXME: make this optional
+                Expr                      -- FIXME: make this optional
+               [Expr]                     -- statement
 
   | Return     (Maybe Symbol)
                 Expr                      -- expr
@@ -218,7 +227,10 @@ data Expr
                 String                    -- func name
                 [FormalDecl]              -- args
                 [Expr]                    -- statement
-
+  | Array      (Maybe Symbol)
+                Expr                      -- index
+                Expr                      -- expr
+  | EList      [Expr]                     -- internal expr
   | Nil                                   -- null expr
     deriving (Show, Eq, Typeable, Data)
   

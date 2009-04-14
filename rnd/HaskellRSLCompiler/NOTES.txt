@@ -4,7 +4,7 @@ Notes
 Revision
 --------
 
- - Feb 22, 2009
+ - Mar 30, 2009
  - Jan 25, 2009.  Initial
 
 
@@ -147,3 +147,46 @@ Builtin
 -------
 
 Builtin 関数の定義をより code less にする. ベクトル型(color, vector, normal)はまとめるなど. 
+
+
+Nested function
+---------------
+
+Parse の段階でまず nested function には一意の名前を付加する.
+nested function は LLVM IR では global scope で定義することになるが、このとき名前がほかの nested function とかぶらないように.
+
+nested function をコールする expr がある場合は、そのコールを一意の関数のコールへと変換する. ::
+
+  float nested(float t) {
+    return t * t;
+  }
+
+  -> define nested.1(...)
+
+  float x = nested(3.0) -> call nested.1(...)
+
+
+配列
+----
+
+RSL は配列をサポートする.
+
+配列の initializer
+~~~~~~~~~~~~~~~~~~
+
+中括弧で配列の initializer を表現する.
+
+::
+
+  float a[4] = {1, 2, 3, 4};
+
+TODO
+----
+
+- 配列のサポート
+- pnoise, cellnoise
+- calculatenormal
+- spline
+- illuminate
+
+

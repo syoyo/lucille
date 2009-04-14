@@ -71,28 +71,30 @@ initLLVMState = LLVMState   { globals = []
 type Register = String
 
 emitTy ty = case ty of
-  TyVoid    -> "void"
-  TyInt     -> "i32"
-  TyString  -> "i8*"
-  TyFloat   -> "float"
-  TyVector  -> "<4 x float>"
-  TyColor   -> "<4 x float>"
-  TyPoint   -> "<4 x float>"
-  TyNormal  -> "<4 x float>"
-  TyMatrix  -> "<16 x float>"
-  TyBool    -> "i1"
+  TyVoid        -> "void"
+  TyInt         -> "i32"
+  TyString      -> "i8*"
+  TyFloat       -> "float"
+  TyVector      -> "<4 x float>"
+  TyColor       -> "<4 x float>"
+  TyPoint       -> "<4 x float>"
+  TyNormal      -> "<4 x float>"
+  TyMatrix      -> "<16 x float>"
+  TyBool        -> "i1"
+  TyArray n ty  -> emitTy ty ++ "*"
 
 getLLVMTySize ty = case ty of
-  TyVoid    -> 4        -- FIXME: Consider 64bit env
-  TyInt     -> 4
-  TyString  -> 4        -- FIXME: Consider 64bit env
-  TyFloat   -> 4
-  TyVector  -> 16
-  TyColor   -> 16 
-  TyPoint   -> 16
-  TyNormal  -> 16
-  TyMatrix  -> 64
-  TyBool    -> 4
+  TyVoid        -> 4        -- FIXME: Consider 64bit env
+  TyInt         -> 4
+  TyString      -> 4        -- FIXME: Consider 64bit env
+  TyFloat       -> 4
+  TyVector      -> 16
+  TyColor       -> 16 
+  TyPoint       -> 16
+  TyNormal      -> 16
+  TyMatrix      -> 64
+  TyBool        -> 4
+  TyArray _ _   -> 4        -- FIXME: Consider 64bit env
 
 class AST a where
 
@@ -638,7 +640,7 @@ instance AST Expr where
 
         tmpReg         = "%" ++ getNameOfSym dst ++ ".buf"
 
-    Call (Just dst) (SymFunc name ty _ _) args  -> concat 
+    Call (Just dst) (SymFunc name ty _ _ _) args  -> concat 
       [ gen n args
       , indent n ++ "%" ++ (getNameOfSym dst) ++ " = "
       , "call " ++ "@" ++ name ++ "()"
@@ -812,7 +814,7 @@ instance AST Expr where
         genArgs [x]    = emitTy (getTyOfExpr x) ++ " " ++ getReg x
         genArgs (x:xs) = emitTy (getTyOfExpr x) ++ " " ++ getReg x ++ ", " ++ genArgs xs
 
-    NestedFunc n resTy name decls stms  -> "; TODO: nested func\n"
+    NestedFunc n resTy name decls stms  -> ""
 
     Nil                               -> "null"
 
@@ -996,7 +998,7 @@ instance AST Expr where
 
         tmpReg         = "%" ++ getNameOfSym dst ++ ".buf"
 
-    Call (Just dst) (SymFunc name ty _ _) args  -> concat 
+    Call (Just dst) (SymFunc name ty _ _ _) args  -> concat 
       [ genStatic n args
       , indent n ++ "%" ++ (getNameOfSym dst) ++ " = "
       , "call " ++ "@" ++ name ++ "()"
@@ -1150,7 +1152,7 @@ instance AST Expr where
         genArgs [x]    = emitTy (getTyOfExpr x) ++ " " ++ getReg x
         genArgs (x:xs) = emitTy (getTyOfExpr x) ++ " " ++ getReg x ++ ", " ++ genArgs xs
 
-    NestedFunc n resTy name decls stms  -> "; TODO: nested func\n"
+    NestedFunc n resTy name decls stms  -> ""
 
     Nil                               -> "null"
 
@@ -1333,7 +1335,7 @@ instance AST Expr where
 
         tmpReg         = "%" ++ getNameOfSym dst ++ ".buf"
 
-    Call (Just dst) (SymFunc name ty _ _) args  -> concat 
+    Call (Just dst) (SymFunc name ty _ _ _) args  -> concat 
       [ genDynamic n args
       , indent n ++ "%" ++ (getNameOfSym dst) ++ " = "
       , "call " ++ "@" ++ name ++ "()"
@@ -1487,7 +1489,7 @@ instance AST Expr where
         genArgs [x]    = emitTy (getTyOfExpr x) ++ " " ++ getReg x
         genArgs (x:xs) = emitTy (getTyOfExpr x) ++ " " ++ getReg x ++ ", " ++ genArgs xs
 
-    NestedFunc n resTy name decls stms  -> "; TODO: nested func\n"
+    NestedFunc n resTy name decls stms  -> ""
 
     Nil                               -> "null"
 

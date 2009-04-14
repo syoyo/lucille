@@ -29,18 +29,30 @@ import RSL.Sema
 import RSL.Typer
 
 -- | RSL parser state
-data RSLState = RSLState  { symbolTable :: SymbolTable }
+data RSLState = RSLState  { symbolTable :: SymbolTable
+                          , n           :: Int
+                          }
+
 
 
 -- | RSL parser having RSL parser state
 type RSLParser a = GenParser Char RSLState a 
 
+-- getUniqueID :: RSLState -> Int
+-- getUniqueID = do    { st <- get
+--                     ; let n' = (n st) + 1
+--                     ; let st' = (symbolTable st)
+--                     ; -- put RSLState { symbolTable = st', n = n' }
+--                     ; return n'
+--                     } 
 
 -- | Initial state of shader env.
 --   Builtin variables are added in global scope.
 initRSLState :: RSLState
 initRSLState = RSLState {
-  symbolTable = [("global", builtinShaderVariables ++ builtinShaderFunctions)] }
+    symbolTable = [("global", builtinShaderVariables ++ builtinShaderFunctions)]
+  , n           = 0
+  }
   
 
 -- | Push scope into the symbol table
@@ -74,6 +86,21 @@ addSymbol sym st = trace ("// Add " ++ (show sym)) $
       newTable = case (symbolTable st) of
         [(scope, xs)]     -> [(scope, [sym] ++ xs)]
         ((scope, xs):xxs) -> [(scope, [sym] ++ xs)] ++ xxs
+
+--
+-- Make function symbol.
+--
+mkFunSym :: String -> Type -> [Type] -> Symbol
+mkFunSym name resTy argTys = SymFunc name resTy argTys [] Nothing
+
+
+extractTysFromDecls :: [FormalDecl] -> [Type]
+extractTysFromDecls decls = map extractTy decls
+
+  where
+
+    extractTy :: FormalDecl -> Type
+    extractTy (FormalDecl ty _ _) = ty
 
 --
 -- Topmost parsing rule
@@ -128,6 +155,21 @@ functionDefinition    = do  { ty    <- option (TyVoid) rslType
                             ; return (UserFunc ty name)
                             }
 
+-- '[' int? ']'
+arraySuffix          :: RSLParser (Maybe Int)
+arraySuffix          =  do  { symbol "["
+                            ; n <- option (-1) natural
+                            ; symbol "]"
+                            ; return (Just (fromIntegral n))
+                            }
+
+-- '{' sepBy expr ',' '}'
+arrayInitExpr        :: RSLParser Expr
+arrayInitExpr        =  do  { symbol "{"
+                            ; es <- sepBy expr (symbol ",")
+                            ; symbol "}"
+                            ; return (EList es)
+                            }
 --
 -- TODO: support multiple var def, e.g., float ka = 1, kb = 1;
 -- 
@@ -137,8 +179,9 @@ formalDecls           = do  { decls <- sepEndBy formalDecl (symbol ";")
                       <?> "formal declarations"
 
 formalDef             = do  { name  <- identifier
+                            ; arr   <- option Nothing arraySuffix
                             ; expr  <- maybeInitFormalDeclExpr
-                            ; return (name, expr)
+                            ; return (name, expr, arr)
                             }
 
 formalDecl            = do  { sc    <- option Nothing maybeRSLStorageClass
@@ -151,10 +194,13 @@ formalDecl            = do  { sc    <- option Nothing maybeRSLStorageClass
                             where
                       
                               -- float a, b, c -> [float a, float b, float c]
-                              genSyms ty [(name, expr)]   = [(SymVar name ty Uniform KindFormalVariable)]
-                              genSyms ty ((name, expr):x) = [(SymVar name ty Uniform KindFormalVariable)] ++ genSyms ty x
-                              genDecls ty [(name, expr)]   = [(FormalDecl ty name expr)]
-                              genDecls ty ((name, expr):x) = [(FormalDecl ty name expr)] ++ genDecls ty x
+                              genSyms ty [(name, expr, arr)]   = [(SymVar name (mkTy ty arr) Uniform KindFormalVariable)]
+                              genSyms ty ((name, expr, arr):x) = [(SymVar name (mkTy ty arr) Uniform KindFormalVariable)] ++ genSyms ty x
+                              genDecls ty [(name, expr, arr)]   = [(FormalDecl (mkTy ty arr) name expr)]
+                              genDecls ty ((name, expr, arr):x) = [(FormalDecl (mkTy ty arr) name expr)] ++ genDecls ty x
+
+                              mkTy baseTy (Just n) = TyArray n baseTy
+                              mkTy baseTy Nothing  = baseTy
 
 statements            =  do { stms <- many statement    -- [[]]
                             ; return $ concat stms      -- []
@@ -168,6 +214,7 @@ statement             =   try varDefsStmt
                       <|> do { stm <- whileStmt       ; return [stm] }
                       <|> do { stm <- forStmt         ; return [stm] }
                       <|> do { stm <- illuminanceStmt ; return [stm] }
+                      <|> do { stm <- illuminateStmt   ; return [stm] }
                       <|> do { stm <- ifStmt          ; return [stm] }
                       <|> do { stm <- returnStmt      ; return [stm] }
                       <|> do { p <- preprocessor      ; return []    }
@@ -190,6 +237,9 @@ nestedFunction  = do  { resTy   <- rslType
 
                       ; updateState (popScope)          -- pop scope
 
+                      -- Register nested function to the current scope.
+                      ; updateState (addSymbol $ mkFunSym name resTy (extractTysFromDecls decls))
+                      
                       ; return (NestedFunc 0 resTy name decls stms)
                       }
                       <?> "nested function definition"
@@ -203,15 +253,18 @@ exprStmt = do { e <- expr
 -- | Variable definition
 --
 varDef                = do  { name  <- identifier
-                            ; expr  <- maybeInitExpr
-                            ; return (name, expr)
+                            ; arr   <- option Nothing arraySuffix
+                            ; expr  <- if arr == Nothing then maybeInitExpr
+                                                         else maybeArrayInitExpr
+                            ; return (name, expr, arr)
                             }
 
 --
 -- | External variable definition
 --
 externVarDef          = do  { sym  <- definedSym  <?> "extern variable"
-                            ; return (getNameOfSym sym, Nothing)
+                            ; arr  <- option Nothing arraySuffix
+                            ; return (getNameOfSym sym, Nothing, arr)
                             }
                       <?> "extern variable"
 
@@ -242,10 +295,13 @@ varDefsStmt           = do  { es    <- option Nothing maybeExternSpec
                             where
 
                               -- float a, b, c -> [float a, float b, float c]
-                              genSyms es ty [(name, expr)]   = [(SymVar name ty Varying (kind es))]
-                              genSyms es ty ((name, expr):x) = [(SymVar name ty Varying (kind es))] ++ genSyms es ty x
-                              genDefs es ty [(name, expr)]   = [(Def (SymVar name ty Varying (kind es)) expr)]
-                              genDefs es ty ((name, expr):x) = [(Def (SymVar name ty Varying (kind es)) expr)] ++ genDefs es ty x
+                              genSyms es ty [(name, expr, arr)]   = [(SymVar name (mkTy ty arr) Varying (kind es))]
+                              genSyms es ty ((name, expr, arr):x) = [(SymVar name (mkTy ty arr) Varying (kind es))] ++ genSyms es ty x
+                              genDefs es ty [(name, expr, arr)]   = [(Def (SymVar name (mkTy ty arr) Varying (kind es)) expr)]
+                              genDefs es ty ((name, expr, arr):x) = [(Def (SymVar name (mkTy ty arr) Varying (kind es)) expr)] ++ genDefs es ty x
+
+                              mkTy baseTy (Just n) = TyArray n baseTy
+                              mkTy baseTy Nothing  = baseTy
 
                               kind s = case s of
                                 (Just KindExternalVariable) -> KindExternalVariable
@@ -335,8 +391,9 @@ returnStmt            = do  { reserved "return"
                             ; return (Return Nothing e)
                             }
                       <?> "return statement"
+
 --
--- Illuminate statement
+-- Illuminance statement
 -- TODO: Parse optional "category" field.
 --
 -- [13.3]
@@ -361,6 +418,33 @@ illuminanceStmt       = do  { reserved "illuminance"
                             ; symbol "}"
                             ; optional (symbol ";")
                             ; return (Illuminance pos normal angle Nothing stms)
+                            }
+
+--
+-- Illuminate statement
+--
+-- [13.3]
+--
+-- illuminate( point position )
+--     statements
+--
+-- illuminate( point position, vector axis, float angle )
+--     statements
+--
+--
+illuminateStmt        = do  { reserved "illuminate"
+                            ; symbol "("
+                            ; pos     <- expr -- TODO: allow vector expr only
+                            ; symbol ","
+                            ; normal  <- expr -- TODO: allow vector expr only
+                            ; symbol ","
+                            ; angle   <- expr -- TODO: allow float expr only
+                            ; symbol ")"
+                            ; symbol "{"      -- TODO: brace could be optional.
+                            ; stms <- statements
+                            ; symbol "}"
+                            ; optional (symbol ";")
+                            ; return (Illuminate pos normal angle stms)
                             }
 --
 -- Expression
@@ -434,9 +518,9 @@ maybeDefinedInScope (scope, syms) name = scan syms
                     where
         
                       symName = case x of
-                        (SymVar         name _ _ _ ) -> name
-                        (SymFunc        name _ _ _ ) -> name
-                        (SymBuiltinFunc name _ _ _ ) -> name
+                        (SymVar         name _ _ _  ) -> name
+                        (SymFunc        name _ _ _ _) -> name
+                        (SymBuiltinFunc name _ _ _  ) -> name
 
 
 maybeDefinedInScopeChain :: SymbolTable -> String -> (Maybe Symbol)
@@ -473,17 +557,27 @@ definedFunc         = do  { state <- getState
                           ; name  <- try identifier
                           ; case (maybeDefined (symbolTable state) name) of
                               (Just sym@(SymBuiltinFunc _ _ _ _ )) -> return sym
-                              (Just sym@(SymFunc _ _ _ _ ))        -> return sym
+                              (Just sym@(SymFunc _ _ _ _ _ ))      -> return sym
                               _                                    -> unexpected ("undefined symbol " ++ show name)
                           } 
                     <?> "defined symbol"
 
 
+-- "[" expr "]"
+arrExpr     :: RSLParser (Maybe Expr)
+arrExpr     =  do   { symbol "[" 
+                    ; e <- expr
+                    ; symbol "]"
+                    ; return (Just e)
+                    }
 --
 -- | Expecting identifier and its defined previously.
 --
 varRef      =   do  { var <- definedSym
-                    ; return (Var Nothing var)
+                    ; arr <- option Nothing arrExpr
+                    ; case arr of
+                        Nothing   -> return (Var Nothing var)
+                        (Just e)  -> return (Array Nothing e (Var Nothing var))
                     }
             <?> "defined symbol"
 
@@ -551,6 +645,12 @@ number                  = do  { val <- parseFloat
 maybeInitExpr           = do  { symbol "="
                               ; e <- expr
                               ; return (Just e)
+                              }
+                        <|>   return Nothing
+
+maybeArrayInitExpr      = do  { symbol "="
+                              ; es <- arrayInitExpr
+                              ; return (Just es)
                               }
                         <|>   return Nothing
                                

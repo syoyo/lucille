@@ -274,6 +274,20 @@ instance Typer Expr where
           ; return (NestedFunc uniqID resTy name decls stms')
           }
 
+    Array _ idxExpr expr ->
+      do  { idxExpr'  <- typing idxExpr
+          ; expr'     <- typing expr
+          ; tmpName   <- getUniqueName
+          ; let ty    = getTyOfExpr expr'
+          ; let sym = (SymVar tmpName ty Uniform KindVariable)
+          ; return (Array (Just sym) idxExpr' expr')
+          }
+
+    EList exprs          ->
+      do  { exprs'    <- mapM typing exprs
+          ; return (EList exprs')
+          }
+
     _ -> error $ "Typing: TODO: " ++ (show e)
   
 instance Typer Func where
