@@ -1650,6 +1650,14 @@ instance AST Func where
       , "\n}\n"
       ]
 
+    -- TODO
+    UserFunc ty name -> concat
+      [ "defined void "
+      , "@" ++ name
+      , "("
+      , ") {}\n"
+      ]
+
     Preprocessor s -> ""
 
   genStatic n f = case f of
@@ -1664,6 +1672,14 @@ instance AST Func where
       , genStatic (n+1) stms
       , "\n" ++ indent (n+1) ++ "ret void;\n"
       , "\n}\n"
+      ]
+
+    -- TODO
+    UserFunc ty name -> concat
+      [ "defined void "
+      , "@" ++ name
+      , "("
+      , ") {}\n"
       ]
 
     Preprocessor s -> ""
@@ -1681,6 +1697,15 @@ instance AST Func where
       , "\n" ++ indent (n+1) ++ "ret void;\n"
       , "\n}\n"
       ]
+
+    -- TODO
+    UserFunc ty name -> concat
+      [ "defined void "
+      , "@" ++ name
+      , "("
+      , ") {}\n"
+      ]
+
 
     Preprocessor s -> ""
 
@@ -1703,6 +1728,15 @@ instance AST Func where
       , genGlobal stms
       , "\n"
       ]
+
+    -- TODO
+    UserFunc ty name -> concat
+      [ "defined void "
+      , "@" ++ name
+      , "("
+      , ") {}\n"
+      ]
+
 
     Preprocessor s -> ""
   

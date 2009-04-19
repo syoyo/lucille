@@ -123,7 +123,7 @@ forceCast e0 e1 = case (getTyOfExpr e0, getTyOfExpr e1) of
   (TyNormal, _      ) -> do {                                return (e0 , e1 ) }
   (TyColor , _      ) -> do {                                return (e0 , e1 ) }
   (TyBool  , TyBool ) -> do {                                return (e0 , e1 ) }
-  _                   -> error $ "[Typer] forceCast: TODO: " ++ show e0 ++ " , " ++ show e1
+  _                   -> error $ "[Typer] forceCast: TODO: " ++ "\n\tty0: " ++ show (getTyOfExpr e0) ++ ":" ++ show e0 ++ " , " ++ "\n\tty1: " ++ show (getTyOfExpr e1) ++ show e1
 
 typeBinOp :: Op -> Expr -> Type
 typeBinOp op expr = case op of
@@ -290,12 +290,19 @@ instance Typer Expr where
 
     _ -> error $ "Typing: TODO: " ++ (show e)
   
+
 instance Typer Func where
+
   typing f = case f of
+
     ShaderFunc ty name decls stms ->
       do { stms' <- mapM typing stms
          ; return (ShaderFunc ty name decls stms') }
-    Preprocessor s ->
+
+    UserFunc   ty name            ->
+      do { return (UserFunc ty name) }
+      
+    Preprocessor s                ->
       do { return (Preprocessor s) }
     
 

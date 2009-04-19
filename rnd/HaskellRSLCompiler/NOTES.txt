@@ -4,7 +4,7 @@ Notes
 Revision
 --------
 
- - Mar 30, 2009
+ - Apr 17, 2009
  - Jan 25, 2009.  Initial
 
 
@@ -180,6 +180,31 @@ RSL は配列をサポートする.
 
   float a[4] = {1, 2, 3, 4};
 
+左値としての配列
+~~~~~~~~~~~~~~~~
+
+左値に配列アクセスが出現する場合は配列の特定位置への代入とみなす.
+
+
+::
+
+  float a[4];
+
+  a[0] = 1.0;
+
+右値に配列アクセスが出現する場合は配列のリードとみなす.
+
+::
+
+  float a[4];
+
+  float m = a[2];
+
+
+両方を表現するための最適な AST 表現はなんだろうか?
+
+LArrayRef, RArrayRef と分けるか, どちらも ArrayRef として表現するか?
+
 TODO
 ----
 
@@ -188,5 +213,4 @@ TODO
 - calculatenormal
 - spline
 - illuminate
-
 

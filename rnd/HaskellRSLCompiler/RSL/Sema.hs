@@ -17,7 +17,11 @@
  
  List of builtin varibles and functions based on RI spec 3.2
 
+ TODO: - Support "output" spec
+       - Support array type
 -}
+
+
 
 module RSL.Sema where
 
@@ -111,8 +115,26 @@ builtinShaderFunctions =
   , (SymBuiltinFunc "round"          f [f]       Nothing)
   , (SymBuiltinFunc "step"           f [f, f]    Nothing)
   , (SymBuiltinFunc "smoothstep"     f [f, f, f] Nothing)
-  , (SymBuiltinFunc "spline"         f [f]       (Just f))
-  -- TODO...
+  , (SymBuiltinFunc "filterstep"     f [f, f, f] Nothing)
+  -- TODO: filterstep(f, f, parameterlist)
+  -- TODO: filterstep(f, f, f, parameterlist)
+  , (SymBuiltinFunc "spline"         f [f, f, f] (Just f))
+  , (SymBuiltinFunc "spline"         c [f, c, c] (Just c))
+  , (SymBuiltinFunc "spline"         p [f, p, p] (Just p))
+  , (SymBuiltinFunc "spline"         v [f, v, v] (Just v))
+  -- TODO: support spline(f, f[]), spline([string basis], ...)
+  , (SymBuiltinFunc "Du"             f [f]       Nothing) 
+  , (SymBuiltinFunc "Du"             c [c]       Nothing) 
+  , (SymBuiltinFunc "Du"             v [p]       Nothing) 
+  , (SymBuiltinFunc "Du"             v [v]       Nothing) 
+  , (SymBuiltinFunc "Dv"             f [f]       Nothing) 
+  , (SymBuiltinFunc "Dv"             c [c]       Nothing) 
+  , (SymBuiltinFunc "Dv"             v [p]       Nothing) 
+  , (SymBuiltinFunc "Dv"             v [v]       Nothing) 
+  , (SymBuiltinFunc "Deriv"          f [f, f]    Nothing) 
+  , (SymBuiltinFunc "Deriv"          c [c, f]    Nothing) 
+  , (SymBuiltinFunc "Deriv"          p [p, f]    Nothing) 
+  , (SymBuiltinFunc "Deriv"          v [v, f]    Nothing) 
   , (SymBuiltinFunc "random"         f []        Nothing)
   , (SymBuiltinFunc "random"         c []        Nothing)
   , (SymBuiltinFunc "random"         p []        Nothing)
@@ -155,6 +177,7 @@ builtinShaderFunctions =
   , (SymBuiltinFunc "cellnoise"      v [p, f]    Nothing)
 
   -- [15.2] Geometric Functions
+  --
   , (SymBuiltinFunc "xcomp"          f [v]       Nothing)
   , (SymBuiltinFunc "xcomp"          f [p]       Nothing)
   , (SymBuiltinFunc "xcomp"          f [n]       Nothing)
@@ -208,18 +231,6 @@ builtinShaderFunctions =
   -- , (SymBuiltinFunc "setcomp"        void [c, f, f]    []) 
   , (SymBuiltinFunc "mix"            c [c, c, f] Nothing) 
 
-  , (SymBuiltinFunc "Du"             f [f]       Nothing) 
-  , (SymBuiltinFunc "Du"             c [c]       Nothing) 
-  , (SymBuiltinFunc "Du"             v [p]       Nothing) 
-  , (SymBuiltinFunc "Du"             v [v]       Nothing) 
-  , (SymBuiltinFunc "Dv"             f [f]       Nothing) 
-  , (SymBuiltinFunc "Dv"             c [c]       Nothing) 
-  , (SymBuiltinFunc "Dv"             v [p]       Nothing) 
-  , (SymBuiltinFunc "Dv"             v [v]       Nothing) 
-  , (SymBuiltinFunc "Deriv"          f [f, f]    Nothing) 
-  , (SymBuiltinFunc "Deriv"          c [c, f]    Nothing) 
-  , (SymBuiltinFunc "Deriv"          p [p, f]    Nothing) 
-  , (SymBuiltinFunc "Deriv"          v [v, f]    Nothing) 
 
   -- [15.5] String Functions
   --

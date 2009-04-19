@@ -311,5 +311,13 @@ instance AST Func where
       , "\n}\n"
       ]
 
+    UserFunc ty name -> concat 
+      [ pprint n ty
+      , " " ++ name
+      , "( /* TODO */"
+      , ") {\n"
+      , "    /* TODO */\n}\n"
+      ]
+
     Preprocessor s -> ""
 

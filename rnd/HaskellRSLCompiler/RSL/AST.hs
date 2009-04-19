@@ -139,6 +139,7 @@ getTyOfExpr expr = case expr of
   Const (Just sym) _              -> getTyOfSym sym
   TypeCast (Just sym) _ _ _       -> getTyOfSym sym
   Var   (Just sym) _              -> getTyOfSym sym
+  Array (Just sym) _ _            -> getTyOfSym sym
   UnaryOp (Just sym) _ _          -> getTyOfSym sym
   BinOp (Just sym) _ _ _          -> getTyOfSym sym
   Call (Just sym) _ _             -> getTyOfSym sym

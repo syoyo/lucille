@@ -140,7 +140,7 @@ shaderDefinition      = do  { ty    <- shaderType
 functionDefinition    = do  { ty    <- option (TyVoid) funType
                             ; name  <- identifier
                             ; symbol "("
-                            ; formals <- formalDecls
+                            ; decls <- formalDecls
                             ; symbol ")"
                             ; symbol "{"
                             -- push scope
@@ -151,6 +151,9 @@ functionDefinition    = do  { ty    <- option (TyVoid) funType
 
                             -- pop scope
                             ; updateState (popScope)
+
+                            -- Add user function to global scope.
+                            ; updateState (addSymbol $ mkFunSym name ty (extractTysFromDecls decls))
 
                             ; return (UserFunc ty name)
                             }
