@@ -37,6 +37,14 @@ getUniqueID = do    { n <- get
                     ; return n'
                     } 
 
+tyRank ty = case ty of
+  TyFloat  -> 1
+  TyVector -> 2
+  TyNormal -> 2
+  TyPoint  -> 2
+  TyColor  -> 2   -- Should be 3?
+  TyMatrix -> 4
+
 class Typer a where
   typing :: a -> TyperState a
 
@@ -57,20 +65,20 @@ getArgumentTypeSignature exprs = map getTyOfExpr exprs
 
 insertItoF :: Expr -> TyperState Expr
 insertItoF expr      = do { tmpName <- getUniqueName
-                          ; let sym = (SymVar tmpName TyFloat Uniform KindVariable)
+                          ; let sym = (SymVar tmpName TyFloat Nothing Uniform KindVariable)
                           ; return (TypeCast (Just sym) TyFloat "" expr)
                           }
 
 insertFtoV :: Type -> Expr -> TyperState Expr
 insertFtoV toTy expr = do { tmpName <- getUniqueName
-                          ; let sym = (SymVar tmpName toTy Uniform KindVariable)
+                          ; let sym = (SymVar tmpName toTy Nothing Uniform KindVariable)
                           ; return (TypeCast (Just sym) toTy "" expr)
                           }
 
 -- Extract first element of the vector variable.
 insertVtoF ::  Expr -> TyperState Expr
 insertVtoF expr = do { tmpName <- getUniqueName
-                     ; let sym = (SymVar tmpName TyFloat Uniform KindVariable)
+                     ; let sym = (SymVar tmpName TyFloat Nothing Uniform KindVariable)
                      ; return (TypeCast (Just sym) TyFloat "" expr)
                      }
 --
@@ -142,31 +150,31 @@ instance Typer Expr where
     Var _ sym ->
       do { tmpName <- getUniqueName
          ; let ty = getTyOfSym sym
-         ; return (Var (Just (SymVar tmpName ty Uniform KindVariable)) sym)
+         ; return (Var (Just (SymVar tmpName ty Nothing Uniform KindVariable)) sym)
          }
 
     Const _ (F fval) ->
       do { tmpName <- getUniqueName
-         ; return (Const (Just (SymVar tmpName TyFloat Uniform KindVariable)) (F fval))
+         ; return (Const (Just (SymVar tmpName TyFloat Nothing Uniform KindVariable)) (F fval))
          }
 
     Const _ (S sval) ->
       do { tmpName <- getUniqueName
-         ; return (Const (Just (SymVar tmpName TyString Uniform KindVariable)) (S sval))
+         ; return (Const (Just (SymVar tmpName TyString Nothing Uniform KindVariable)) (S sval))
          }
 
     TypeCast _ toTy space e ->
       do { e' <- typing e
          ; tmpName <- getUniqueName
          -- If toTy and Ty(e') has same type, no need for type casting.
-         ; if toTy == (getTyOfExpr e') then return e' else return (TypeCast (Just (SymVar tmpName toTy Uniform KindVariable)) toTy space e')
+         ; if toTy == (getTyOfExpr e') then return e' else return (TypeCast (Just (SymVar tmpName toTy Nothing Uniform KindVariable)) toTy space e')
          }
 
     UnaryOp _ op e ->
       do  { e' <- typing e
           ; tmpName <- getUniqueName
           ; let ty  = getTyOfExpr e'
-          ; let sym = (SymVar tmpName ty Uniform KindVariable)
+          ; let sym = (SymVar tmpName ty Nothing Uniform KindVariable)
           ; return (UnaryOp (Just sym) op e')
           }
     
@@ -176,7 +184,7 @@ instance Typer Expr where
           ; (e0'', e1'') <- upcastBinary e0' e1'
           ; tmpName <- getUniqueName
           ; let ty  = typeBinOp op e0''
-          ; let sym = (SymVar tmpName ty Uniform KindVariable)
+          ; let sym = (SymVar tmpName ty Nothing Uniform KindVariable)
           ; return (BinOp (Just sym) op e0'' e1'')
 
           }
@@ -193,7 +201,7 @@ instance Typer Expr where
           ; tmpName <- getUniqueName
           ; case getReturnTypeOfFuncWithArgumentSignature (getNameOfSym sym) (getArgumentTypeSignature exprs') of
               Nothing       -> error $ "[Typer] TODO: " ++ (show e)
-              (Just funSym) -> let sym' = (SymVar tmpName (getTyOfSym funSym) Uniform KindVariable) in
+              (Just funSym) -> let sym' = (SymVar tmpName (getTyOfSym funSym) Nothing Uniform KindVariable) in
                                return (Call (Just sym') funSym exprs')  -- rewrite sym with funSym
           }
 
@@ -209,7 +217,7 @@ instance Typer Expr where
       do  { stmt'   <- mapM typing stmt
           ; tmpName <- getUniqueName
           ; let ty   = TyVector           -- always vector value
-          ; let sym = (SymVar tmpName ty Uniform KindVariable)
+          ; let sym = (SymVar tmpName ty Nothing Uniform KindVariable)
           ; return (Triple (Just sym) stmt')       -- TODO: check len(stmt) == 3.
           }
 
@@ -220,7 +228,7 @@ instance Typer Expr where
           ; elseExpr' <- typing elseExpr
           ; tmpName   <- getUniqueName
           ; let ty  = getTyOfExpr cond'
-          ; let sym = (SymVar tmpName ty Uniform KindVariable)
+          ; let sym = (SymVar tmpName ty Nothing Uniform KindVariable)
           ; return (Conditional (Just sym) cond' thenExpr' elseExpr')
           }
 
@@ -264,7 +272,7 @@ instance Typer Expr where
       do  { expr'   <- typing expr
           ; tmpName <- getUniqueName
           ; let ty  = getTyOfExpr expr'
-          ; let sym = (SymVar tmpName ty Uniform KindVariable)
+          ; let sym = (SymVar tmpName ty Nothing Uniform KindVariable)
           ; return (Return (Just sym) expr')
           }
 
@@ -279,7 +287,7 @@ instance Typer Expr where
           ; expr'     <- typing expr
           ; tmpName   <- getUniqueName
           ; let ty    = getTyOfExpr expr'
-          ; let sym = (SymVar tmpName ty Uniform KindVariable)
+          ; let sym = (SymVar tmpName ty Nothing Uniform KindVariable)
           ; return (Array (Just sym) idxExpr' expr')
           }
 

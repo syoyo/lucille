@@ -90,20 +90,20 @@ instance AST Expr where
       , " )"
       ]
 
-    Const _ (F val)             -> show val
+    Const _ (F val)               -> show val
 
-    Const _ (S val)             -> "\"" ++ val ++ "\""
+    Const _ (S val)               -> "\"" ++ val ++ "\""
 
-    Var _  (SymVar name _ _ _)  -> name
+    Var _  (SymVar name _ _ _ _)  -> name
 
-    UnaryOp _ op expr           -> concat
+    UnaryOp _ op expr             -> concat
       [ "( "
       , emitOp op ++ " "
       , pprint 0 expr
       , " )"
       ]
 
-    BinOp _ op e0 e1            -> concat
+    BinOp _ op e0 e1              -> concat
       [ "( "
       , pprint 0 e0 -- left
       , " " ++ emitOp op ++ " "
@@ -289,8 +289,8 @@ instance AST FormalDecl where
 
   pprint n decl = case decl of
 
-    FormalDecl (TyArray n ty) name _    -> pprint n ty ++ " " ++ name ++ "[" ++ show n ++ "]"
-    FormalDecl ty name _    -> pprint n ty ++ " " ++ name
+    FormalDecl (TyArray n ty) _ name _  -> pprint n ty ++ " " ++ name ++ "[" ++ show n ++ "]"
+    FormalDecl ty _ name _              -> pprint n ty ++ " " ++ name
 
 
   pprintList n []     = ""

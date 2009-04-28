@@ -100,7 +100,7 @@ extractTysFromDecls decls = map extractTy decls
   where
 
     extractTy :: FormalDecl -> Type
-    extractTy (FormalDecl ty _ _) = ty
+    extractTy (FormalDecl ty _ _ _) = ty
 
 --
 -- Topmost parsing rule
@@ -187,21 +187,21 @@ formalDef             = do  { name  <- identifier
                             ; return (name, expr, arr)
                             }
 
-formalDecl            = do  { q     <- option NoQual qual
+formalDecl            = do  { qs    <- option Nothing maybeOutputSpec
                             ; sc    <- option Nothing maybeRSLStorageClass
                             ; ty    <- rslType
                             ; defs  <- sepBy1 formalDef (symbol ",")
-                            ; mapM (updateState . addSymbol) (genSyms ty defs)
-                            ; return (genDecls ty defs)
+                            ; mapM (updateState . addSymbol) (genSyms ty qs defs)
+                            ; return (genDecls ty qs defs)
                             }
 
                             where
                       
                               -- float a, b, c -> [float a, float b, float c]
-                              genSyms ty [(name, expr, arr)]   = [(SymVar name (mkTy ty arr) Uniform KindFormalVariable)]
-                              genSyms ty ((name, expr, arr):x) = [(SymVar name (mkTy ty arr) Uniform KindFormalVariable)] ++ genSyms ty x
-                              genDecls ty [(name, expr, arr)]   = [(FormalDecl (mkTy ty arr) name expr)]
-                              genDecls ty ((name, expr, arr):x) = [(FormalDecl (mkTy ty arr) name expr)] ++ genDecls ty x
+                              genSyms ty qs [(name, expr, arr)]   = [(SymVar name (mkTy ty arr) qs Uniform KindFormalVariable)]
+                              genSyms ty qs ((name, expr, arr):x) = [(SymVar name (mkTy ty arr) qs Uniform KindFormalVariable)] ++ genSyms ty qs x
+                              genDecls ty qs [(name, expr, arr)]   = [(FormalDecl (mkTy ty arr) qs name expr)]
+                              genDecls ty qs ((name, expr, arr):x) = [(FormalDecl (mkTy ty arr) qs name expr)] ++ genDecls ty qs x
 
                               mkTy baseTy (Just n) = TyArray n baseTy
                               mkTy baseTy Nothing  = baseTy
@@ -288,21 +288,22 @@ externVarDef          = do  { sym  <- definedSym  <?> "extern variable"
 -- elsewhere.
 --
 varDefsStmt           = do  { es    <- option Nothing maybeExternSpec
+                            ; os    <- option Nothing maybeOutputSpec
                             ; sc    <- option Nothing maybeRSLStorageClass
                             ; ty    <- rslType
                             ; defs  <- sepBy1 (def es) (symbol ",")
                             ; symbol ";"
-                            ; mapM (updateState . addSymbol) (genSyms es ty defs)
-                            ; return (genDefs es ty defs)
+                            ; mapM (updateState . addSymbol) (genSyms es ty os defs)
+                            ; return (genDefs es ty os defs)
                             }
 
                             where
 
                               -- float a, b, c -> [float a, float b, float c]
-                              genSyms es ty [(name, expr, arr)]   = [(SymVar name (mkTy ty arr) Varying (kind es))]
-                              genSyms es ty ((name, expr, arr):x) = [(SymVar name (mkTy ty arr) Varying (kind es))] ++ genSyms es ty x
-                              genDefs es ty [(name, expr, arr)]   = [(Def (SymVar name (mkTy ty arr) Varying (kind es)) expr)]
-                              genDefs es ty ((name, expr, arr):x) = [(Def (SymVar name (mkTy ty arr) Varying (kind es)) expr)] ++ genDefs es ty x
+                              genSyms es ty os [(name, expr, arr)]   = [(SymVar name (mkTy ty arr) os Varying (kind es))]
+                              genSyms es ty os ((name, expr, arr):x) = [(SymVar name (mkTy ty arr) os Varying (kind es))] ++ genSyms es ty os x
+                              genDefs es ty os [(name, expr, arr)]   = [(Def (SymVar name (mkTy ty arr) os Varying (kind es)) expr)]
+                              genDefs es ty os ((name, expr, arr):x) = [(Def (SymVar name (mkTy ty arr) os Varying (kind es)) expr)] ++ genDefs es ty os x
 
                               mkTy baseTy (Just n) = TyArray n baseTy
                               mkTy baseTy Nothing  = baseTy
@@ -522,9 +523,9 @@ maybeDefinedInScope (scope, syms) name = scan syms
                     where
         
                       symName = case x of
-                        (SymVar         name _ _ _  ) -> name
-                        (SymFunc        name _ _ _ _) -> name
-                        (SymBuiltinFunc name _ _ _  ) -> name
+                        (SymVar         name _ _ _ _  ) -> name
+                        (SymFunc        name _ _ _ _  ) -> name
+                        (SymBuiltinFunc name _ _ _    ) -> name
 
 
 maybeDefinedInScopeChain :: SymbolTable -> String -> (Maybe Symbol)
@@ -552,7 +553,7 @@ maybeDefined table name = maybeDefinedInScopeChain table name
 definedSym          = do  { state <- getState
                           ; name  <- try identifier
                           ; case (maybeDefined (symbolTable state) name) of
-                              (Just sym@(SymVar _ _ _ _ )) -> return sym
+                              (Just sym@(SymVar _ _ _ _ _ )) -> return sym
                               _    -> unexpected ("undefined symbol " ++ show name)
                           } 
                       <?> "defined symbol"
@@ -666,7 +667,7 @@ maybeInitFormalDeclExpr = do  { symbol "="
                         <|>   return Nothing
                                
 
-qual                    =   (reserved "output"        >> return Output      )
+outputSpec              =   (reserved "output"        >> return OutputSpec  )
                        
 shaderType              =   (reserved "light"         >> return Light       )
                         <|> (reserved "surface"       >> return Surface     )
@@ -694,6 +695,10 @@ rslStorageClass         =   (reserved "uniform"       >> return Uniform     )
 
 externSpec              =   (reserved "extern"        >> return KindExternalVariable)
                         <?> "external spec"
+
+maybeOutputSpec         = do  { os <- outputSpec
+                              ; return (Just os)
+                              }
 
 maybeRSLStorageClass    = do  { sc <- rslStorageClass
                               ; return (Just sc)

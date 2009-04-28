@@ -40,10 +40,8 @@ data Op
   | OpDivAssign -- /=
     deriving (Show, Eq, Typeable, Data)
 
--- | Type qualifier
-data Qual
-  = Output
-  | NoQual
+-- | Output type specifier
+data OutputSpec = OutputSpec
     deriving (Show, Eq, Typeable, Data) 
   
 data Type
@@ -58,7 +56,7 @@ data Type
   | TyNormal
   | TyMatrix
   | TyBool                  -- Used internally
-  | TyQualified Qual Type
+  -- | TyQualified Qual Type
   | TyArray Int Type        -- Array type
     deriving (Show, Eq, Typeable, Data)
 
@@ -107,30 +105,31 @@ data Kind
 
 
 data Symbol
-  = SymVar  String            -- name of the symbol
-            Type              -- type of the symbol
-            StorageClass      -- storage class of the symbol
-            Kind              -- kind of the symbol
+  = SymVar  String              -- name of the symbol
+            Type                -- type of the symbol
+            (Maybe OutputSpec)  -- output spec
+            StorageClass        -- storage class of the symbol
+            Kind                -- kind of the symbol
 
-  | SymFunc String            -- name of the function
-            Type              -- return type of the function
-            [Type]            -- arguments of the function         
-            [Type]            -- optional arguments
-            (Maybe String)    -- nested function has uniqe name
+  | SymFunc String              -- name of the function
+            Type                -- return type of the function
+            [Type]              -- arguments of the function         
+            [Type]              -- optional arguments
+            (Maybe String)      -- nested function has uniqe name
 
   | SymBuiltinFunc 
-            String            -- name of the function
-            Type              -- return type of the function
-            [Type]            -- arguments of the function         
-            (Maybe Type)      -- vaarg
+            String              -- name of the function
+            Type                -- return type of the function
+            [Type]              -- arguments of the function         
+            (Maybe Type)        -- vaarg
 
     deriving (Show, Eq, Typeable, Data)
 
-getNameOfSym (SymVar  name _ _ _)         = name
+getNameOfSym (SymVar  name _ _ _ _)       = name
 getNameOfSym (SymFunc name _ _ _ _)       = name
 getNameOfSym (SymBuiltinFunc name _ _ _)  = name
 
-getTyOfSym   (SymVar  _ ty _ _)           = ty
+getTyOfSym   (SymVar  _ ty _ _ _)         = ty
 getTyOfSym   (SymFunc _ ty _ _ _)         = ty
 getTyOfSym   (SymBuiltinFunc _ ty _ _)    = ty
 
@@ -245,5 +244,5 @@ data Func
 
 
 data FormalDecl 
-  = FormalDecl Type String (Maybe Expr)     -- TODO: Allow const expression
+  = FormalDecl Type (Maybe OutputSpec) String (Maybe Expr)     -- TODO: Allow const expression
     deriving (Show, Eq, Typeable, Data)

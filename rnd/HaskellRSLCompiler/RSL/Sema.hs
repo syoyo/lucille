@@ -32,52 +32,52 @@ import RSL.AST
 --
 builtinShaderVariables :: [Symbol]
 builtinShaderVariables =
-  [ (SymVar "Ci"        TyColor  Varying KindBuiltinVariable)
-  , (SymVar "Oi"        TyColor  Varying KindBuiltinVariable)
-  , (SymVar "Cs"        TyColor  Varying KindBuiltinVariable)
-  , (SymVar "Os"        TyColor  Varying KindBuiltinVariable)
-  , (SymVar "P"         TyPoint  Varying KindBuiltinVariable)
-  , (SymVar "dPdu"      TyVector Varying KindBuiltinVariable)
-  , (SymVar "dPdv"      TyVector Varying KindBuiltinVariable)
-  , (SymVar "Ps"        TyPoint  Varying KindBuiltinVariable)
-  , (SymVar "I"         TyVector Varying KindBuiltinVariable)
-  , (SymVar "E"         TyPoint  Uniform KindBuiltinVariable)
-  , (SymVar "L"         TyVector Uniform KindBuiltinVariable)
-  , (SymVar "N"         TyNormal Varying KindBuiltinVariable)
-  , (SymVar "Ng"        TyNormal Varying KindBuiltinVariable)
-  , (SymVar "Ns"        TyNormal Varying KindBuiltinVariable)
-  , (SymVar "Cl"        TyColor  Varying KindBuiltinVariable)
-  , (SymVar "Ol"        TyColor  Varying KindBuiltinVariable)
-  , (SymVar "s"         TyFloat  Varying KindBuiltinVariable)
-  , (SymVar "t"         TyFloat  Varying KindBuiltinVariable)
-  , (SymVar "u"         TyFloat  Varying KindBuiltinVariable)
-  , (SymVar "v"         TyFloat  Varying KindBuiltinVariable)
-  , (SymVar "du"        TyFloat  Varying KindBuiltinVariable)
-  , (SymVar "dv"        TyFloat  Varying KindBuiltinVariable)
-  , (SymVar "ncompos"   TyFloat  Uniform KindBuiltinVariable)
-  , (SymVar "time"      TyFloat  Uniform KindBuiltinVariable)
-  , (SymVar "dtime"     TyFloat  Uniform KindBuiltinVariable)
-  , (SymVar "dPdtime"   TyVector Varying KindBuiltinVariable)
+  [ (SymVar "Ci"        TyColor  Nothing Varying KindBuiltinVariable)
+  , (SymVar "Oi"        TyColor  Nothing Varying KindBuiltinVariable)
+  , (SymVar "Cs"        TyColor  Nothing Varying KindBuiltinVariable)
+  , (SymVar "Os"        TyColor  Nothing Varying KindBuiltinVariable)
+  , (SymVar "P"         TyPoint  Nothing Varying KindBuiltinVariable)
+  , (SymVar "dPdu"      TyVector Nothing Varying KindBuiltinVariable)
+  , (SymVar "dPdv"      TyVector Nothing Varying KindBuiltinVariable)
+  , (SymVar "Ps"        TyPoint  Nothing Varying KindBuiltinVariable)
+  , (SymVar "I"         TyVector Nothing Varying KindBuiltinVariable)
+  , (SymVar "E"         TyPoint  Nothing Uniform KindBuiltinVariable)
+  , (SymVar "L"         TyVector Nothing Uniform KindBuiltinVariable)
+  , (SymVar "N"         TyNormal Nothing Varying KindBuiltinVariable)
+  , (SymVar "Ng"        TyNormal Nothing Varying KindBuiltinVariable)
+  , (SymVar "Ns"        TyNormal Nothing Varying KindBuiltinVariable)
+  , (SymVar "Cl"        TyColor  Nothing Varying KindBuiltinVariable)
+  , (SymVar "Ol"        TyColor  Nothing Varying KindBuiltinVariable)
+  , (SymVar "s"         TyFloat  Nothing Varying KindBuiltinVariable)
+  , (SymVar "t"         TyFloat  Nothing Varying KindBuiltinVariable)
+  , (SymVar "u"         TyFloat  Nothing Varying KindBuiltinVariable)
+  , (SymVar "v"         TyFloat  Nothing Varying KindBuiltinVariable)
+  , (SymVar "du"        TyFloat  Nothing Varying KindBuiltinVariable)
+  , (SymVar "dv"        TyFloat  Nothing Varying KindBuiltinVariable)
+  , (SymVar "ncompos"   TyFloat  Nothing Uniform KindBuiltinVariable)
+  , (SymVar "time"      TyFloat  Nothing Uniform KindBuiltinVariable)
+  , (SymVar "dtime"     TyFloat  Nothing Uniform KindBuiltinVariable)
+  , (SymVar "dPdtime"   TyVector Nothing Varying KindBuiltinVariable)
 
   -- extension for lucille.
   
-  , (SymVar "x"  TyFloat  Varying KindBuiltinVariable)
-  , (SymVar "y"  TyFloat  Varying KindBuiltinVariable)
-  , (SymVar "z"  TyFloat  Varying KindBuiltinVariable)
-  , (SymVar "w"  TyFloat  Varying KindBuiltinVariable)
-  , (SymVar "sx" TyInt    Varying KindBuiltinVariable)
-  , (SymVar "sy" TyInt    Varying KindBuiltinVariable)
+  , (SymVar "x"  TyFloat  Nothing Varying KindBuiltinVariable)
+  , (SymVar "y"  TyFloat  Nothing Varying KindBuiltinVariable)
+  , (SymVar "z"  TyFloat  Nothing Varying KindBuiltinVariable)
+  , (SymVar "w"  TyFloat  Nothing Varying KindBuiltinVariable)
+  , (SymVar "sx" TyInt    Nothing Varying KindBuiltinVariable)
+  , (SymVar "sy" TyInt    Nothing Varying KindBuiltinVariable)
 
   -- Constant
-  , (SymVar "PI" TyFloat  Uniform KindBuiltinVariable)
+  , (SymVar "PI" TyFloat  Nothing Uniform KindBuiltinVariable)
 
   ] -- More is TODO
   
 
 builtinOutputShaderVariables :: [Symbol]
 builtinOutputShaderVariables =
-  [ (SymVar "Ci" TyColor  Varying KindBuiltinVariable)
-  , (SymVar "Oi" TyColor  Varying KindBuiltinVariable)
+  [ (SymVar "Ci" TyColor  (Just OutputSpec) Varying KindBuiltinVariable)
+  , (SymVar "Oi" TyColor  (Just OutputSpec) Varying KindBuiltinVariable)
   ]
 
 builtinShaderFunctions :: [Symbol]
@@ -106,10 +106,16 @@ builtinShaderFunctions =
   , (SymBuiltinFunc "min"            f [f, f] Nothing)
   -- TODO: float, point, vector, normal, color
   , (SymBuiltinFunc "max"            f [f, f] Nothing)
-  -- TODO: float, point, vector, normal, color
-  , (SymBuiltinFunc "clamp"          f [f, f] Nothing)
-  -- float, point, vector, normal, color
+  , (SymBuiltinFunc "clamp"          f [f, f, f] Nothing)
+  , (SymBuiltinFunc "clamp"          p [p, p, p] Nothing)
+  , (SymBuiltinFunc "clamp"          v [v, v, v] Nothing)
+  , (SymBuiltinFunc "clamp"          n [n, n, n] Nothing)
+  , (SymBuiltinFunc "clamp"          c [c, c, c] Nothing)
   , (SymBuiltinFunc "mix"            f [f, f, f] Nothing)
+  , (SymBuiltinFunc "mix"            p [p, p, f] Nothing)
+  , (SymBuiltinFunc "mix"            v [v, v, f] Nothing)
+  , (SymBuiltinFunc "mix"            n [n, n, f] Nothing)
+  , (SymBuiltinFunc "mix"            c [c, c, f] Nothing)
   , (SymBuiltinFunc "floor"          f [f]       Nothing)
   , (SymBuiltinFunc "ceil"           f [f]       Nothing)
   , (SymBuiltinFunc "round"          f [f]       Nothing)
@@ -139,10 +145,21 @@ builtinShaderFunctions =
   , (SymBuiltinFunc "random"         c []        Nothing)
   , (SymBuiltinFunc "random"         p []        Nothing)
   , (SymBuiltinFunc "noise"          f [f]       Nothing)
-  , (SymBuiltinFunc "noise"          f [p]       Nothing)
-  , (SymBuiltinFunc "noise"          f [v]       Nothing)
-  , (SymBuiltinFunc "noise"          f [n]       Nothing)
   , (SymBuiltinFunc "noise"          f [f, f]    Nothing)
+  , (SymBuiltinFunc "noise"          f [p]       Nothing)
+  , (SymBuiltinFunc "noise"          f [p, f]    Nothing)
+  , (SymBuiltinFunc "noise"          c [f]       Nothing)
+  , (SymBuiltinFunc "noise"          c [f, f]    Nothing)
+  , (SymBuiltinFunc "noise"          c [p]       Nothing)
+  , (SymBuiltinFunc "noise"          c [p, f]    Nothing)
+  , (SymBuiltinFunc "noise"          p [f]       Nothing)
+  , (SymBuiltinFunc "noise"          p [f, f]    Nothing)
+  , (SymBuiltinFunc "noise"          p [p]       Nothing)
+  , (SymBuiltinFunc "noise"          p [p, f]    Nothing)
+  , (SymBuiltinFunc "noise"          v [f]       Nothing)
+  , (SymBuiltinFunc "noise"          v [f, f]    Nothing)
+  , (SymBuiltinFunc "noise"          v [p]       Nothing)
+  , (SymBuiltinFunc "noise"          v [p, f]    Nothing)
   , (SymBuiltinFunc "pnoise"         f [f, f]    Nothing)
   , (SymBuiltinFunc "pnoise"         f [f, f, f, f]    Nothing)
   , (SymBuiltinFunc "pnoise"         f [p, p]    Nothing)
@@ -213,16 +230,14 @@ builtinShaderFunctions =
   , (SymBuiltinFunc "transform"      p [s, s, p] Nothing) 
   , (SymBuiltinFunc "transform"      p [m, p]    Nothing) 
   , (SymBuiltinFunc "transform"      p [s, m, p] Nothing) 
-  , (SymBuiltinFunc "transform"      v [s, v]    Nothing) 
-  , (SymBuiltinFunc "transform"      v [s, s, v] Nothing) 
-  , (SymBuiltinFunc "transform"      v [m, v]    Nothing) 
-  , (SymBuiltinFunc "transform"      v [s, m, v] Nothing) 
-  , (SymBuiltinFunc "transform"      n [s, n]    Nothing) 
-  , (SymBuiltinFunc "transform"      n [s, s, n] Nothing) 
-  , (SymBuiltinFunc "transform"      n [m, n]    Nothing) 
-  , (SymBuiltinFunc "transform"      n [s, m, n] Nothing) 
+  , (SymBuiltinFunc "vtransform"     v [s, v]    Nothing) 
   , (SymBuiltinFunc "vtransform"     v [s, s, v] Nothing) 
-  , (SymBuiltinFunc "depth"          f [p]       Nothing) 
+  , (SymBuiltinFunc "vtransform"     v [m, v]    Nothing) 
+  , (SymBuiltinFunc "vtransform"     v [s, m, v] Nothing) 
+  , (SymBuiltinFunc "ntransform"     n [s, n]    Nothing) 
+  , (SymBuiltinFunc "ntransform"     n [s, s, n] Nothing) 
+  , (SymBuiltinFunc "ntransform"     n [m, n]    Nothing) 
+  , (SymBuiltinFunc "ntransform"     n [s, m, n] Nothing) 
   , (SymBuiltinFunc "depth"          f [p]       Nothing) 
   , (SymBuiltinFunc "calculatenormal" p [p]      Nothing)
 
@@ -280,7 +295,7 @@ builtinShaderFunctions =
 
 
 lookupVariable :: [Symbol] -> String -> [Symbol]
-lookupVariable syms name = filter (\(SymVar sname _ _ _) -> sname == name) syms
+lookupVariable syms name = filter (\(SymVar sname _ _ _ _) -> sname == name) syms
 
 lookupBuiltinFunc :: [Symbol] -> String -> [Symbol]
 lookupBuiltinFunc syms name = filter (\(SymBuiltinFunc fname _ _ _) -> fname == name) syms
@@ -303,3 +318,34 @@ lookupBuiltinFuncWithArgumentSignature :: [Symbol] -> String -> [Type] -> [Symbo
 lookupBuiltinFuncWithArgumentSignature syms name argTys = 
   filter (\sym@(SymBuiltinFunc fname _ tys _) -> (fname == name) && (checkArgTy sym argTys ) ) syms
   -- filter (\(SymBuiltinFunc fname _ tys _) -> (fname == name) && (tys == argTys) ) syms
+
+
+
+{-
+   Parameters
+ -}
+
+textureParams = [
+
+  -- name     , type    , class  , num
+
+    ("blur"   , TyFloat , Varying, 0)
+  , ("sblur"  , TyFloat , Varying, 0)
+  , ("tblur"  , TyFloat , Varying, 0)
+  , ("width"  , TyFloat , Uniform, 0)
+  , ("swidth" , TyFloat , Uniform, 0)
+  , ("twidth" , TyFloat , Uniform, 0)
+  , ("filter" , TyString, Uniform, 0)
+  , ("fill"   , TyFloat , Uniform, 0)
+  , ("samples", TyFloat , Uniform, 0)  -- shadowmap param
+  , ("bias"   , TyFloat , Varying, 0)  -- shadowmap param
+  ]
+
+textureInfoParams = [
+
+    ("resolution"       , TyFloat   , Uniform, 2)
+  , ("type"             , TyString  , Uniform, 0)
+  , ("channels"         , TyFloat   , Uniform, 0)
+  , ("viewingmatrix"    , TyFloat   , Uniform, 0)
+  , ("projectionmatrix" , TyMatrix  , Uniform, 0)
+  ]

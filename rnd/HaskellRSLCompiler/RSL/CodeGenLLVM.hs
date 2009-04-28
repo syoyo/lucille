@@ -193,8 +193,8 @@ emitOp op = case op of
   OpDivAssign -> "/="
 
 getLLNameOfSym :: Symbol -> String
-getLLNameOfSym (SymVar name ty _ KindBuiltinVariable) = "@" ++ name
-getLLNameOfSym (SymVar name _ _ _)                    = "%" ++ name
+getLLNameOfSym (SymVar name ty _ _ KindBuiltinVariable) = "@" ++ name
+getLLNameOfSym (SymVar name _ _ _ _)                    = "%" ++ name
 
 getReg :: Expr -> String
 getReg expr = case expr of
@@ -500,10 +500,10 @@ instance AST Expr where
 
     Var (Just dstSym) srcSym -> case srcSym of
 
-      (SymVar name _ _ KindFormalVariable)  -> concat
+      (SymVar name _ _ _ KindFormalVariable)  -> concat
         [ indent n ++ emitLoadFromFormalVariable dstSym srcSym ]
 
-      (SymVar name _ _ KindBuiltinVariable) -> concat
+      (SymVar name _ _ _ KindBuiltinVariable) -> concat
         [ indent n ++ emitLoadFromBuiltinVariable dstSym srcSym ]
 
       _                                     -> concat
@@ -576,7 +576,7 @@ instance AST Expr where
     
     Assign _ op (Var _ sym) rexpr -> case sym of
 
-      (SymVar _ _ _ KindBuiltinVariable) -> concat
+      (SymVar _ _ _ _ KindBuiltinVariable) -> concat
 
         [ gen n rexpr
         , indent n
@@ -588,7 +588,7 @@ instance AST Expr where
         ]
 
 
-      (SymVar _ _ _ kind) -> concat
+      (SymVar _ _ _ _ kind) -> concat
 
         [ gen n rexpr
         , indent n
@@ -867,10 +867,10 @@ instance AST Expr where
 
     Var (Just dstSym) srcSym -> case srcSym of
 
-      (SymVar name _ _ KindFormalVariable)  -> concat
+      (SymVar name _ _ _ KindFormalVariable)  -> concat
         [ indent n ++ emitLoadFromFormalVariable dstSym srcSym ]
 
-      (SymVar name _ _ KindBuiltinVariable) -> concat
+      (SymVar name _ _ _ KindBuiltinVariable) -> concat
         [ indent n ++ emitLoadFromBuiltinVariable dstSym srcSym ]
 
       _                                     -> concat
@@ -937,7 +937,7 @@ instance AST Expr where
     
     Assign _ op (Var _ sym) rexpr -> case sym of
 
-      (SymVar _ _ _ KindBuiltinVariable) -> concat
+      (SymVar _ _ _ _ KindBuiltinVariable) -> concat
 
         [ genStatic n rexpr
         , indent n
@@ -949,7 +949,7 @@ instance AST Expr where
         ]
 
 
-      (SymVar _ _ _ kind) -> concat
+      (SymVar _ _ _ _ kind) -> concat
 
         [ genStatic n rexpr
         , indent n
@@ -1204,10 +1204,10 @@ instance AST Expr where
 
     Var (Just dstSym) srcSym -> case srcSym of
 
-      (SymVar name _ _ KindFormalVariable)  -> concat
+      (SymVar name _ _ _ KindFormalVariable)  -> concat
         [ indent n ++ emitLoadFromFormalVariable dstSym srcSym ]
 
-      (SymVar name _ _ KindBuiltinVariable) -> concat
+      (SymVar name _ _ _ KindBuiltinVariable) -> concat
         [ indent n ++ emitLoadFromBuiltinVariable dstSym srcSym ]
 
       _                                     -> concat
@@ -1274,7 +1274,7 @@ instance AST Expr where
     
     Assign _ op (Var _ sym) rexpr -> case sym of
 
-      (SymVar _ _ _ KindBuiltinVariable) -> concat
+      (SymVar _ _ _ _ KindBuiltinVariable) -> concat
 
         [ genDynamic n rexpr
         , indent n
@@ -1286,7 +1286,7 @@ instance AST Expr where
         ]
 
 
-      (SymVar _ _ _ kind) -> concat
+      (SymVar _ _ _ _ kind) -> concat
 
         [ genDynamic n rexpr
         , indent n
@@ -1499,8 +1499,8 @@ instance AST FormalDecl where
 
   gen n decl = case decl of
 
-    FormalDecl ty name Nothing    -> emitTy ty ++ " " ++ "%" ++ name
-    FormalDecl ty name (Just val) -> emitTy ty ++ " " ++ "%" ++ name
+    FormalDecl ty os name Nothing    -> emitTy ty ++ " " ++ "%" ++ name
+    FormalDecl ty os name (Just val) -> emitTy ty ++ " " ++ "%" ++ name
 
 
   genList n []     = ""
@@ -1509,8 +1509,8 @@ instance AST FormalDecl where
 
   genStatic n decl = case decl of
 
-    FormalDecl ty name Nothing    -> emitTy ty ++ " " ++ "%" ++ name
-    FormalDecl ty name (Just val) -> emitTy ty ++ " " ++ "%" ++ name
+    FormalDecl ty os name Nothing    -> emitTy ty ++ " " ++ "%" ++ name
+    FormalDecl ty os name (Just val) -> emitTy ty ++ " " ++ "%" ++ name
 
 
   genStaticList n []     = ""
@@ -1519,8 +1519,8 @@ instance AST FormalDecl where
 
   genDynamic n decl = case decl of
 
-    FormalDecl ty name Nothing    -> emitTy ty ++ " " ++ "%" ++ name
-    FormalDecl ty name (Just val) -> emitTy ty ++ " " ++ "%" ++ name
+    FormalDecl ty os name Nothing    -> emitTy ty ++ " " ++ "%" ++ name
+    FormalDecl ty os name (Just val) -> emitTy ty ++ " " ++ "%" ++ name
 
 
   genDynamicList n []     = ""
@@ -1534,7 +1534,7 @@ instance AST FormalDecl where
   
 
 emitStoreFormalVariableToBuffer :: Int -> FormalDecl -> String
-emitStoreFormalVariableToBuffer n (FormalDecl ty name _) = concat
+emitStoreFormalVariableToBuffer n (FormalDecl ty os name _) = concat
   -- %var.addr = alloca ty
   -- store %var, %var.addr
   [ indent n ++ buf ++ " = " ++ "alloca " ++ tyStr ++ ";\n"
@@ -1550,7 +1550,7 @@ emitStoreFormalVariableToBuffer n (FormalDecl ty name _) = concat
 
 
 emitBuiltinVariableSetter :: Symbol -> String
-emitBuiltinVariableSetter (SymVar name ty _ _) =
+emitBuiltinVariableSetter (SymVar name ty _ _ _) =
   "declare void @rsl_set" ++ name ++ "(" ++ tyStr ++ ")\n"
 
   where
@@ -1558,7 +1558,7 @@ emitBuiltinVariableSetter (SymVar name ty _ _) =
     tyStr = emitTy ty
 
 emitBuiltinVariableGetter :: Symbol -> String
-emitBuiltinVariableGetter (SymVar name ty _ _) =
+emitBuiltinVariableGetter (SymVar name ty _ _ _) =
   "declare " ++ tyStr ++ " @rsl_get" ++ name ++ "()\n"
   
   where
@@ -1765,16 +1765,16 @@ emitShaderParamStructDef decls = concat
 
     delim = if length decls == 0 then "" else ", "
 
-    emitTys []                          = ""
-    emitTys [(FormalDecl ty _ _ )]     = emitTy ty
-    emitTys ((FormalDecl ty _ _ ):xs)  = emitTy ty ++ ", " ++ emitTys xs
+    emitTys []                           = ""
+    emitTys [(FormalDecl ty _ _ _ )]     = emitTy ty
+    emitTys ((FormalDecl ty _ _ _ ):xs)  = emitTy ty ++ ", " ++ emitTys xs
 
     structSize = sum $ map (getLLVMTySize . getTyField) decls
 
     align16 = ((structSize `div` 16) + 1) * 16
 
     getTyField :: FormalDecl -> Type
-    getTyField (FormalDecl ty _ _) = ty
+    getTyField (FormalDecl ty _ _ _) = ty
 
     emitPad :: Int -> String
     emitPad 0 = ""
@@ -1805,7 +1805,7 @@ emitShaderParamStructSizeGetter sz = concat
 -- Emit function which set/get shader variable.
 --
 emitShaderParamGetter :: Int -> FormalDecl -> String
-emitShaderParamGetter offset (FormalDecl ty name _) = concat
+emitShaderParamGetter offset (FormalDecl ty _ name _) = concat
   [ "define void @set_shader_param_" ++ name ++ "(%struct._shader_param_t* %param, " ++ emitTy ty ++" %x) {\n"
   , "entry:\n"
   , indent 1 ++ "%tmp = getelementptr %struct._shader_param_t* %param, i32 0, i32 " ++ show offset ++ "\n"
@@ -1816,7 +1816,7 @@ emitShaderParamGetter offset (FormalDecl ty name _) = concat
 
 
 emitShaderParamSetter :: Int -> FormalDecl -> String
-emitShaderParamSetter offset (FormalDecl ty name _) = concat
+emitShaderParamSetter offset (FormalDecl ty _ name _) = concat
   [ "define " ++ emitTy ty ++ " @get_shader_param_" ++ name ++ "(%struct._shader_param_t *%param) {\n"
   , "entry:\n"
   , indent 1 ++ "%tmp = getelementptr %struct._shader_param_t* %param, i32 0, i32 " ++ show offset ++ "\n"
@@ -1859,8 +1859,8 @@ extractExternVariables exprs = map getSym (filter isExternVariableDef exprs)
   where
 
     isExternVariableDef e = case e of
-      (Def (SymVar name _ _ kind) initExpr) -> if kind == KindExternalVariable then True else False
-      _                                     -> False
+      (Def (SymVar name _ _ _ kind) initExpr) -> if kind == KindExternalVariable then True else False
+      _                                       -> False
 
     getSym e = case e of
       (Def sym _) -> sym
@@ -1899,8 +1899,8 @@ emitFrameStructDef (NestedFunc n ty fname decls stms) =
 
     emitTys :: [Symbol] -> String
     emitTys []                      = ""
-    emitTys [(SymVar _ ty _ _)]     = emitTy ty
-    emitTys ((SymVar _ ty _ _):xs)  = emitTy ty ++ ", " ++ emitTys xs
+    emitTys [(SymVar _ ty _ _ _)]     = emitTy ty
+    emitTys ((SymVar _ ty _ _ _):xs)  = emitTy ty ++ ", " ++ emitTys xs
 
 emitFrameStructDef _ = ""
 
