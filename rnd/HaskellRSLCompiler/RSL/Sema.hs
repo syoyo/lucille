@@ -124,10 +124,14 @@ builtinShaderFunctions =
   , (SymBuiltinFunc "filterstep"     f [f, f, f] Nothing)
   -- TODO: filterstep(f, f, parameterlist)
   -- TODO: filterstep(f, f, f, parameterlist)
-  , (SymBuiltinFunc "spline"         f [f, f, f] (Just f))
-  , (SymBuiltinFunc "spline"         c [f, c, c] (Just c))
-  , (SymBuiltinFunc "spline"         p [f, p, p] (Just p))
-  , (SymBuiltinFunc "spline"         v [f, v, v] (Just v))
+  , (SymBuiltinFunc "spline"         f [f, f, f]    (Just f))
+  , (SymBuiltinFunc "spline"         f [s, f, f, f] (Just f))
+  , (SymBuiltinFunc "spline"         c [f, c, c]    (Just c))
+  , (SymBuiltinFunc "spline"         c [s, f, c, c] (Just c))
+  , (SymBuiltinFunc "spline"         p [f, p, p]    (Just p))
+  , (SymBuiltinFunc "spline"         p [s, f, p, p] (Just p))
+  , (SymBuiltinFunc "spline"         v [f, v, v]    (Just v))
+  , (SymBuiltinFunc "spline"         v [s, f, v, v] (Just v))
   -- TODO: support spline(f, f[]), spline([string basis], ...)
   , (SymBuiltinFunc "Du"             f [f]       Nothing) 
   , (SymBuiltinFunc "Du"             c [c]       Nothing) 
@@ -194,7 +198,7 @@ builtinShaderFunctions =
   , (SymBuiltinFunc "cellnoise"      v [p, f]    Nothing)
 
   -- [15.2] Geometric Functions
-  --
+
   , (SymBuiltinFunc "xcomp"          f [v]       Nothing)
   , (SymBuiltinFunc "xcomp"          f [p]       Nothing)
   , (SymBuiltinFunc "xcomp"          f [n]       Nothing)
@@ -243,9 +247,16 @@ builtinShaderFunctions =
 
   -- [15.3] Color Functions
   , (SymBuiltinFunc "comp"           f [c, f]    Nothing) 
-  -- , (SymBuiltinFunc "setcomp"        void [c, f, f]    []) 
-  , (SymBuiltinFunc "mix"            c [c, c, f] Nothing) 
+  , (SymBuiltinFunc "ctransform"     c [s, c]    Nothing) 
+  , (SymBuiltinFunc "ctransform"     c [s, s, c] Nothing) 
 
+  -- [15.4] Matrix Functions
+  , (SymBuiltinFunc "comp"           f [m, f, f] Nothing) 
+  -- , (SymBuiltinFunc "setcomp"        void [c, f, f]    []) 
+  , (SymBuiltinFunc "determinant"    f [m]       Nothing) 
+  , (SymBuiltinFunc "translate"      m [m, v]    Nothing) 
+  , (SymBuiltinFunc "rotate"         m [m, f, v] Nothing) 
+  , (SymBuiltinFunc "scale"          m [m, p]    Nothing) 
 
   -- [15.5] String Functions
   --
