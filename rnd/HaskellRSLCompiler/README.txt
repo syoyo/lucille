@@ -2,7 +2,7 @@ Haskell + parsec version of RSL compiler.
 =========================================
 
   Started: Dec 9th, 2008
-  Updated: Mar 7th, 2009
+  Updated: May 20th, 2009
 
 What is this?
 -------------
@@ -18,6 +18,9 @@ Requirements
  * Haskell libraries
    - fgl, functional graph libraray
      http://hackage.haskell.org/cgi-bin/hackage-scripts/package/fgl
+
+   - wl-pprint, pretty-printing library
+     http://hackage.haskell.org/cgi-bin/hackage-scripts/package/wl-pprint
 
  * mcpp: A portable C preprocessor with Validation Suite
    http://mcpp.sourceforge.net/index.html
