@@ -1658,6 +1658,11 @@ instance AST Func where
       , ") {}\n"
       ]
 
+    -- TODO
+    StructDef name members -> concat
+      [ "; TODO: struct " ++ name ++ "\n"
+      ]
+
     Preprocessor s -> ""
 
   genStatic n f = case f of
@@ -1680,6 +1685,11 @@ instance AST Func where
       , "@" ++ name
       , "("
       , ") {}\n"
+      ]
+
+    -- TODO
+    StructDef name members -> concat
+      [ "; TODO: struct " ++ name ++ "\n"
       ]
 
     Preprocessor s -> ""
@@ -1706,6 +1716,10 @@ instance AST Func where
       , ") {}\n"
       ]
 
+    -- TODO
+    StructDef name members -> concat
+      [ "; TODO: struct " ++ name ++ "\n"
+      ]
 
     Preprocessor s -> ""
 
@@ -1737,6 +1751,10 @@ instance AST Func where
       , ") {}\n"
       ]
 
+    -- TODO
+    StructDef name members -> concat
+      [ "; TODO: struct " ++ name ++ "\n"
+      ]
 
     Preprocessor s -> ""
   

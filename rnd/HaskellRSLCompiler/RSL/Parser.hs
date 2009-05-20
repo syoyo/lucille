@@ -113,6 +113,7 @@ program               = do  { ast <- many (spaces >> global)
 
 global                =   shaderDefinition
                       <|> functionDefinition
+                      <|> structDefinition
                       <|> preprocessor
                       <?>   "top level definition"
 
@@ -156,6 +157,13 @@ functionDefinition    = do  { ty    <- option (TyVoid) funType
                             ; updateState (addSymbol $ mkFunSym name ty (extractTysFromDecls decls))
 
                             ; return (UserFunc ty name)
+                            }
+
+-- New in RSL2
+structDefinition      = do  { reserved "struct"
+                            ; name <- identifier
+                            ; members <- braces formalDecls
+                            ; return (StructDef name members)
                             }
 
 -- '[' int? ']'
@@ -780,7 +788,7 @@ mkMyError :: ParseError -> FilePath -> ParseError
 mkMyError err fname = setErrorPos (setSourceName (errorPos err) fname) err
 
 
-run :: RSLParser [Func] -> FilePath -> FilePath -> ([Func] -> IO ()) -> IO ()
+run :: RSLParser RSLUnit -> FilePath -> FilePath -> (RSLUnit -> IO ()) -> IO ()
 run p prepname name proc =
   do  { result <- parseRSLFromFile p prepname
       ; case (result) of
@@ -796,7 +804,7 @@ run p prepname name proc =
       }
 
 
-runLex :: RSLParser [Func] -> FilePath -> FilePath -> ([Func] -> IO ()) -> IO ()
+runLex :: RSLParser RSLUnit -> FilePath -> FilePath -> (RSLUnit -> IO ()) -> IO ()
 runLex p prepname name proc =
   run (do { whiteSpace
           ; x <- p
@@ -920,6 +928,8 @@ rslStyle = javaStyle
                     , "extern"
                     , "return"
                     , "color", "vector", "normal", "matrix", "point", "void"
+                    -- RSL 2.0
+                    , "public", "class", "struct"
                     -- More is TODO
                     ]
   , reservedOpNames = ["+", "-", "*", "/"] -- More is TODO

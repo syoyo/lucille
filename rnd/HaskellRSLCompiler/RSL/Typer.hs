@@ -310,6 +310,9 @@ instance Typer Func where
     UserFunc   ty name            ->
       do { return (UserFunc ty name) }
       
+    StructDef  name members       ->
+      do { return (StructDef name members) }
+
     Preprocessor s                ->
       do { return (Preprocessor s) }
     
