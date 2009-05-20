@@ -1,0 +1,12 @@
+TODO
+====
+
+ * Implement semantic checker.
+ * Implement type checker.
+   - Handle polymorphic function correctly.
+ * Support optinal argument.
+ * Support 'output' qualifier.
+ * Compiler driver(compile, link and so on in one command)
+   - Use llvmc?
+ * Support shader type other than 'surface' shader.
+ * Support combination with DSO(native code).
