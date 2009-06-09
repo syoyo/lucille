@@ -4,7 +4,7 @@ Notes
 Revision
 --------
 
- - Apr 17, 2009
+ - Jul  9, 2009.  Updated
  - Jan 25, 2009.  Initial
 
 
@@ -113,7 +113,8 @@ http://web.engr.oregonstate.edu/~erwig/HaskellRules/
 行数
 ----
 
-なるべく 1 万行以下に抑える
+なるべく 1 万行以下に抑える.
+xmonad を参考にする.
 
 
 Polymorphic 関数
@@ -205,6 +206,45 @@ RSL は配列をサポートする.
 
 LArrayRef, RArrayRef と分けるか, どちらも ArrayRef として表現するか?
 
+エラーレポート
+~~~~~~~~~~~~~~
+
+エラー表示のために、RSLLoc を導入する. これはトークンのソースコードの位置などを記録する. エラーの時はこの情報を使って expressive なエラー表示を行う.
+Parsec の SourceLoc を流用する手もあるが、独自に再定義することにする.
+
+ポリモーフィック関数と subtyping
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+RSL には polymorphic で subtyping な性質をもつ(かもしれない)関数がある.
+
+例::
+
+
+  float noise(float);
+  float noise(point);
+  point noise(float);
+  point noise(point);
+
+現在, typing のステージにおいては型判定は単純に関数定義のリストに対して arg の型でマッチングを取っているだけである. そのため, 以下のケースが判定できない. ::
+
+  float x = noise(1.0);	// 内部では point noise(float) にマッチしてしまう.
+
+対策としては内部の関数定義に多相型を扱えるようにサポートするようにすることである. これは取りうる型のリスト(product)を持つようにすればいいだろうか. ::
+
+  def: [float, point] noise([float, point]);
+
+  float x = noise(1.0) // resTy = float, argTys = [float]
+
+  -> [float, point] noise([(float), point])
+  -> [float, point] noise(float)
+  -> [(float), point] noise(float)
+  -> float noise(float)
+  -> matched.
+
+
+ここのあたりの問題は, 型理論の世界で bounded quantization と呼んでいるらしい. これを使うともう少し sophisticated な型判定ルーチンとなるだろうか. TAPL 参照のこと.
+
+
 TODO
 ----
 
@@ -213,4 +253,7 @@ TODO
 - calculatenormal
 - spline
 - illuminate
+- パースエラー表示の改善
+- Haddock 化を行う.
+- break, continue のサポート
 
