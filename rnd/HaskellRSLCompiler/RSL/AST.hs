@@ -236,13 +236,16 @@ data Expr
     deriving (Show, Eq, Typeable, Data)
   
 
-data Func 
-  = ShaderFunc ShaderType String [FormalDecl] [Expr]
-  | UserFunc   Type       String
-  | Preprocessor String
-    deriving (Show, Eq, Typeable, Data)
-
-
 data FormalDecl 
   = FormalDecl Type (Maybe OutputSpec) String (Maybe Expr)     -- TODO: Allow const expression
     deriving (Show, Eq, Typeable, Data)
+
+data Func 
+  = ShaderFunc ShaderType String [FormalDecl] [Expr]
+  | UserFunc   Type       String
+  | StructDef             String [FormalDecl]                  -- RSL2
+  | Preprocessor String
+    deriving (Show, Eq, Typeable, Data)
+
+type RSLUnit = [Func]
+  

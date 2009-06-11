@@ -13,6 +13,7 @@ import RSL.PPrint
 import RSL.Typer
 import RSL.CFG
 import RSL.CodeGenLLVM
+import RSL.CodeGenC
 
 --
 -- Configurations
@@ -71,6 +72,10 @@ debugPrinter ast = do putStrLn $ "// [AST] = " ++ show ast ++ "\n"
                       writeFile "output.ll" (headerString ++ "\n" ++ globalVariablesString ++ codeString ++ "\n" ++ staticCodeString ++ "\n" ++ dynamicCodeString)
 
 
+genCodeCPrinter ast = do putStrLn $ genCode ast
+                                          
+
+
 --
 -- Execute C preprocessor as an external command.
 --
@@ -94,6 +99,7 @@ main = do (flags, args) <- getArgs >>= parseOption
 
               do { preprocessedFilename <- runPreprocessor (args !! 0)
                  ; runLex program preprocessedFilename (args !! 0) debugPrinter
+                 -- ; runLex program preprocessedFilename (args !! 0) genCodeCPrinter
                    -- clean up
                  ; removeFile preprocessedFilename
                  }

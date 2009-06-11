@@ -319,5 +319,12 @@ instance AST Func where
       , "    /* TODO */\n}\n"
       ]
 
+    StructDef name members  -> concat
+      [ "struct " ++ name ++ " {\n"
+      , pprint (n+1) members
+      , "\n"
+      , "}\n"
+      ]
+
     Preprocessor s -> ""
 
