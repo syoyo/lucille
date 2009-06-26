@@ -477,19 +477,19 @@ ri_bvh_intersect(
     if (fabs(ray->dir[0]) > RI_EPS) {
         ray->invdir[0] = 1.0 / ray->dir[0];
     } else {
-        ray->invdir[0] = RI_FLT_MAX;        /* FIXME: make this +Inf ? */
+        ray->invdir[0] = (ray->dir[0] < 0.0) ? -RI_FLT_MAX : RI_FLT_MAX;
     }
 
     if (fabs(ray->dir[1]) > RI_EPS) {
         ray->invdir[1] = 1.0 / ray->dir[1];
     } else {
-        ray->invdir[1] = RI_FLT_MAX;
+        ray->invdir[2] = (ray->dir[2] < 0.0) ? -RI_FLT_MAX : RI_FLT_MAX;
     }
 
     if (fabs(ray->dir[2]) > RI_EPS) {
         ray->invdir[2] = 1.0 / ray->dir[2];
     } else {
-        ray->invdir[2] = RI_FLT_MAX;
+        ray->invdir[2] = (ray->dir[2] < 0.0) ? -RI_FLT_MAX : RI_FLT_MAX;
     }
 
     ray->dir_sign[0] = (ray->dir[0] < 0.0) ? 1 : 0;
