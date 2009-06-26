@@ -1,0 +1,25 @@
+How to support shadeop in RSL compiler 
+=======================================
+
+Procedure
+---------
+
+ * Compile RSL code
+ * If unresolved function was found, seek the symbol from shadeop DLLs in the search path.
+
+How to search symbols in dll
+----------------------------
+
+ * dlopen(filename.so)
+ * Seek global data symbol ``filename_optables`` in the DLL.
+   * If the global symbol was not found, its not a shadeop DLL.
+ * Parse string in the shadeop field in ``filename_optables``
+ * Find init, main, cleanup function whose name is given by ``filename_optables`` from the DLL.
+
+
+Future plan
+-----------
+
+Use LLVM! LLVM enables IPO over DSO boundary.
+
+

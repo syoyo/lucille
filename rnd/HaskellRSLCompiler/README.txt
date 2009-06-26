@@ -16,7 +16,7 @@ Requirements
 -------------
 
  * Haskell libraries
-   - fgl, functional graph libraray
+   - fgl, functional graph libraray.
      http://hackage.haskell.org/cgi-bin/hackage-scripts/package/fgl
 
    - wl-pprint, pretty-printing library
