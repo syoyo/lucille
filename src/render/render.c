@@ -186,6 +186,9 @@ ri_render_init()
 
     grender->display_drv      = NULL;
 
+    grender->mutex            = ri_mutex_new();
+    ri_mutex_init(grender->mutex);
+
     grender->scene            = ri_scene_new();
 
     grender->bucket_queue     = ri_mt_queue_new();
@@ -1139,9 +1142,19 @@ render_bucket(
         }
     }
 
+    //
+    // Needs a lock to write out data to the display driver.
+    // More smarter idea is making the display driver thread-safe internally.
+    //
+    ri_mutex_lock(ri_render_get()->mutex);
+    printf("lock\n");
+
     bucket_write( bucket, 
                   ri_render_get()->display_drv,
                   ri_option_get_curr_display(ri_render_get()->context->option) );
+
+    ri_mutex_unlock(ri_render_get()->mutex);
+    printf("unlock\n");
 
     ri_mem_free_aligned(bucket->pixels);
     ri_mem_free_aligned(bucket->depths);
