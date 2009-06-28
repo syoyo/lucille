@@ -1,7 +1,7 @@
 /*
  * rockenfield, the framebuffer display driver for lucille.
  *
- * $Id: rockenfield.cpp 276 2007-04-07 12:01:44Z lucille $
+ * $Id$
  */
 #include <cstdio>
 #include <cstdlib>
@@ -84,9 +84,11 @@ extern "C" {
 
 class MyWindow : public Fl_Double_Window {
 	int handle(int event);
+
     public:
 	MyWindow(int w, int h, const char *t=0L)
 	  : Fl_Double_Window(w, h, t) {}; 
+	int redraw();
 };
 
 typedef struct _pixpacket
@@ -214,7 +216,7 @@ static void refresh()
 {
 	display_image_update(offsetx, offsety, zoom);
 	gPanel->image()->uncache();
-	Fl::redraw();
+	gMainWindow->redraw();
 }
 
 
@@ -911,6 +913,11 @@ keyboard(int key)
 	return need_update;
 }
 
+int MyWindow::redraw(){
+	Fl_Double_Window::redraw();
+	Fl::awake();
+}
+
 int
 MyWindow::handle(int event)
 {
@@ -1369,7 +1376,7 @@ idle(void *data)
 	if (need_update) {
 		display_image_update(offsetx, offsety, zoom);
 		gPanel->image()->uncache();
-		Fl::redraw();
+		gMainWindow->redraw();
 		Fl::wait();
 		need_update = 0;
 	}
@@ -1388,6 +1395,8 @@ int
 main(int argc, char **argv)
 {
 	int i;
+
+	Fl::lock();
 
 	init_buffer(image_width, image_height);
 	init_display_buffer(window_width, window_height);
@@ -1565,7 +1574,9 @@ main(int argc, char **argv)
 
 #endif
 
-	return Fl::run();
+	while(gMainWindow->visible()){
+		Fl::wait();
+	}
 
 #if defined(ENABLE_THREADING)
 #ifdef WIN32
