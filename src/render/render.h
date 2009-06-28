@@ -8,7 +8,7 @@
 /*
  * global rendering manager object.
  *
- * $Id: render.h,v 1.4 2004/06/13 06:44:51 syoyo Exp $
+ * $Id$
  */
 
 #ifndef LUCILLE_RENDERER_H
@@ -59,6 +59,8 @@ typedef struct _ri_render_t
                                              * display driver               */
 
     ri_statistic_t      stat;               /* statistics for rendering     */
+
+    ri_mutex_t         *mutex;
 
 
     void               (*progress_handler)(void);
