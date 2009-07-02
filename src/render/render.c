@@ -87,6 +87,7 @@ typedef struct _bucket_t {
     int             w, h;          /* bucket size                  */
     ri_vector_t    *pixels;        /* contents of the bucket       */
     ri_float_t     *depths;        /* contents of Z-buffer         */
+    ri_float_t     *alphas;        /* contents of alpha            */
     int             rendered;
     int             written;
 } bucket_t;
@@ -94,6 +95,7 @@ typedef struct _bucket_t {
 typedef struct _sample_t {
     ri_vector_t     radiance;
     ri_float_t      depth;
+    ri_float_t      alpha;
     ri_float_t      x, y;          /* sample positon with subpixel accuracy */
 } sample_t;
 
@@ -1124,6 +1126,7 @@ render_bucket(
 
     bucket->pixels = (ri_vector_t *)ri_mem_alloc_aligned(sizeof(ri_vector_t) * w * h, 32);
     bucket->depths = (ri_float_t *)ri_mem_alloc_aligned(sizeof(ri_float_t) * w * h, 32);
+    bucket->alphas = (ri_float_t *)ri_mem_alloc_aligned(sizeof(ri_float_t) * w * h, 32);
 
     //ri_log(LOG_INFO, "(Render) Rendering bucket region [%dx%d]", x, y);
 
@@ -1147,17 +1150,16 @@ render_bucket(
     // More smarter idea is making the display driver thread-safe internally.
     //
     ri_mutex_lock(ri_render_get()->mutex);
-    printf("lock\n");
 
     bucket_write( bucket, 
                   ri_render_get()->display_drv,
                   ri_option_get_curr_display(ri_render_get()->context->option) );
 
     ri_mutex_unlock(ri_render_get()->mutex);
-    printf("unlock\n");
 
     ri_mem_free_aligned(bucket->pixels);
     ri_mem_free_aligned(bucket->depths);
+    ri_mem_free_aligned(bucket->alphas);
 
     return 0;   /* OK */
 
